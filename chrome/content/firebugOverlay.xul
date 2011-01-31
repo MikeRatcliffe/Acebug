@@ -16,7 +16,7 @@
                                 label="LargeCommandLine" style="display:none;" />
                             <iframe id="fbAceBrowser" type="content" flex="1"
                                      tooltip="fbTooltip" contextmenu="fbContextMenu"
-                                     src="chrome://acebug/content/ace/fbeditor.html"
+                                     src="chrome://acebug/content/fbace/fbeditor.html"
                                      position="1"/>
                             <hbox id="fbCommandToolbar">
                                 <toolbarbutton id="fbCmdLoadButton" label="Load"
