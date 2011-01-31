@@ -13,5 +13,6 @@ Acebug is a Firebug Extension that brings the power of the Ace Editor to Firebug
 
 Getting the Source
 ==================
-git clone git://github.com/MikeRatcliffe/Acebug.git
-git submodule update --init --recursive
+
+    git clone git://github.com/MikeRatcliffe/Acebug.git
+    git submodule update --init --recursive
