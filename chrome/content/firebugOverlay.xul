@@ -14,11 +14,10 @@
                             <textbox id="fbLargeCommandLine" multiline="true" flex="1"
                                 newlines="pasteintact"
                                 label="LargeCommandLine" style="display:none;" />
-                            <browser id="fbAceBrowser" flex='1'
+                            <iframe id="fbAceBrowser" type="content" flex="1"
                                      tooltip="fbTooltip" contextmenu="fbContextMenu"
-                                     disablehistory="true"
                                      src="chrome://acebug/content/ace/fbeditor.html"
-                                     type="content" position="1"/>
+                                     position="1"/>
                             <hbox id="fbCommandToolbar">
                                 <toolbarbutton id="fbCmdLoadButton" label="Load"
                                     oncommand="Firebug.largeCommandLineEditor.loadFile()" position="6"/>
