@@ -130,7 +130,7 @@ Firebug.largeCommandLineEditor = {
 
 		items.push(
             {
-                label: "execute selection",
+                label: "Execute selection",
                 command: function() {
 					Firebug.CommandLine.enter(Firebug.currentContext, editorText);
 					self.focus();
@@ -138,7 +138,7 @@ Firebug.largeCommandLineEditor = {
 				disabled: !editorText
 			},
             {
-                label: "stream comment",
+                label: "Stream comment",
                 command: function() {
                     var range = editor.getSelection().getRange(),
                         startRow = range.start.row,
@@ -158,7 +158,7 @@ Firebug.largeCommandLineEditor = {
 			},
 			"-",
 			{
-                label: "copy",
+                label: "Copy",
                 command: function() {
 					gClipboardHelper.copyString(editorText);
 					self.focus();
@@ -166,7 +166,7 @@ Firebug.largeCommandLineEditor = {
 				disabled: !editorText
 			},
 			{
-                label: "cut",   command: function() {
+                label: "Cut",   command: function() {
 					gClipboardHelper.copyString(editorText);
                     editor.onCut();
 					self.focus();
@@ -174,14 +174,23 @@ Firebug.largeCommandLineEditor = {
 				disabled: !editorText
 			},
 			{
-                label: "paste",
+                label: "Paste",
                 command: function() {
 					editor.onTextInput(clipBoardText);
 					self.focus();
 				},
 				disabled: !clipBoardText
-			}
-
+			},
+            "-",
+            {
+                label: "Report Acebug issue",
+                command: function() {
+                    var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
+                        .getService(Components.interfaces.nsIWindowMediator);
+                    var mainWindow = wm.getMostRecentWindow("navigator:browser");
+                    mainWindow.gBrowser.selectedTab = mainWindow.gBrowser.addTab("https://github.com/MikeRatcliffe/Acebug/issues");
+                }
+            }
 		);
 		return items;
 	},
