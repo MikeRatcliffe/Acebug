@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+
+<overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+         xmlns:html="http://www.w3.org/1999/xhtml">
+
+    <script type="application/x-javascript" src="chrome://acebug/content/aceEditor.js"/>
+
+    <vbox id="fbContentBox">
+        <box id="fbPanelBox" flex="1">
+            <panelBar id="fbPanelBar1" class="panelBar" flex="3" persist="width,height">
+                <box id="fbPanelPane" flex="1" persist="orient">
+                    <deck id="fbSidePanelDeck" persist="width,height">
+                        <vbox id="fbLargeCommandBox">
+                            <textbox id="fbLargeCommandLine" multiline="true" flex="1"
+                                newlines="pasteintact"
+                                label="LargeCommandLine" style="display:none;" />
+                            <browser id="fbAceBrowser" flex='1'
+                                     tooltip="fbTooltip" contextmenu="fbContextMenu"
+                                     disablehistory="true"
+                                     src="chrome://acebug/content/ace/fbeditor.html"
+                                     type="content" position="1"/>
+                            <hbox id="fbCommandToolbar">
+                                <toolbarbutton id="fbCmdLoadButton" label="Load"
+                                    oncommand="Firebug.largeCommandLineEditor.loadFile()" position="6"/>
+                                <toolbarbutton id="fbCmdSaveButton" label="Save"
+                                    oncommand="Firebug.largeCommandLineEditor.saveFile()" position="7"/>
+                            </hbox>
+                        </vbox>
+                    </deck>
+                </box>
+            </panelBar>
+        </box>
+    </vbox>
+</overlay>

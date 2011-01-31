@@ -1,0 +1,3 @@
+content		acebug		chrome/content/ xpcnativewrappers=no
+
+overlay		chrome://firebug/content/firebugOverlay.xul		chrome://acebug/content/firebugOverlay.xul

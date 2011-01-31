@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+
+<RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+  
+  <Description about="urn:mozilla:install-manifest">
+    <em:id>acebug@mozilla.org</em:id>
+    <em:version>0.2b1</em:version>
+    <em:type>2</em:type>
+    <em:name>Acebug</em:name>
+    <em:description>Bring the awesome power of Ace to Firefox. Firebug 1.7X.0a9 or above must be installed in order to use this extension.</em:description>
+    <em:creator>Harutyun Amirjanyan &amp; Michael Ratcliffe</em:creator>
+    <em:iconURL>chrome://acebug/content/acebug.png</em:iconURL>
+    <em:homepageURL>https://github.com/MikeRatcliffe/Acebug/tree</em:homepageURL>
+  
+    <!-- Any suitably modern toolkit application -->
+    <em:targetApplication>
+      <Description>
+        <em:id>toolkit@mozilla.org</em:id>
+        <em:minVersion>1.9.0.*</em:minVersion>
+        <em:maxVersion>2.0.0.*</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+    
+    <!-- Firefox, at least one valid target application needed by AMO -->
+    <em:targetApplication>
+      <Description>
+        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id>
+        <em:minVersion>2.0</em:minVersion>
+        <em:maxVersion>4.0.*</em:maxVersion>
+      </Description>
+    </em:targetApplication>
+  </Description>
+</RDF>

@@ -1,0 +1,3 @@
+[submodule "chrome/content/ace"]
+	path = chrome/content/ace
+	url = git@github.com:MikeRatcliffe/ace.git
