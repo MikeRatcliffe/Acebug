@@ -7,5 +7,5 @@ Acebug is a Firebug Extension that brings the power of the Ace Editor to Firebug
 * Autocompletion
 * Improved context menu items
 * Internationalization
-* <ctrl><enter> shortcut
+* Add &lt;ctrl&gt;&lt;enter&gt; shortcut
 * Options - Choose keyboard bindings (vim, emacs etc.), choose color scheme, etc., etc.
