@@ -56,23 +56,24 @@ exports.launch = function(env) {
 	toggleGutter=function() {
 		env.editor.renderer.setShowGutter(!env.editor.renderer.showGutter);
 	}
-	/*custom = new HashHandler({
-          "gotoright": "Tab"
-    })*/
-	// TODO: use hashandler
+	
+	/**********  handle shortcuts *****/
+	// TODO: find better way	
+	Search = require("ace/search").Search;
+	canon = require("pilot/canon");
+	
+	customKeySet = {}
 	editor.addCommand=function(x){
-		var conf=editor.keyBinding.config
-		delete conf.reverse
 		canon.addCommand({
 			name: x.name,
 			exec: function(env, args, request) { 
 				x.exec(env, args)
 			}
 		});
-		conf[x.name]=x.key
-		editor.keyBinding.setConfig(conf)
+		delete customKeySet.reverse
+		customKeySet[x.name] = x.key
+		env.editor.setKeyboardHandler(new HashHandler(customKeySet) )
 	}
-	
 };
 
 });

@@ -16,12 +16,16 @@ Firebug.Ace =
 
 	},
 
-	initializeUI: function() {
-		this.rightWindowWrapped = $("fbAceBrowser").contentWindow;
-        this.rightWindow = this.rightWindowWrapped.wrappedJSObject;
-        //set Firebug.largeCommandLineEditor on wrapped window so that Firebug.getElementPanel can access it
-        this.rightWindowWrapped.document.body.ownerPanel = Firebug.largeCommandLineEditor;
-
+	initializeUI: function() {	
+		FBL.$("fbAceBrowser").addEventListener('DOMContentLoaded',function(e){
+			var browser = FBL.$("fbAceBrowser")
+			browser.removeEventListener('DOMContentLoaded', arguments.callee, false);
+			Firebug.Ace.rightWindowWrapped = browser.contentWindow;
+			Firebug.Ace.rightWindow = Firebug.Ace.rightWindowWrapped.wrappedJSObject;
+			//set Firebug.largeCommandLineEditor on wrapped window so that Firebug.getElementPanel can access it
+			Firebug.Ace.rightWindowWrapped.document.body.ownerPanel = Firebug.largeCommandLineEditor;
+			Firebug.Ace.rightWindow.onStartupFinished = Firebug.largeCommandLineEditor.initialize
+		}, false)
         // Not sure if this is the proper way to do this
         Firebug.CommandLine.getCommandLineLarge = function()
         {
@@ -72,7 +76,6 @@ Firebug.largeCommandLineEditor = {
 	},
 
 	focus: function() {
-		dump('focus');
 		Firebug.Ace.env.editor.focus();
 	},
 
@@ -212,7 +215,8 @@ var gClipboardHelper = {
 	cbHelperService: Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper),
 
     copyString: function(str) {
-        this.cbHelperService.copyString(str)
+        if(str)
+			this.cbHelperService.copyString(str)
     },
 
     getData: function() {
@@ -240,9 +244,15 @@ var gClipboardHelper = {
 function initEnv()
 {
     // we grab the editor as fast as possible with locking the thread
-    Firebug.Ace.env = Firebug.Ace.rightWindow.getAceEditorEnv();
+    Firebug.Ace.env = Firebug.Ace.rightWindow.env;
     if(!Firebug.Ace.env)
-        setTimeout(arguments.callee, 0);
+	{
+		setTimeout(arguments.callee, 0);
+		return
+	}
+    Firebug.Ace.env.editor.addCommand({name:'execute',key:'Ctrl-Return',exec:function(){
+		Firebug.CommandLine.enter(Firebug.currentContext)
+	}})    
 }
 
 function readEntireFile(file)

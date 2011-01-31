@@ -12,12 +12,11 @@
                     <deck id="fbSidePanelDeck" persist="width,height">
                         <vbox id="fbLargeCommandBox">
                             <textbox id="fbLargeCommandLine" multiline="true" flex="1"
-                                newlines="pasteintact"
-                                label="LargeCommandLine" style="display:none;" />
+                                label="LargeCommandLine" style="display:none;-moz-binding:none" />
                             <browser id="fbAceBrowser" flex='1'
                                      tooltip="fbTooltip" contextmenu="fbContextMenu"
                                      disablehistory="true"
-                                     src="chrome://acebug/content/ace/fbeditor.html"
+                                     src="chrome://acebug/content/fbace/fbeditor.html"
                                      type="content" position="1"/>
                             <hbox id="fbCommandToolbar">
                                 <toolbarbutton id="fbCmdLoadButton" label="Load"
