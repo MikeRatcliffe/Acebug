@@ -16,7 +16,7 @@ Firebug.Ace =
 
 	},
 
-	initializeUI: function() {	
+	initializeUI: function() {
 		FBL.$("fbAceBrowser").addEventListener('DOMContentLoaded',function(e){
 			var browser = FBL.$("fbAceBrowser")
 			browser.removeEventListener('DOMContentLoaded', arguments.callee, false);
@@ -252,7 +252,7 @@ function initEnv()
 	}
     Firebug.Ace.env.editor.addCommand({name:'execute',key:'Ctrl-Return',exec:function(){
 		Firebug.CommandLine.enter(Firebug.currentContext)
-	}})    
+	}})
 }
 
 function readEntireFile(file)
