@@ -5,13 +5,13 @@
   
   <Description about="urn:mozilla:install-manifest">
     <em:id>acebug@mozilla.org</em:id>
-    <em:version>0.3b1</em:version>
+    <em:version>1.0</em:version>
     <em:type>2</em:type>
     <em:name>Acebug</em:name>
-    <em:description>Bring the awesome power of Ace to Firefox. Firebug 1.7X.0a9 or above must be installed in order to use this extension.</em:description>
+    <em:description>Syntax highlighting for the Firebug command line using Ace. Firebug 1.7X.0a9 or above must be installed in order to use this extension.</em:description>
     <em:creator>Harutyun Amirjanyan &amp; Michael Ratcliffe</em:creator>
     <em:iconURL>chrome://acebug/content/acebug.png</em:iconURL>
-    <em:homepageURL>https://github.com/MikeRatcliffe/Acebug/tree</em:homepageURL>
+    <em:homepageURL>http://www.msi-stuff.com/acebug/index.htm</em:homepageURL>
   
     <!-- Any suitably modern toolkit application -->
     <em:targetApplication>
