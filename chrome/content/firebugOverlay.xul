@@ -13,7 +13,7 @@
                         <vbox id="fbLargeCommandBox">
                             <textbox id="fbLargeCommandLine" multiline="true" flex="1"
                                 newlines="pasteintact"
-                                label="LargeCommandLine" style="display:none;" />
+                                label="LargeCommandLine" style="display:none;-moz-binding:none;" />
                             <iframe id="fbAceBrowser" type="content" flex="1"
                                      tooltip="fbTooltip" contextmenu="fbContextMenu"
                                      src="chrome://acebug/content/fbace/fbeditor.html"
