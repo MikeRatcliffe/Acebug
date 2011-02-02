@@ -33,14 +33,41 @@ Firebug.Ace =
         };
 	},
 
-    showPanel: function() {
-        Firebug.largeCommandLineEditor.initialize();
+    showPanel: function(browser, panel) {
+		if(!Firebug.Ace.env){
+			Firebug.largeCommandLineEditor.initialize();
+			return
+		}
     },
+
 };
 
 Firebug.largeCommandLineEditor = {
 	initialize: function() {
-        initEnv();
+        Firebug.Ace.env = Firebug.Ace.rightWindow.env;
+		var editor = Firebug.Ace.env.editor
+		
+		// this is wrong, but needed to keep commandline value in synch
+		// firebugs comandline binding has similar listener for oninput
+		editor.textInput.getElement().addEventListener( "input", function(){
+			Firebug.currentContext.commandLineText=Firebug.largeCommandLineEditor.value
+		}, false);
+		
+		//add shortcuts
+		Firebug.Ace.env.editor.addCommand({
+			name:'execute',
+			key:'Ctrl-Return',
+			exec:function(){
+				Firebug.CommandLine.enter(Firebug.currentContext)
+			}
+		});		
+		Firebug.Ace.env.editor.addCommand({
+			name:'complete',
+			key:'Ctrl-Space',
+			exec:function(){
+				Firebug.CommandLine.enter(Firebug.currentContext)
+			}
+		});
 	},
 
 	getValue: function() {
@@ -67,6 +94,10 @@ Firebug.largeCommandLineEditor = {
 		return this.setValue(val);
 	},
 
+	setFontSize: function(){
+		//todo
+	},
+	
 	addEventListener: function() {
 		Firebug.Ace.rightWindow.addEventListener.apply(null,arguments);
 	},
@@ -240,20 +271,6 @@ var gClipboardHelper = {
 	}
 };
 /***********************************************************/
-
-function initEnv()
-{
-    // we grab the editor as fast as possible with locking the thread
-    Firebug.Ace.env = Firebug.Ace.rightWindow.env;
-    if(!Firebug.Ace.env)
-	{
-		setTimeout(arguments.callee, 0);
-		return
-	}
-    Firebug.Ace.env.editor.addCommand({name:'execute',key:'Ctrl-Return',exec:function(){
-		Firebug.CommandLine.enter(Firebug.currentContext)
-	}})
-}
 
 function readEntireFile(file)
 {
