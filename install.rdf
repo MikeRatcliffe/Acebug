@@ -5,7 +5,7 @@
   
   <Description about="urn:mozilla:install-manifest">
     <em:id>acebug@mozilla.org</em:id>
-    <em:version>1.1</em:version>
+    <em:version>1.2</em:version>
     <em:type>2</em:type>
     <em:name>Acebug</em:name>
     <em:description>Syntax highlighting for the Firebug command line using Ace. Firebug 1.7X.0a9 or above must be installed in order to use this extension.</em:description>
