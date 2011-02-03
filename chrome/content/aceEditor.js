@@ -30,7 +30,10 @@ Firebug.Ace =
     showPanel: function(browser, panel) {
         if(!Firebug.Ace.env){
             Firebug.largeCommandLineEditor.initialize();
+            Firebug.Ace.env = Firebug.Ace.rightWindow.env;
         }
+
+        Firebug.Ace.rightWindow.addEventListener("resize", Firebug.largeCommandLineEditor.resizeHandler, true);
     },
 };
 
@@ -100,6 +103,18 @@ Firebug.largeCommandLineEditor = {
 
     focus: function() {
         Firebug.Ace.env.editor.focus();
+    },
+
+    resizeHandler: function() {
+        var editor = Firebug.Ace.env.editor;
+        var session = editor.session;
+
+        if(session.getUseWrapMode()) {
+            var characterWidth = editor.renderer.layerConfig.characterWidth;
+            var contentWidth = editor.container.ownerDocument.getElementsByClassName("ace_scroller")[0].clientWidth;
+
+            session.setWrapLimit(parseInt(contentWidth / characterWidth, 10));
+        }
     },
 
     loadFile:function()
