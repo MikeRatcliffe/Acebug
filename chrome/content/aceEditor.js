@@ -12,10 +12,6 @@ Firebug.Ace =
 {
 	dispatchName: "Ace",
 
-	setTextSize: function(size){
-
-	},
-
 	initializeUI: function() {
 			var browser = FBL.$("fbAceBrowser");
 
@@ -90,8 +86,8 @@ Firebug.largeCommandLineEditor = {
 		return this.setValue(val);
 	},
 
-	setFontSize: function(){
-		//todo
+	setFontSize: function(sizePercent){
+		Firebug.Ace.env.editor.container.style.fontSize = sizePercent;
 	},
 
 	addEventListener: function() {
