@@ -29,6 +29,7 @@ exports.launch = function(env) {
     editor = env.editor = new Editor(new Renderer(container, theme));
     env.editor.setSession(jsDoc);
     env.editor.session.setUseWrapMode(true);
+    env.editor.setShowPrintMargin(false);
 
     function onResize() {
         env.editor.resize();

@@ -39,6 +39,9 @@ Firebug.Ace =
 
 Firebug.largeCommandLineEditor = {
     initialize: function() {
+        if(!Firebug.Ace.rightWindow)
+            Firebug.Ace.initializeUI();
+
         Firebug.Ace.env = Firebug.Ace.rightWindow.env;
         var editor = Firebug.Ace.env.editor;
 
