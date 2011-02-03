@@ -17,16 +17,14 @@ Firebug.Ace =
 	},
 
 	initializeUI: function() {
-		FBL.$("fbAceBrowser").addEventListener('DOMContentLoaded',function(e){
-			var browser = FBL.$("fbAceBrowser")
-			browser.removeEventListener('DOMContentLoaded', arguments.callee, false);
+			var browser = FBL.$("fbAceBrowser");
+
 			Firebug.Ace.rightWindowWrapped = browser.contentWindow;
 			Firebug.Ace.rightWindow = Firebug.Ace.rightWindowWrapped.wrappedJSObject;
 			//set Firebug.largeCommandLineEditor on wrapped window so that Firebug.getElementPanel can access it
 			Firebug.Ace.rightWindowWrapped.document.body.ownerPanel = Firebug.largeCommandLineEditor;
-			Firebug.Ace.rightWindow.onStartupFinished = Firebug.largeCommandLineEditor.initialize
-		}, false)
-        // Not sure if this is the proper way to do this
+			Firebug.Ace.rightWindow.onStartupFinished = Firebug.largeCommandLineEditor.initialize;
+
         Firebug.CommandLine.getCommandLineLarge = function()
         {
             return Firebug.largeCommandLineEditor;
@@ -36,23 +34,21 @@ Firebug.Ace =
     showPanel: function(browser, panel) {
 		if(!Firebug.Ace.env){
 			Firebug.largeCommandLineEditor.initialize();
-			return
 		}
     },
-
 };
 
 Firebug.largeCommandLineEditor = {
 	initialize: function() {
         Firebug.Ace.env = Firebug.Ace.rightWindow.env;
-		var editor = Firebug.Ace.env.editor
-		
+		var editor = Firebug.Ace.env.editor;
+
 		// this is wrong, but needed to keep commandline value in synch
-		// firebugs comandline binding has similar listener for oninput
-		editor.textInput.getElement().addEventListener( "input", function(){
-			Firebug.currentContext.commandLineText=Firebug.largeCommandLineEditor.value
+		// firebugs commandline binding has similar listener for oninput
+		editor.textInput.getElement().addEventListener( "input", function() {
+			Firebug.currentContext.commandLineText = Firebug.largeCommandLineEditor.value;
 		}, false);
-		
+
 		//add shortcuts
 		Firebug.Ace.env.editor.addCommand({
 			name:'execute',
@@ -60,7 +56,7 @@ Firebug.largeCommandLineEditor = {
 			exec:function(){
 				Firebug.CommandLine.enter(Firebug.currentContext)
 			}
-		});		
+		});
 		Firebug.Ace.env.editor.addCommand({
 			name:'complete',
 			key:'Ctrl-Space',
@@ -97,7 +93,7 @@ Firebug.largeCommandLineEditor = {
 	setFontSize: function(){
 		//todo
 	},
-	
+
 	addEventListener: function() {
 		Firebug.Ace.rightWindow.addEventListener.apply(null,arguments);
 	},
@@ -238,7 +234,7 @@ Firebug.largeCommandLineEditor = {
 	{
 		return null;
 	},
-}
+};
 
 
 /***********************************************************/
