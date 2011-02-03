@@ -1,3 +1,4 @@
-content		acebug		chrome/content/
-
+content		acebug		   chrome/content/
+locale      acebug  en-US  chrome/locale/en-US/
+locale      acebug  de-DE  chrome/locale/de-DE/
 overlay		chrome://firebug/content/firebugOverlay.xul		chrome://acebug/content/firebugOverlay.xul
