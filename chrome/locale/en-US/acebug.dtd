@@ -1,0 +1,4 @@
+<!ENTITY  acebug.fbCmdLoadButton.label         "Load">
+<!ENTITY  acebug.fbCmdLoadButton.tooltip       "Load File">
+<!ENTITY  acebug.fbCmdSaveButton.label         "Save">
+<!ENTITY  acebug.fbCmdSaveButton.tooltip       "Save File">

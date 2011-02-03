@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-
+<!DOCTYPE acebugDTD SYSTEM "chrome://acebug/locale/acebug.dtd">
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
          xmlns:html="http://www.w3.org/1999/xhtml">
 
@@ -19,9 +19,11 @@
                                      src="chrome://acebug/content/fbace/fbeditor.html"
                                      position="1"/>
                             <hbox id="fbCommandToolbar">
-                                <toolbarbutton id="fbCmdLoadButton" label="Load"
+                                <toolbarbutton id="fbCmdLoadButton" label="&acebug.fbCmdLoadButton.label;"
+                                    tooltip="&acebug.fbCmdLoadButton.tooltip;"
                                     oncommand="Firebug.largeCommandLineEditor.loadFile()" position="6"/>
-                                <toolbarbutton id="fbCmdSaveButton" label="Save"
+                                <toolbarbutton id="fbCmdSaveButton" label="&acebug.fbCmdSaveButton.label;"
+                                    tooltip="&acebug.fbCmdSaveButton.tooltip;"
                                     oncommand="Firebug.largeCommandLineEditor.saveFile()" position="7"/>
                             </hbox>
                         </vbox>
@@ -30,4 +32,9 @@
             </panelBar>
         </box>
     </vbox>
+
+    <stringbundleset id="stringbundleset">
+        <stringbundle id="strings_acebug"
+            src="chrome://acebug/locale/acebug.properties"/>
+    </stringbundleset>
 </overlay>
