@@ -113,7 +113,7 @@ Firebug.largeCommandLineEditor = {
         var session = editor.session;
 
         if(session.getUseWrapMode()) {
-            var characterWidth = editor.renderer.layerConfig.characterWidth;
+            var characterWidth = editor.renderer.characterWidth;
             var contentWidth = editor.container.ownerDocument.getElementsByClassName("ace_scroller")[0].clientWidth;
 
             session.setWrapLimit(parseInt(contentWidth / characterWidth, 10));
