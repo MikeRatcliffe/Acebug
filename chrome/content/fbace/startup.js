@@ -1,7 +1,7 @@
 define(function(require, exports, module) {
 
 exports.launch = function(env) {
-	//since we are using separate window make everything global for now
+    //since we are using separate window make everything global for now
     window.env = env;
     event = require("pilot/event");
     Editor = require("ace/editor").Editor;
@@ -10,9 +10,9 @@ exports.launch = function(env) {
     EditSession = require("ace/edit_session").EditSession;
     UndoManager = require("ace/undomanager").UndoManager;
 
-	JavaScriptMode = require("ace/mode/javascript").Mode;
-	// worker is more of nuisance now
-	JavaScriptMode.prototype.createWorker = function(session) {
+    JavaScriptMode = require("ace/mode/javascript").Mode;
+    // worker is more of nuisance now
+    JavaScriptMode.prototype.createWorker = function(session) {
         return null;
     };
 
@@ -20,7 +20,7 @@ exports.launch = function(env) {
     var emacs = require("ace/keyboard/keybinding/emacs").Emacs;
     var HashHandler = require("ace/keyboard/hash_handler").HashHandler;
 
-	//empty gutter is annoying, so put space into document
+    //empty gutter is annoying, so put space into document
     jsDoc = new EditSession(' ');
     jsDoc.setMode(new JavaScriptMode());
     jsDoc.setUndoManager(new UndoManager());
@@ -28,17 +28,28 @@ exports.launch = function(env) {
     var container = document.getElementById("editor");
     editor = env.editor = new Editor(new Renderer(container, theme));
     env.editor.setSession(jsDoc);
+
     env.editor.session.setUseWrapMode(true);
     env.editor.setShowPrintMargin(false);
 
     function onResize() {
-        env.editor.resize();
+        var session = editor.session;
+
+        editor.resize();
+        if(session.getUseWrapMode()) {
+            var characterWidth = editor.renderer.characterWidth;
+            var contentWidth = editor.container.ownerDocument.getElementsByClassName("ace_scroller")[0].clientWidth;
+
+            if(contentWidth > 0) {
+                session.setWrapLimit(parseInt(contentWidth / characterWidth, 10));
+            }
+        }
     }
     window.onresize = onResize;
     onResize();
 
-	//do we need to prevent dragging?
-	event.addListener(container, "dragover", function(e) {
+    //do we need to prevent dragging?
+    event.addListener(container, "dragover", function(e) {
         return event.preventDefault(e);
     });
 
@@ -46,28 +57,28 @@ exports.launch = function(env) {
         return event.preventDefault(e);
     });
 
-	// global functions
-	window.toggleGutter = function() {
-		env.editor.renderer.setShowGutter(!env.editor.renderer.showGutter);
-	};
+    // global functions
+    window.toggleGutter = function() {
+        env.editor.renderer.setShowGutter(!env.editor.renderer.showGutter);
+    };
 
-	/**********  handle shortcuts *****/
-	// TODO: find better way
-	var Search = require("ace/search").Search;
-	var canon = require("pilot/canon");
+    /**********  handle shortcuts *****/
+    // TODO: find better way
+    var Search = require("ace/search").Search;
+    var canon = require("pilot/canon");
 
-	var customKeySet = {};
-	editor.addCommand = function(x) {
-		canon.addCommand({
-			name: x.name,
-			exec: function(env, args, request) {
-				x.exec(env, args);
-			}
-		});
-		delete customKeySet.reverse;
-		customKeySet[x.name] = x.key;
-		env.editor.setKeyboardHandler(new HashHandler(customKeySet));
-	};
+    var customKeySet = {};
+    editor.addCommand = function(x) {
+        canon.addCommand({
+            name: x.name,
+            exec: function(env, args, request) {
+                x.exec(env, args);
+            }
+        });
+        delete customKeySet.reverse;
+        customKeySet[x.name] = x.key;
+        env.editor.setKeyboardHandler(new HashHandler(customKeySet));
+    };
 };
 
 });

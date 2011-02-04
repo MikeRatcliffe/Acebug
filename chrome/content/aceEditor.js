@@ -13,27 +13,26 @@ Firebug.Ace =
     dispatchName: "Ace",
 
     initializeUI: function() {
-            var browser = FBL.$("fbAceBrowser");
-
-            Firebug.Ace.rightWindowWrapped = browser.contentWindow;
-            Firebug.Ace.rightWindow = Firebug.Ace.rightWindowWrapped.wrappedJSObject;
-            //set Firebug.largeCommandLineEditor on wrapped window so that Firebug.getElementPanel can access it
-            Firebug.Ace.rightWindowWrapped.document.body.ownerPanel = Firebug.largeCommandLineEditor;
-            Firebug.Ace.rightWindow.onStartupFinished = Firebug.largeCommandLineEditor.initialize;
+        var browser = FBL.$("fbAceBrowser");
+        this.rightWindowWrapped = browser.contentWindow;
+        this.rightWindow = Firebug.Ace.rightWindowWrapped.wrappedJSObject;
 
         Firebug.CommandLine.getCommandLineLarge = function()
         {
             return Firebug.largeCommandLineEditor;
         };
+        
+        Firebug.ConsolePanel.prototype.detach = function(oldChrome, newChrome) {
+            var oldFrame = oldChrome.$("fbAceBrowser");
+            var newFrame = newChrome.$("fbAceBrowser");
+            if(oldFrame.contentWindow == Firebug.Ace.rightWindowWrapped) {
+                oldFrame.QueryInterface(Ci.nsIFrameLoaderOwner).swapFrameLoaders(newFrame)
+            }
+        };
     },
 
     showPanel: function(browser, panel) {
-        if(!Firebug.Ace.env){
-            Firebug.largeCommandLineEditor.initialize();
-            Firebug.Ace.env = Firebug.Ace.rightWindow.env;
-        }
 
-        Firebug.Ace.rightWindow.addEventListener("resize", Firebug.largeCommandLineEditor.resizeHandler, true);
     },
 };
 
@@ -44,6 +43,22 @@ Firebug.largeCommandLineEditor = {
 
         Firebug.Ace.env = Firebug.Ace.rightWindow.env;
         var editor = Firebug.Ace.env.editor;
+
+        //set Firebug.largeCommandLineEditor on wrapped window so that Firebug.getElementPanel can access it
+        Firebug.Ace.rightWindowWrapped.document.body.ownerPanel = this;
+        // clean up preload handlers
+        this.getValue = this._getValue;
+        this.setValue = this._setValue;
+        this.setValue(this._valueBuffer || '');
+        delete this._getValue;
+        delete this._setValue;
+        delete this._loadingStarted;
+        delete this._valueBuffer;
+        this.setFontSize = this._setFontSize;
+        if(this._fontSizeBuffer){
+            this.setFontSize(this._fontSizeBuffer);
+            delete this._fontSizeBuffer;
+        }
 
         // this is wrong, but needed to keep commandline value in synch
         // firebugs commandline binding has similar listener for oninput
@@ -67,33 +82,51 @@ Firebug.largeCommandLineEditor = {
             }
         });
     },
+    // called if ace still loading
+    _startLoading: function() {
+        if(this._loadingStarted)
+            return;
+        this._loadingStarted = true;
+        Firebug.Ace.rightWindow.startAce(bind(this.initialize,this));
+    },
 
     getValue: function() {
-        return Firebug.Ace.env.editor.selection.doc.toString();
+        this._startLoading();
+        return this._valueBuffer || '';
     },
 
     setValue: function(text) {
-        if(!Firebug.Ace.rightWindow)
-            Firebug.Ace.initializeUI();
+        this._startLoading();
+        return this._valueBuffer = text;
+    },
 
+    setFontSize: function(sizePercent){
+        this._fontSizeBuffer = sizePercent;
+    },
+
+    // activated when ace is loaded
+    _getValue: function() {
+        return Firebug.Ace.env.editor.selection.doc.toString();
+    },
+
+    _setValue: function(text) {
         var editor = Firebug.Ace.env.editor;
-
         editor.selection.selectAll();
         editor.onTextInput(text);
-
         return text;
     },
 
+    _setFontSize: function(sizePercent){
+        Firebug.Ace.env.editor.container.style.fontSize = sizePercent;
+    },
+
+    //* * * * * * * * * * * * * * * * * * * * * * * * *
     get value() {
         return this.getValue();
     },
 
     set value(val) {
         return this.setValue(val);
-    },
-
-    setFontSize: function(sizePercent){
-        Firebug.Ace.env.editor.container.style.fontSize = sizePercent;
     },
 
     addEventListener: function() {
@@ -106,18 +139,6 @@ Firebug.largeCommandLineEditor = {
 
     focus: function() {
         Firebug.Ace.env.editor.focus();
-    },
-
-    resizeHandler: function() {
-        var editor = Firebug.Ace.env.editor;
-        var session = editor.session;
-
-        if(session.getUseWrapMode()) {
-            var characterWidth = editor.renderer.characterWidth;
-            var contentWidth = editor.container.ownerDocument.getElementsByClassName("ace_scroller")[0].clientWidth;
-
-            session.setWrapLimit(parseInt(contentWidth / characterWidth, 10));
-        }
     },
 
     loadFile:function()
