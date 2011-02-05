@@ -8,12 +8,38 @@
     <link rel="stylesheet" href="styles.css" type="text/css" media="screen" charset="utf-8">
 
     <script src="../ace/demo/require.js" type="text/javascript" charset="utf-8"></script>
-    <script src="boot.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        var config = {
+            paths: {
+                fbace: "../../fbace",
+                ace: "../../ace/lib/ace",
+                pilot: "../../ace/support/pilot/lib/pilot"
+            }
+        };
+
+        var deps = [ "pilot/fixoldbrowsers", "pilot/plugin_manager", "pilot/settings",
+                     "pilot/environment", "fbace/startup" ];
+
+        var plugins = [ "pilot/index", "ace/defaults" ];
+
+        var startAce=function(callback) {
+            require(config);
+            require(deps, function() {
+                var catalog = require("pilot/plugin_manager").catalog;
+                catalog.registerPlugins(plugins).then(function() {
+                    var env = require("pilot/environment").create();
+                    catalog.startupPlugins({ env: env }).then(function() {
+                        require("fbace/startup").launch(env);
+                    }).then(callback);
+                });
+            });
+        };
+	</script>
 
 </head>
 <body>
     <div id="editor">
 		<div id="toggleGutter" onclick="toggleGutter();"></div>
-	</div>    
+	</div>
 </body>
 </html>
