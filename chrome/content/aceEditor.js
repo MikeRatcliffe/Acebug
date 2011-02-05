@@ -21,7 +21,7 @@ Firebug.Ace =
         {
             return Firebug.largeCommandLineEditor;
         };
-        
+
         Firebug.ConsolePanel.prototype.detach = function(oldChrome, newChrome) {
             var oldFrame = oldChrome.$("fbAceBrowser");
             var newFrame = newChrome.$("fbAceBrowser");

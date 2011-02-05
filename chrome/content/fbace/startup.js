@@ -38,7 +38,7 @@ exports.launch = function(env) {
         editor.resize();
         if(session.getUseWrapMode()) {
             var characterWidth = editor.renderer.characterWidth;
-            var contentWidth = editor.container.ownerDocument.getElementsByClassName("ace_scroller")[0].clientWidth;
+            var contentWidth = editor.renderer.scroller.clientWidth;
 
             if(contentWidth > 0) {
                 session.setWrapLimit(parseInt(contentWidth / characterWidth, 10));
