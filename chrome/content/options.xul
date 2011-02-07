@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+
+<prefwindow onload="softTabsClicked(true);"
+     title="Acebug Preferences"
+     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+    <script type="application/x-javascript" src="chrome://acebug/content/options.js"/>
+
+	<prefpane label="Acebug Preferences">
+		<preferences>
+			<preference id="acebug-highlightactiveline" name="extensions.acebug.highlightactiveline" type="bool" />
+            <preference id="acebug-showinvisiblecharacters" name="extensions.acebug.showinvisiblecharacters" type="bool" />
+            <preference id="acebug-softtabs" name="extensions.acebug.softtabs" type="bool" />
+            <preference id="acebug-tabsize" name="extensions.acebug.tabsize" type="int" />
+            <preference id="acebug-wordwrap" name="extensions.acebug.wordwrap" type="bool" />
+            <preference id="acebug-theme" name="extensions.acebug.theme" type="string" />
+            <preference id="acebug-keybinding" name="extensions.acebug.keybinding" type="string" />
+		</preferences>
+
+		<groupbox>
+            <caption label="Settings" />
+            <box>
+                <vbox>
+                    <checkbox id="abHighlightactiveline" preference="acebug-highlightactiveline"
+                        label="Highlight Active Line" />
+                    <checkbox id="abShowinvisiblecharacters" preference="acebug-showinvisiblecharacters"
+                        label="Show Invisible Characters" />
+                    <checkbox id="abWordwrap" preference="acebug-wordwrap"
+                        label="Wrap text" />
+                    <checkbox id="abSoftTabs" preference="acebug-softtabs"
+                        label="Use spaces instead of tabs" onclick="softTabsClicked(false);" />
+                    <hbox>
+                        <spacer flex="1" />
+                        <label id="abTabSizeLbl" value="Tab size" control="abTabSize" />
+                        <textbox id="abTabSize" size="2" cols="2" preference="acebug-tabsize" />
+                    </hbox>
+                    <menulist id="abTheme" label="Theme" preference="acebug-theme">
+                        <menupopup>
+                            <menuitem value="ace/theme/clouds" label="Clouds" />
+                            <menuitem value="ace/theme/clouds_midnight" label="Clouds Midnight" />
+                            <menuitem value="ace/theme/cobalt" label="Cobalt" />
+                            <menuitem value="ace/theme/dawn" label="Dawn" />
+                            <menuitem value="ace/theme/eclipse" label="Eclipse" />
+                            <menuitem value="ace/theme/idle_fingers" label="idleFingers" />
+                            <menuitem value="ace/theme/kr_theme" label="krTheme" />
+                            <menuitem value="ace/theme/mono_industrial" label="Mono Industrial" />
+                            <menuitem value="ace/theme/monokai" label="Monokai" />
+                            <menuitem value="ace/theme/pastel_on_dark" label="Pastel on dark" />
+                            <menuitem value="ace/theme/textmate" label="TextMate" />
+                            <menuitem value="ace/theme/twilight" label="Twilight" />
+                        </menupopup>
+                    </menulist>
+                    <menulist id="abKeyBinding" label="Key binding" preference="acebug-keybinding">
+                        <menupopup>
+                            <menuitem value="Ace" label="Ace" />
+                            <menuitem value="Vim" label="Vim" />
+                            <menuitem value="Emacs" label="Emacs" />
+                        </menupopup>
+                    </menulist>
+                </vbox>
+            </box>
+		</groupbox>
+
+	</prefpane>
+
+</prefwindow>

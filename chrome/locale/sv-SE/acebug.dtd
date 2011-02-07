@@ -1,4 +1,4 @@
-<!ENTITY  acebug.fbCmdLoadButton.label         "">
-<!ENTITY  acebug.fbCmdLoadButton.tooltip       "">
-<!ENTITY  acebug.fbCmdSaveButton.label         "">
-<!ENTITY  acebug.fbCmdSaveButton.tooltip       "">
+<!ENTITY acebug.fbCmdLoadButton.label "Läs in">
+<!ENTITY acebug.fbCmdLoadButton.tooltip "Läs in fil">
+<!ENTITY acebug.fbCmdSaveButton.label "Spara">
+<!ENTITY acebug.fbCmdSaveButton.tooltip "Spara fil">

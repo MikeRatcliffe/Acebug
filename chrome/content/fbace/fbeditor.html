@@ -22,14 +22,14 @@
 
         var plugins = [ "pilot/index", "ace/defaults" ];
 
-        var startAce=function(callback) {
+        var startAce = function(callback, options) {
             require(config);
             require(deps, function() {
                 var catalog = require("pilot/plugin_manager").catalog;
                 catalog.registerPlugins(plugins).then(function() {
                     var env = require("pilot/environment").create();
                     catalog.startupPlugins({ env: env }).then(function() {
-                        require("fbace/startup").launch(env);
+                        require("fbace/startup").launch(env, options);
                     }).then(callback);
                 });
             });

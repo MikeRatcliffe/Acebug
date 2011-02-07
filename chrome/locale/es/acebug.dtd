@@ -1,4 +1,4 @@
-<!ENTITY  acebug.fbCmdLoadButton.label         "">
-<!ENTITY  acebug.fbCmdLoadButton.tooltip       "">
-<!ENTITY  acebug.fbCmdSaveButton.label         "">
-<!ENTITY  acebug.fbCmdSaveButton.tooltip       "">
+<!ENTITY acebug.fbCmdLoadButton.label "Cargar">
+<!ENTITY acebug.fbCmdLoadButton.tooltip "Cargar archivo">
+<!ENTITY acebug.fbCmdSaveButton.label "Guardar">
+<!ENTITY acebug.fbCmdSaveButton.tooltip "Guardar archivo">

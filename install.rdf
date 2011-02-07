@@ -4,15 +4,25 @@
      xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 
   <Description about="urn:mozilla:install-manifest">
+    <em:name>Acebug</em:name>
+    <em:description>Syntax highlighting for the Firebug command line using Ace. Firebug 1.7X.0a9 or above must be installed in order to use this extension.</em:description>
     <em:id>acebug@mozilla.org</em:id>
     <em:version>1.4</em:version>
     <em:type>2</em:type>
-    <em:name>Acebug</em:name>
-    <em:description>Syntax highlighting for the Firebug command line using Ace. Firebug 1.7X.0a9 or above must be installed in order to use this extension.</em:description>
     <em:creator>Harutyun Amirjanyan &amp; Michael Ratcliffe</em:creator>
     <em:iconURL>chrome://acebug/content/acebug.png</em:iconURL>
+    <em:icon64URL>chrome://acebug/content/acebug64.png</em:icon64URL>
+    <em:optionsURL>chrome://acebug/content/options.xul</em:optionsURL>
     <em:homepageURL>http://www.msi-stuff.com/acebug/index.htm</em:homepageURL>
 
+    <em:localized>
+      <Description>
+        <em:locale>sv-SE</em:locale>
+        <em:name>Acebug</em:name>
+        <em:description>Syntaxmarkering f&#246;r Firebugs kommandoradsfunktion m.h.a. Ace. Firebug 1.7X.0a9 eller h&#246;gre m&#229;ste vara installerat f&#246;r att detta till&#228;gg skall fungera.</em:description>
+      </Description>
+    </em:localized>
+ 
     <!-- Any suitably modern toolkit application -->
     <em:targetApplication>
       <Description>

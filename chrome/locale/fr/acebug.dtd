@@ -1,4 +1,4 @@
-<!ENTITY  acebug.fbCmdLoadButton.label         "">
-<!ENTITY  acebug.fbCmdLoadButton.tooltip       "">
-<!ENTITY  acebug.fbCmdSaveButton.label         "">
-<!ENTITY  acebug.fbCmdSaveButton.tooltip       "">
+<!ENTITY acebug.fbCmdLoadButton.label "Charger">
+<!ENTITY acebug.fbCmdLoadButton.tooltip "Chargement d'un fichier">
+<!ENTITY acebug.fbCmdSaveButton.label "Enregistrer">
+<!ENTITY acebug.fbCmdSaveButton.tooltip "Enregistrement d'un fichier">

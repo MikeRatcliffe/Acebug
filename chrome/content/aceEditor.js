@@ -81,13 +81,33 @@ Firebug.largeCommandLineEditor = {
                 Firebug.CommandLine.enter(Firebug.currentContext);
             }
         });
+
+        acebugPrefObserver.register();
     },
     // called if ace still loading
     _startLoading: function() {
         if(this._loadingStarted)
             return;
         this._loadingStarted = true;
-        Firebug.Ace.rightWindow.startAce(bind(this.initialize,this));
+
+        var prefs = Components.classes["@mozilla.org/preferences-service;1"]
+            .getService(Components.interfaces.nsIPrefService);
+        var branch = prefs.getBranch("extensions.acebug.");
+        var options = {};
+
+        var names = branch.getChildList("", {});
+        for (let i = 0; i < names.length; i++) {
+            let name = names[i];
+            if (branch.getPrefType(name) == branch.PREF_BOOL) {
+                options[name] = branch.getBoolPref(name);
+            } else if (branch.getPrefType(name) == branch.PREF_STRING) {
+                options[name] = branch.getCharPref(name);
+            } else {
+                options[name] = branch.getIntPref(name);
+            }
+        }
+
+        Firebug.Ace.rightWindow.startAce(bind(this.initialize,this), options);
     },
 
     getValue: function() {
@@ -272,6 +292,55 @@ Firebug.largeCommandLineEditor = {
     },
 };
 
+/***********************************************************/
+
+var acebugPrefObserver = {
+    register: function() {
+        var prefService = Components.classes["@mozilla.org/preferences-service;1"]
+            .getService(Components.interfaces.nsIPrefService);
+
+        this._branch = prefService.getBranch("extensions.acebug.");
+        this._branch.QueryInterface(Components.interfaces.nsIPrefBranch2);
+        this._branch.addObserver("", this, false);
+    },
+
+    unregister: function() {
+        if (!this._branch)
+            return;
+        this._branch.removeObserver("", this);
+    },
+
+    observe: function(aSubject, aTopic, aData) {
+        if(aTopic != "nsPref:changed")
+            return;
+
+        var env = Firebug.Ace.env;
+
+        switch (aData) {
+            case "highlightactiveline":
+                env.editor.setHighlightActiveLine(this._branch.getBoolPref(aData));
+            break;
+            case "keybinding":
+                alert("You have changed Acebug's key-bindings. These changes will not take affect until your browser is restarted.");
+            break;
+            case "showinvisiblecharacters":
+                env.editor.setShowInvisibles(this._branch.getBoolPref(aData));
+            break;
+            case "softtabs":
+                env.editor.session.setUseSoftTabs(this._branch.getBoolPref(aData));
+            break;
+            case "tabsize":
+                env.editor.session.setTabSize(this._branch.getIntPref(aData));
+            break;
+            case "theme":
+                env.editor.setTheme(this._branch.getCharPref(aData));
+            break;
+            case "wordwrap":
+                env.editor.session.setUseWrapMode(this._branch.getBoolPref(aData));
+            break;
+        }
+    }
+};
 
 /***********************************************************/
 var gClipboardHelper = {

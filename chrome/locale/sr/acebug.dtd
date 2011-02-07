@@ -1,4 +1,4 @@
-<!ENTITY  acebug.fbCmdLoadButton.label         "">
-<!ENTITY  acebug.fbCmdLoadButton.tooltip       "">
-<!ENTITY  acebug.fbCmdSaveButton.label         "">
-<!ENTITY  acebug.fbCmdSaveButton.tooltip       "">
+<!ENTITY acebug.fbCmdLoadButton.label "Учитај">
+<!ENTITY acebug.fbCmdLoadButton.tooltip "Учитај датотеку">
+<!ENTITY acebug.fbCmdSaveButton.label "Сачувај">
+<!ENTITY acebug.fbCmdSaveButton.tooltip "Сачувај датотеку">

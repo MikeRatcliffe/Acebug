@@ -1,4 +1,4 @@
-<!ENTITY  acebug.fbCmdLoadButton.label         "">
-<!ENTITY  acebug.fbCmdLoadButton.tooltip       "">
-<!ENTITY  acebug.fbCmdSaveButton.label         "">
-<!ENTITY  acebug.fbCmdSaveButton.tooltip       "">
+<!ENTITY acebug.fbCmdLoadButton.label "Laden">
+<!ENTITY acebug.fbCmdLoadButton.tooltip "Bestand laden">
+<!ENTITY acebug.fbCmdSaveButton.label "Opslaan">
+<!ENTITY acebug.fbCmdSaveButton.tooltip "Bestand opslaan">
