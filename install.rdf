@@ -15,14 +15,6 @@
     <em:optionsURL>chrome://acebug/content/options.xul</em:optionsURL>
     <em:homepageURL>http://www.msi-stuff.com/acebug/index.htm</em:homepageURL>
 
-    <em:localized>
-      <Description>
-        <em:locale>sv-SE</em:locale>
-        <em:name>Acebug</em:name>
-        <em:description>Syntaxmarkering f&#246;r Firebugs kommandoradsfunktion m.h.a. Ace. Firebug 1.7X.0a9 eller h&#246;gre m&#229;ste vara installerat f&#246;r att detta till&#228;gg skall fungera.</em:description>
-      </Description>
-    </em:localized>
- 
     <!-- Any suitably modern toolkit application -->
     <em:targetApplication>
       <Description>

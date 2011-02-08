@@ -1,6 +1,7 @@
 define(function(require, exports, module) {
 
 exports.launch = function(env, options) {
+    env.acebug = {require: require};
     //since we are using separate window make everything global for now
     window.env = env;
     event = require("pilot/event");
@@ -64,17 +65,19 @@ exports.launch = function(env, options) {
     editor = env.editor = new Editor(new Renderer(container, theme));
     env.editor.setSession(jsDoc);
 
-    var vim = require("ace/keyboard/keybinding/vim").Vim;
-    var emacs = require("ace/keyboard/keybinding/emacs").Emacs;
+    env.acebug.keybindings = {
+        vim: require("ace/keyboard/keybinding/vim").Vim,
+        emacs: require("ace/keyboard/keybinding/emacs").Emacs
+    };
     switch(options.keybinding) {
         case "Ace":
             env.editor.setKeyboardHandler(null);
         break;
         case "Vim":
-            env.editor.setKeyboardHandler(vim);
+            env.editor.setKeyboardHandler(env.acebug.keybindings.vim);
         break;
         case "Emacs":
-            env.editor.setKeyboardHandler(emacs);
+            env.editor.setKeyboardHandler(env.acebug.keybindings.emacs);
         break;
     }
 
@@ -117,23 +120,27 @@ exports.launch = function(env, options) {
         env.editor.renderer.setShowGutter(!env.editor.renderer.showGutter);
     };
 
-    /**********  handle shortcuts *****/
-    // TODO: find better way
-    var Search = require("ace/search").Search;
-    var canon = require("pilot/canon");
+    editor.addCommand = function(cmd) {
+        var canon = require("pilot/canon");
 
-    var customKeySet = {};
-    editor.addCommand = function(x) {
         canon.addCommand({
-            name: x.name,
+            name: cmd.name,
             exec: function(env, args, request) {
-                x.exec(env, args);
+                cmd.exec(env, args);
             }
         });
-        delete customKeySet.reverse;
-        customKeySet[x.name] = x.key;
-        env.editor.setKeyboardHandler(new HashHandler(customKeySet));
+
+        var HashHandler = require("ace/keyboard/hash_handler").HashHandler;
+        var ue = require("pilot/useragent");
+
+        if (ue.isMac)
+            var bindings = require("ace/keyboard/keybinding/default_mac").bindings;
+        else
+            bindings = require("ace/keyboard/keybinding/default_win").bindings;
+
+        delete bindings.reverse;
+        bindings[cmd.name] = cmd.key;
+        env.editor.setKeyboardHandler(new HashHandler(bindings));
     };
 };
-
 });
