@@ -37,6 +37,7 @@
                         <label id="abTabSizeLbl" value="&acebug.options.tabsize;" control="abTabSize" />
                         <textbox id="abTabSize" size="2" cols="2" preference="acebug-tabsize" />
                     </hbox>
+                    <label id="abThemeLbl" value="&acebug.options.theme;" control="abTheme" />
                     <menulist id="abTheme" label="&acebug.options.theme;" preference="acebug-theme">
                         <menupopup>
                             <menuitem value="ace/theme/clouds" label="&acebug.options.theme.clouds;" />
@@ -53,6 +54,7 @@
                             <menuitem value="ace/theme/twilight" label="&acebug.options.theme.twilight;" />
                         </menupopup>
                     </menulist>
+                    <label id="abThemeLbl" value="&acebug.options.keybinding;" control="abKeyBinding" />
                     <menulist id="abKeyBinding" label="&acebug.options.keybinding;" preference="acebug-keybinding">
                         <menupopup>
                             <menuitem value="Ace" label="&acebug.options.keybinding.ace;" />
