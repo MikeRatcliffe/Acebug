@@ -87,26 +87,16 @@ exports.launch = function(env, options) {
     env.editor.setHighlightActiveLine(options.highlightactiveline);
     env.editor.session.setUseSoftTabs(options.softtabs);
     env.editor.session.setTabSize(options.tabsize);
-    env.editor.session.setUseWrapMode(options.wordwrap);
     env.editor.setShowPrintMargin(false);
+    env.editor.session.setUseWrapMode(options.wordwrap);
+    env.editor.session.setWrapLimitRange(null, null);
 
     function onResize() {
-        var session = editor.session;
-
         editor.resize();
-        if(session.getUseWrapMode()) {
-            var characterWidth = editor.renderer.characterWidth;
-            var contentWidth = editor.renderer.scroller.clientWidth;
-
-            if(contentWidth > 0) {
-                session.setWrapLimit(parseInt(contentWidth / characterWidth, 10));
-            }
-        }
     }
     window.onresize = onResize;
     onResize();
 
-    //do we need to prevent dragging?
     event.addListener(container, "dragover", function(e) {
         return event.preventDefault(e);
     });
