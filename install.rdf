@@ -32,5 +32,13 @@
         <em:maxVersion>4.0.*</em:maxVersion>
       </Description>
     </em:targetApplication>
+
+    <em:translator>ReinekeFux (de)</em:translator>
+    <em:translator>urko (es)</em:translator>
+    <em:translator>Goofy (fr)</em:translator>
+    <em:translator>markh (nl)</em:translator>
+    <em:translator>DakSrbija (sr)</em:translator>
+    <em:translator>Lakrits (sv-SE)</em:translator>
+    <em:translator>yfdyh000 (zh-CN)</em:translator>
   </Description>
 </RDF>
