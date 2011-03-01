@@ -15,7 +15,7 @@ Firebug.Ace =
     initializeUI: function() {
         var browser = FBL.$("fbAceBrowser");
         this.rightWindowWrapped = browser.contentWindow;
-        this.rightWindow = Firebug.Ace.rightWindowWrapped.wrappedJSObject;
+        this.rightWindow =this.rightWindowWrapped.wrappedJSObject;
 
         Firebug.CommandLine.getCommandLineLarge = function()
         {
@@ -26,7 +26,7 @@ Firebug.Ace =
             var oldFrame = oldChrome.$("fbAceBrowser");
             var newFrame = newChrome.$("fbAceBrowser");
             if(oldFrame.contentWindow == Firebug.Ace.rightWindowWrapped) {
-                oldFrame.QueryInterface(Ci.nsIFrameLoaderOwner).swapFrameLoaders(newFrame)
+                oldFrame.QueryInterface(Ci.nsIFrameLoaderOwner).swapFrameLoaders(newFrame);
             }
         };
     },
@@ -34,10 +34,32 @@ Firebug.Ace =
     showPanel: function(browser, panel) {
 
     },
+
+    getOptions: function(){
+        var prefs = Components.classes["@mozilla.org/preferences-service;1"]
+            .getService(Components.interfaces.nsIPrefService);
+        var branch = prefs.getBranch("extensions.acebug.");
+        var options = {};
+
+        var names = branch.getChildList("", {});
+        for (let i = 0; i < names.length; i++) {
+            let name = names[i];
+            if (branch.getPrefType(name) == branch.PREF_BOOL) {
+                options[name] = branch.getBoolPref(name);
+            } else if (branch.getPrefType(name) == branch.PREF_STRING) {
+                options[name] = branch.getCharPref(name);
+            } else {
+                options[name] = branch.getIntPref(name);
+            }
+        }
+        return options;
+    }
 };
 
 Firebug.largeCommandLineEditor = {
     initialize: function() {
+        if(!this._getValue)
+            return;
         if(!Firebug.Ace.rightWindow)
             Firebug.Ace.initializeUI();
 
@@ -59,26 +81,13 @@ Firebug.largeCommandLineEditor = {
             this.setFontSize(this._fontSizeBuffer);
             delete this._fontSizeBuffer;
         }
-
-        // this is wrong, but needed to keep commandline value in synch
-        // firebugs commandline binding has similar listener for oninput
-        editor.textInput.getElement().addEventListener( "input", function() {
-            Firebug.currentContext.commandLineText = Firebug.largeCommandLineEditor.value;
-        }, false);
+        delete this._setFontSize;
 
         //add shortcuts
-        Firebug.Ace.env.editor.addCommand({
-            name:'execute',
-            key:'Ctrl-Return',
-            exec:function(){
-                Firebug.CommandLine.enter(Firebug.currentContext);
-            }
-        });
-        Firebug.Ace.env.editor.addCommand({
-            name:'complete',
-            key:'Ctrl-Space',
-            exec:function(){
-                Firebug.CommandLine.enter(Firebug.currentContext);
+        Firebug.Ace.env.editor.addCommands({
+            execute: Firebug.largeCommandLineEditor.enter,
+            startAutocompleter: function() {
+                Firebug.Ace.autocompleter.start(editor);
             }
         });
 
@@ -90,24 +99,7 @@ Firebug.largeCommandLineEditor = {
             return;
         this._loadingStarted = true;
 
-        var prefs = Components.classes["@mozilla.org/preferences-service;1"]
-            .getService(Components.interfaces.nsIPrefService);
-        var branch = prefs.getBranch("extensions.acebug.");
-        var options = {};
-
-        var names = branch.getChildList("", {});
-        for (let i = 0; i < names.length; i++) {
-            let name = names[i];
-            if (branch.getPrefType(name) == branch.PREF_BOOL) {
-                options[name] = branch.getBoolPref(name);
-            } else if (branch.getPrefType(name) == branch.PREF_STRING) {
-                options[name] = branch.getCharPref(name);
-            } else {
-                options[name] = branch.getIntPref(name);
-            }
-        }
-
-        Firebug.Ace.rightWindow.startAce(bind(this.initialize,this), options);
+        Firebug.Ace.rightWindow.startAce(bind(this.initialize,this), Firebug.Ace.getOptions());
     },
 
     getValue: function() {
@@ -126,7 +118,7 @@ Firebug.largeCommandLineEditor = {
 
     // activated when ace is loaded
     _getValue: function() {
-        return Firebug.Ace.env.editor.selection.doc.toString();
+        return Firebug.Ace.env.editor.session.getValue();
     },
 
     _setValue: function(text) {
@@ -146,7 +138,21 @@ Firebug.largeCommandLineEditor = {
     },
 
     set value(val) {
-        return this.setValue(val);
+        if(arguments.callee.caller == Firebug.CommandLine.commandHistory.onMouseUp || this._setValue)
+            return this.setValue(val);
+        return val;
+    },
+
+    enter: function(runSelection) {
+        var editor = Firebug.Ace.env.editor;
+        if (runSelection)
+            var text = editor.getCopyText();
+        if (!text) {
+            //log lines with breakpoints
+            var bp = editor.session.$breakpoints;
+            text = editor.session.doc.$lines.map(function(x,i) bp[i]?'console.log('+x+')':x ).join('\n');
+        }
+        Firebug.CommandLine.enter(Firebug.currentContext, text);
     },
 
     addEventListener: function() {
@@ -158,7 +164,10 @@ Firebug.largeCommandLineEditor = {
     },
 
     focus: function() {
-        Firebug.Ace.env.editor.focus();
+        Firebug.Ace.env && Firebug.Ace.env.editor.focus();
+    },
+
+    __noSuchMethod__: function() {
     },
 
     loadFile:function()
@@ -225,21 +234,8 @@ Firebug.largeCommandLineEditor = {
             {
                 label: $ACESTR("acebug.streamcomment"),
                 command: function() {
-                    var range = editor.getSelection().getRange(),
-                        startRow = range.start.row,
-                        startCol = range.start.column,
-                        endRow = range.end.row,
-                        endCol = range.end.column;
-
-                    editor.clearSelection();
-                    editor.moveCursorTo(endRow, endCol);
-                    editor.insert(" */");
-                    editor.moveCursorTo(startRow, startCol);
-                    editor.insert("/* ");
-
-                    self.focus();
-                },
-                disabled: !editorText
+                    Firebug.Ace.env.execCommand('toggleStreamComment');
+                }
             },
             "-",
             {
@@ -289,7 +285,7 @@ Firebug.largeCommandLineEditor = {
     getTooltipObject: function(target)
     {
         return null;
-    },
+    }
 };
 
 /***********************************************************/
@@ -321,17 +317,7 @@ var acebugPrefObserver = {
                 env.editor.setHighlightActiveLine(this._branch.getBoolPref(aData));
             break;
             case "keybinding":
-                switch(this._branch.getCharPref(aData)) {
-                    case "Ace":
-                        env.editor.setKeyboardHandler(null);
-                    break;
-                    case "Vim":
-                        env.editor.setKeyboardHandler(env.acebug.keybindings.vim);
-                    break;
-                    case "Emacs":
-                        env.editor.setKeyboardHandler(env.acebug.keybindings.emacs);
-                    break;
-                }
+                env.setKeybinding(this._branch.getCharPref(aData));
             break;
             case "showinvisiblecharacters":
                 env.editor.setShowInvisibles(this._branch.getBoolPref(aData));
@@ -358,7 +344,7 @@ var gClipboardHelper = {
 
     copyString: function(str) {
         if(str)
-            this.cbHelperService.copyString(str)
+            this.cbHelperService.copyString(str);
     },
 
     getData: function() {
@@ -419,55 +405,6 @@ function writeFile(file, text)
     converter.close();
 }
 
-
-// ************************************************************************************************
-// StyleSheetEditor
-
-function StyleSheetEditor(doc)
-{
-    this.box = this.tag.replace({}, doc, this);
-    this.input = this.box.firstChild;
-}
-
-StyleSheetEditor.prototype = domplate(Firebug.BaseEditor,
-{
-    getValue: function()
-    {
-        return this.input.value;
-    },
-
-    setValue: function(value)
-    {
-        return this.input.value = value;
-    },
-
-    show: function(target, panel, value, textSize, targetSize)
-    {
-        var command = Firebug.chrome.$("cmd_toggleCSSEditing");
-        command.setAttribute("checked", true);
-
-        this.target = target;
-        this.panel = panel;
-
-        this.panel.panelNode.appendChild(this.box);
-
-        this.input.value = value;
-        this.input.focus();
-    },
-
-    hide: function()
-    {
-        var command = Firebug.chrome.$("cmd_toggleCSSEditing");
-        command.setAttribute("checked", false);
-
-        if (this.box.parentNode == this.panel.panelNode)
-            this.panel.panelNode.removeChild(this.box);
-
-        delete this.target;
-        delete this.panel;
-        delete this.styleSheet;
-    }
-});
 
 // ************************************************************************************************
 

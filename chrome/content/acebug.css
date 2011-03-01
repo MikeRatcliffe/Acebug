@@ -1,0 +1,47 @@
+/*********** autocompletion tree ****************************/
+/*tree{
+    -moz-appearance: listbox!important;
+}*/
+#domfly::-moz-tree-row(odd) {
+    background-color: #FAFAFA;
+}
+
+#domfly::-moz-tree-row(lit) {
+    background-color: #FFFFAA;
+}
+#domfly::-moz-tree-row(head) {
+    background-color: #AAFFAA;
+    border: 1px solid green;
+    -moz-border-radius: 8px 2px;
+}
+#domfly::-moz-tree-row(selected) {
+    background-color: #E0EBF8;
+    border: 1px solid /*  #8FB1DA*/ transparent;
+}
+#domfly::-moz-tree-row(selected focus) {
+    -moz-border-radius: 15px 15px
+}
+#domfly::-moz-tree-cell-text(selected) {
+    color: #000;
+}
+#domfly::-moz-tree-row(hover) {
+    /*background-color: #97C6E7!important ;*/
+    border: 1px solid rgb(213, 80, 255);
+    -moz-border-radius: 2px 8px;
+}
+
+#domfly::-moz-tree-cell-text(d0) {
+    color: #000;
+}
+#domfly::-moz-tree-cell-text(d1) {
+    color: darkblue;
+}
+#domfly::-moz-tree-cell-text(d2) {
+    color: green;
+}
+#domfly::-moz-tree-cell-text(d3) {
+    color: #339;
+}
+#domfly::-moz-tree-cell-text(d4) {
+    color: #000;
+}

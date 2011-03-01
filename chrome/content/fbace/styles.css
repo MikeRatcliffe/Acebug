@@ -59,3 +59,49 @@ body {
     border-right: 1px solid #A1A1CF;
     border-top: 1px solid #A1A1CF;
 }
+/********************************* breakpoints *****************************************/
+.sourceRow.hovered {
+    background-color: #EEEEEE;
+}
+
+.ace_gutter-cell.ace_breakpoint{
+	background: url("chrome://firebug/skin/breakpoint.png") no-repeat;
+}
+
+
+.ace_gutter-cell[exe_line="true"] {
+    outline: 1px solid #D9D9B6;
+    margin-right: 1px;
+    background-color: lightgoldenrodyellow;
+}
+
+.ace_gutter-cell[executable="true"] > .sourceLine {
+    content: "-";
+    color: #4AA02C;  /* Spring Green */
+    font-weight: bold;
+}
+
+.ace_gutter-cell[exe_line="true"] > .sourceLine {
+    background-image: url(chrome://firebug/skin/exe.png);
+    color: #000000;
+}
+
+.ace_gutter-cell[breakpoint="true"] > .sourceLine {
+    background-image: url(chrome://firebug/skin/breakpoint.png);
+}
+
+.ace_gutter-cell[breakpoint="true"][condition="true"] > .sourceLine {
+    background-image: url(chrome://firebug/skin/breakpointCondition.png);
+}
+
+.ace_gutter-cell[breakpoint="true"][disabledBreakpoint="true"] > .sourceLine {
+    background-image: url(chrome://firebug/skin/breakpointDisabled.png);
+}
+
+.ace_gutter-cell[breakpoint="true"][exe_line="true"] > .sourceLine {
+    background-image: url(chrome://firebug/skin/breakpointExe.png);
+}
+
+.ace_gutter-cell[breakpoint="true"][exe_line="true"][disabledBreakpoint="true"] > .sourceLine {
+    background-image: url(chrome://firebug/skin/breakpointDisabledExe.png);
+}

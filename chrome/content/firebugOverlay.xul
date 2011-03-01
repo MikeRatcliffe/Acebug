@@ -1,9 +1,11 @@
 <?xml version="1.0"?>
+<?xml-stylesheet href="acebug.css" type="text/css"?>
 <!DOCTYPE acebugDTD SYSTEM "chrome://acebug/locale/acebug.dtd">
 <overlay xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
          xmlns:html="http://www.w3.org/1999/xhtml">
 
     <script type="application/x-javascript" src="chrome://acebug/content/aceEditor.js"/>
+    <script type="application/x-javascript" src="chrome://acebug/content/autocompleter.js"/>
 
     <vbox id="fbContentBox">
         <box id="fbPanelBox" flex="1">
@@ -19,12 +21,22 @@
                                      src="chrome://acebug/content/fbace/fbeditor.html"
                                      position="1"/>
                             <hbox id="fbCommandToolbar">
+                                <toolbarbutton id="fbCmdLineRunButton" label="firebug.Run"
+                                    class="toolbar-text-button fbInternational"
+                                    tooltiptext="firebug.Run_the_entered_command"
+                                    onclick="Firebug.largeCommandLineEditor.enter(event.button)"
+                                    oncommand=""/>
+                                <toolbarbutton id="fbCmdLineCopyButton" removeelement='true'/>
+                                <toolbarbutton id="fbCmdLineCopyButton" insertbefore='fbCommandEditorHistoryButton'
+                                    label="//" oncommand="Firebug.Ace.env.execCommand('togglecomment')"/>
+                                <toolbarbutton id="fbCmdLineCopyButton" insertbefore='fbCommandEditorHistoryButton'
+                                    label="/*" oncommand="Firebug.Ace.env.execCommand('toggleStreamComment')"/>
                                 <toolbarbutton id="fbCmdLoadButton" label="&acebug.fbCmdLoadButton.label;"
                                     tooltip="&acebug.fbCmdLoadButton.tooltip;"
-                                    oncommand="Firebug.largeCommandLineEditor.loadFile()" position="6"/>
+                                    oncommand="Firebug.largeCommandLineEditor.loadFile()" insertbefore="fbCommandToggleLarge"/>
                                 <toolbarbutton id="fbCmdSaveButton" label="&acebug.fbCmdSaveButton.label;"
                                     tooltip="&acebug.fbCmdSaveButton.tooltip;"
-                                    oncommand="Firebug.largeCommandLineEditor.saveFile()" position="7"/>
+                                    oncommand="Firebug.largeCommandLineEditor.saveFile()" insertbefore="fbCommandToggleLarge"/>
                             </hbox>
                         </vbox>
                     </deck>
@@ -32,6 +44,29 @@
             </panelBar>
         </box>
     </vbox>
+
+    <popupset id='mainPopupSet'>
+        <panel id="aceAutocompletePanel" noautofocus="true"  ignorekeys='true'>
+            <hbox>
+                <toolbarbutton label=''  onclick='jsExplore.qi()'/>
+                <spacer flex='1'/>
+                <label/>
+                <toolbarbutton class='tab-close-button' oncommand='this.parentNode.parentNode.hidePopup()'/>
+            </hbox>
+            <hbox flex="1">
+                <tree   seltype="single" treelines="false" flex="1" tabindex='-1'
+                        hidecolumnpicker='true' style='-moz-user-focus:none' >
+                    <treechildren id="domfly"/>
+                    <treecols>
+                        <treecol id="name" hideheader="true" primary="true" flex="2" />
+                    </treecols>
+                </tree>
+                <!-- <splitter/>
+                <textbox multiline='true' id='autocomplate-bubble' flex='1' wrap='off' width='1' /> -->
+            </hbox>
+        </panel>
+        <panel id='autocomplate-info-bubble' noautofocus="true"  ignorekeys='true'><textbox  multiline="true" wrap='off' flex="1"/></panel>
+    </popupset>
 
     <stringbundleset id="stringbundleset">
         <stringbundle id="strings_acebug"
