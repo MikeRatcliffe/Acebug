@@ -167,7 +167,7 @@ Firebug.Ace.autocompleter = {
                 self.moveTreeSelection(1);
             },
 
-            peviousEntry: function(){
+            previousEntry: function(){
                 self.moveTreeSelection(-1);
             },
 
@@ -618,8 +618,8 @@ function(){dump(this.name); delete this.description; this.description=jn.inspect
     };
 } else {//4.0b2+
     getProps = function(targetObj) {
-        // todo: complete this function ... it currently always returns an empty array
-        return [];
+        if (!targetObj)
+            return [];
 
         var d, o;
         var x = targetObj.wrappedJSObject;
@@ -633,7 +633,6 @@ function(){dump(this.name); delete this.description; this.description=jn.inspect
 
         if(typeof x !== "object" && typeof x !== "function") {
             x = x.constructor;
-            jn.say(x,targetObj);
         }
         if(typeof x === "xml")
             return [];
@@ -793,7 +792,19 @@ jn.inspect = function(x, isLong) {
             nameList.push(' ~', l);
     } catch(e) {}
 
-    if(nameList.length < 6) {
+    if(isLong) {
+        var propList = [];
+        propList.push("{\n    ");
+        for(i in x){
+            if(propList.length > 10){
+                propList.push('..more..');
+                break;
+            }
+            propList.push(i, ',\n    ');
+        }
+        propList.push("\n}\n");
+        nameList.push(propList.join(''));
+    } else if(nameList.length < 6) {
         nameList.push("{");
         for(i in x){
             if(nameList.length > 12)
@@ -902,10 +913,10 @@ jn.lookupSetter = function (object,prop) {
     try {
         s = object.__lookupSetter__(prop);
         if(s)
-            ans.push(jn.inspect(s, "long").replace(/^.*()/,"set " + prop + "()"));
+            ans.push(jn.inspect(s, "long").replace(/^.*\)/,"set " + prop + "()"));
         s = object.__lookupGetter__(prop);
         if(s)
-            ans.push(jn.inspect(s, "long").replace(/^.*()/,"get " + prop + "()"));
+            ans.push(jn.inspect(s, "long").replace(/^.*\)/,"get " + prop + "()"));
     } catch(e) {
         Components.utils.reportError(e);
     }
