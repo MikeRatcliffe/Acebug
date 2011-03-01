@@ -741,8 +741,7 @@ jn.inspect = function(x, isLong) {
     if(Class === "Array") {
         l = x.length;
         nameList.push("`" + Class + "` ~" + l);
-        // todo: What is the point of the next line ... the result will *always* be 1
-        l = Math.min(isLong?100:10,l);
+        l = Math.min(isLong?100:10, l);
         for(i = 0; i < l; i++) {
             nameList.push(x[i].toString());
         }
