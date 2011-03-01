@@ -618,8 +618,8 @@ function(){dump(this.name); delete this.description; this.description=jn.inspect
     };
 } else {//4.0b2+
     getProps = function(targetObj) {
-        // todo: complete this function ... it currently always returns an empty array
-        return [];
+        if (!targetObj)
+            return [];
 
         var d, o;
         var x = targetObj.wrappedJSObject;
