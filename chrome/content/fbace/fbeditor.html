@@ -53,6 +53,7 @@ require = loadScripts = function(deps, callback, lastUrl){
 	var script = document.createElement("script")
 	script.type = "text/javascript";	  
 	script.onload = function(){
+		this.onload = null
 		loadScripts(deps, callback, url)
 	}
    

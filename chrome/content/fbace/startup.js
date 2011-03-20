@@ -152,16 +152,19 @@ exports.launch = function(env, options) {
 		//editor.session.panel.setBreakpoint(lineNo, state)
 	});
 
-	getMode = function(name){
-		if(name.slice(-5) === ".html")
-			return new HTMLMode();
-		if(name.slice(-4) === ".xml")
-			return new XMLMode();
-		//if(name.slice(-5) === ".html")
-			return new JavaScriptMode();
+	getMode = function(name) {
+		var mode = (name.match(/.(xml|html?|css|js)($|\?|\#)/)||[,'js'])[1]
+		var map = {html:'HTMLMode', htm:'HTMLMode', js:'JavaScriptMode', css:'CSSMode', xml:'XMLMode'}
+		return new window[map[mode]]();
 	};
+	createSession = function(name) {
+		var s = new EditSession('');
+		s.setMode(getMode(name));
+		s.setUndoManager(new UndoManager());
+		return s
+	}
 
-	env.editor.addCommands({
+	editor.addCommands({
 		toggleStreamComment: function() {
 			// TODO: handle space in ' */' while toggling
 			var range = editor.getSelection().getRange();

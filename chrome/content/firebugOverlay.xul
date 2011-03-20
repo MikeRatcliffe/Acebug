@@ -6,6 +6,7 @@
 
     <script type="application/x-javascript" src="chrome://acebug/content/aceEditor.js"/>
     <script type="application/x-javascript" src="chrome://acebug/content/autocompleter.js"/>
+    <script type="application/x-javascript" src="chrome://acebug/content/resource.js"/>
 
     <vbox id="fbContentBox">
         <box id="fbPanelBox" flex="1">
@@ -44,6 +45,12 @@
             </panelBar>
         </box>
     </vbox>
+	
+	<deck id="fbPanelBar1-deck" >
+		<iframe id="fbAceBrowser1" type="content" flex="1"
+             tooltip="fbTooltip" contextmenu="fbContextMenu"
+             src="chrome://acebug/content/fbace/fbeditor.html" position="1"/>
+	</deck>
 
     <popupset id='mainPopupSet'>
         <panel id="aceAutocompletePanel" noautofocus="true"  ignorekeys='true'>
