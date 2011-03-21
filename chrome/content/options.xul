@@ -40,26 +40,26 @@
                     <label id="abThemeLbl" value="&acebug.options.theme;" control="abTheme" />
                     <menulist id="abTheme" label="&acebug.options.theme;" preference="acebug-theme">
                         <menupopup>
-                            <menuitem value="ace/theme/clouds" label="&acebug.options.theme.clouds;" />
-                            <menuitem value="ace/theme/clouds_midnight" label="&acebug.options.theme.cloudsmidnight;" />
-                            <menuitem value="ace/theme/cobalt" label="&acebug.options.theme.cobalt;" />
-                            <menuitem value="ace/theme/dawn" label="&acebug.options.theme.dawn;" />
-                            <menuitem value="ace/theme/eclipse" label="&acebug.options.theme.eclipse;" />
-                            <menuitem value="ace/theme/idle_fingers" label="&acebug.options.theme.idlefingers;" />
-                            <menuitem value="ace/theme/kr_theme" label="&acebug.options.theme.krtheme;" />
-                            <menuitem value="ace/theme/mono_industrial" label="&acebug.options.theme.monoindustrial;" />
-                            <menuitem value="ace/theme/monokai" label="&acebug.options.theme.monokai;" />
-                            <menuitem value="ace/theme/pastel_on_dark" label="&acebug.options.theme.pastelondark;" />
-                            <menuitem value="ace/theme/textmate" label="&acebug.options.theme.textmate;" />
-                            <menuitem value="ace/theme/twilight" label="&acebug.options.theme.twilight;" />
+                            <menuitem closemenu='none' value="ace/theme/clouds" label="&acebug.options.theme.clouds;" />
+                            <menuitem closemenu='none' value="ace/theme/clouds_midnight" label="&acebug.options.theme.cloudsmidnight;" />
+                            <menuitem closemenu='none' value="ace/theme/cobalt" label="&acebug.options.theme.cobalt;" />
+                            <menuitem closemenu='none' value="ace/theme/dawn" label="&acebug.options.theme.dawn;" />
+                            <menuitem closemenu='none' value="ace/theme/eclipse" label="&acebug.options.theme.eclipse;" />
+                            <menuitem closemenu='none' value="ace/theme/idle_fingers" label="&acebug.options.theme.idlefingers;" />
+                            <menuitem closemenu='none' value="ace/theme/kr_theme" label="&acebug.options.theme.krtheme;" />
+                            <menuitem closemenu='none' value="ace/theme/mono_industrial" label="&acebug.options.theme.monoindustrial;" />
+                            <menuitem closemenu='none' value="ace/theme/monokai" label="&acebug.options.theme.monokai;" />
+                            <menuitem closemenu='none' value="ace/theme/pastel_on_dark" label="&acebug.options.theme.pastelondark;" />
+                            <menuitem closemenu='none' value="ace/theme/textmate" label="&acebug.options.theme.textmate;" />
+                            <menuitem closemenu='none' value="ace/theme/twilight" label="&acebug.options.theme.twilight;" />
                         </menupopup>
                     </menulist>
                     <label id="abThemeLbl" value="&acebug.options.keybinding;" control="abKeyBinding" />
                     <menulist id="abKeyBinding" label="&acebug.options.keybinding;" preference="acebug-keybinding">
                         <menupopup>
-                            <menuitem value="Ace" label="&acebug.options.keybinding.ace;" />
-                            <menuitem value="Vim" label="&acebug.options.keybinding.vim;" />
-                            <menuitem value="Emacs" label="&acebug.options.keybinding.emacs;" />
+                            <menuitem closemenu='none' value="Ace" label="&acebug.options.keybinding.ace;" />
+                            <menuitem closemenu='none' value="Vim" label="&acebug.options.keybinding.vim;" />
+                            <menuitem closemenu='none' value="Emacs" label="&acebug.options.keybinding.emacs;" />
                         </menupopup>
                     </menulist>
                 </vbox>

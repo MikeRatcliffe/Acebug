@@ -40,7 +40,7 @@ Firebug.Ace =
     },
 
     showPanel: function(browser, panel) {
-		this.win1.startAce()
+		this.win1.startAce(null, this.getOptions())
 		this.showPanel=function(){}
     },
 
@@ -83,6 +83,7 @@ Firebug.largeCommandLineEditor = {
 
         //set Firebug.largeCommandLineEditor on wrapped window so that Firebug.getElementPanel can access it
         Firebug.Ace.win2Wrapped.document.body.ownerPanel = this;
+        Firebug.Ace.win1Wrapped.document.body.ownerPanel = this;
         // clean up preload handlers
         this.getValue = this._getValue;
         this.setValue = this._setValue;
@@ -279,6 +280,12 @@ Firebug.largeCommandLineEditor = {
                 disabled: !clipBoardText
             },
             "-",
+			{
+                label: $ACESTR("acebug.options"),
+                command: function() {
+                    openDialog('chrome://acebug/content/options.xul','','resizable,centerscreen')
+                }
+            },
             {
                 label: $ACESTR("acebug.reportissue"),
                 command: function() {
@@ -325,29 +332,37 @@ var acebugPrefObserver = {
         if(aTopic != "nsPref:changed")
             return;
 
-        var env = Firebug.Ace.env;
+        var env1 = Firebug.Ace.win1.env;
+        var env2 = Firebug.Ace.win2.env;
 
         switch (aData) {
             case "highlightactiveline":
-                env.editor.setHighlightActiveLine(this._branch.getBoolPref(aData));
+                env1 && env1.editor.setHighlightActiveLine(this._branch.getBoolPref(aData));
+                env2 && env2.editor.setHighlightActiveLine(this._branch.getBoolPref(aData));
             break;
             case "keybinding":
-                env.setKeybinding(this._branch.getCharPref(aData));
+                env1 && env1.setKeybinding(this._branch.getCharPref(aData));
+                env2 && env2.setKeybinding(this._branch.getCharPref(aData));
             break;
             case "showinvisiblecharacters":
-                env.editor.setShowInvisibles(this._branch.getBoolPref(aData));
+                env1 && env1.editor.setShowInvisibles(this._branch.getBoolPref(aData));
+                env2 && env2.editor.setShowInvisibles(this._branch.getBoolPref(aData));
             break;
             case "softtabs":
-                env.editor.session.setUseSoftTabs(this._branch.getBoolPref(aData));
+                env1 && env1.editor.session.setUseSoftTabs(this._branch.getBoolPref(aData));
+                env2 && env2.editor.session.setUseSoftTabs(this._branch.getBoolPref(aData));
             break;
             case "tabsize":
-                env.editor.session.setTabSize(this._branch.getIntPref(aData));
+                env1 && env1.editor.session.setTabSize(this._branch.getIntPref(aData));
+                env2 && env2.editor.session.setTabSize(this._branch.getIntPref(aData));
             break;
             case "theme":
-                env.editor.setTheme(this._branch.getCharPref(aData));
+                env1 && env1.editor.setTheme(this._branch.getCharPref(aData));
+                env2 && env2.editor.setTheme(this._branch.getCharPref(aData));
             break;
             case "wordwrap":
-                env.editor.session.setUseWrapMode(this._branch.getBoolPref(aData));
+                env1 && env1.editor.session.setUseWrapMode(this._branch.getBoolPref(aData));
+                env2 && env2.editor.session.setUseWrapMode(this._branch.getBoolPref(aData));
             break;
         }
     }
@@ -423,241 +438,11 @@ function writeFile(file, text)
 
 // ************************************************************************************************
 // stylesheet panel
-Firebug.stylesheetEditor = {
-    initialize: function() {
-        if(!this._getValue)
-            return;
-        if(!Firebug.Ace.win1)
-            Firebug.Ace.initializeUI();
-
-        Firebug.Ace.env = Firebug.Ace.win1.env;
-        var editor = Firebug.Ace.env.editor;
-
-        //set Firebug.largeCommandLineEditor on wrapped window so that Firebug.getElementPanel can access it
-        Firebug.Ace.win2Wrapped.document.body.ownerPanel = this;
-        // clean up preload handlers
-        this.getValue = this._getValue;
-        this.setValue = this._setValue;
-        this.setValue(this._valueBuffer || '');
-        delete this._getValue;
-        delete this._setValue;
-        delete this._loadingStarted;
-        delete this._valueBuffer;
-        this.setFontSize = this._setFontSize;
-        if(this._fontSizeBuffer){
-            this.setFontSize(this._fontSizeBuffer);
-            delete this._fontSizeBuffer;
-        }
-        delete this._setFontSize;
-
-        //add shortcuts
-        Firebug.Ace.env.editor.addCommands({
-            execute: Firebug.largeCommandLineEditor.enter,
-            startAutocompleter: function() {
-                Firebug.Ace.autocompleter.start(editor);
-            }
-        });
-
-        acebugPrefObserver.register();
-    },
-    // called if ace still loading
-    _startLoading: function() {
-        if(this._loadingStarted)
-            return;
-        this._loadingStarted = true;
-
-        Firebug.Ace.win2.startAce(bind(this.initialize,this), Firebug.Ace.getOptions());
-    },
-
-    getValue: function() {
-        this._startLoading();
-        return this._valueBuffer || '';
-    },
-
-    setValue: function(text) {
-        this._startLoading();
-        return this._valueBuffer = text;
-    },
-
-    setFontSize: function(sizePercent){
-        this._fontSizeBuffer = sizePercent;
-    },
-
-    // activated when ace is loaded
-    _getValue: function() {
-        return Firebug.Ace.env.editor.session.getValue();
-    },
-
-    _setValue: function(text) {
-        var editor = Firebug.Ace.env.editor;
-        editor.selection.selectAll();
-        editor.onTextInput(text);
-        return text;
-    },
-
-    _setFontSize: function(sizePercent){
-        Firebug.Ace.env.editor.container.style.fontSize = sizePercent;
-    },
-
-    //* * * * * * * * * * * * * * * * * * * * * * * * *
-    get value() {
-        return this.getValue();
-    },
-
-    set value(val) {
-        if(arguments.callee.caller == Firebug.CommandLine.commandHistory.onMouseUp || this._setValue)
-            return this.setValue(val);
-        return val;
-    },
-
-    enter: function(runSelection) {
-        var editor = Firebug.Ace.env.editor;
-        if (runSelection)
-            var text = editor.getCopyText();
-        if (!text) {
-            //log lines with breakpoints
-            var bp = editor.session.$breakpoints;
-            text = editor.session.doc.$lines.map(function(x,i) bp[i]?'console.log('+x+')':x ).join('\n');
-        }
-        Firebug.CommandLine.enter(Firebug.currentContext, text);
-    },
-
-    addEventListener: function() {
-        Firebug.Ace.win2.addEventListener.apply(null,arguments);
-    },
-
-    removeEventListener: function() {
-        Firebug.Ace.win2.removeEventListener.apply(null,arguments);
-    },
-
-    focus: function() {
-        Firebug.Ace.env && Firebug.Ace.env.editor.focus();
-    },
-
-    __noSuchMethod__: function() {
-    },
-
-    loadFile:function()
-    {
-        var result;
-        var fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-
-        fp.init(window, $ACESTR("acebug.selectafile"), Ci.nsIFilePicker.modeOpen);
-        fp.appendFilter($ACESTR("acebug.javascriptfiles"), "*.js");
-        fp.appendFilters(Ci.nsIFilePicker.filterAll);
-
-        result = fp.show();
-        if( result == Ci.nsIFilePicker.returnOK) {
-            this.value = readEntireFile(fp.file);
-        }
-    },
-
-    saveFile:function()
-    {
-        var file, name, result,
-            fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-
-        fp.init(window, $ACESTR("acebug.saveas"), Ci.nsIFilePicker.modeSave);
-        fp.appendFilter($ACESTR("acebug.javascriptfiles"), "*.js");
-        fp.appendFilters(Ci.nsIFilePicker.filterAll);
-
-        result = fp.show();
-        if(result == Ci.nsIFilePicker.returnOK)
-        {
-            file = fp.file;
-            name = file.leafName;
-
-            if(name.indexOf('.js')<0)
-            {
-                file = file.parent;
-                file.append(name + '.js');
-            }
-
-            writeFile(file, this.value);
-        }
-        else if(result == Ci.nsIFilePicker.returnReplace)
-        {
-            writeFile(fp.file, this.value);
-        }
-    },
-
-    getContextMenuItems: function(target)
-    {
-        var items = [],
-            editor = Firebug.Ace.env.editor,
-            clipBoardText = gClipboardHelper.getData(),
-            editorText = editor.getCopyText(),
-            self = this;
-
-        items.push(
-            {
-                label: $ACESTR("acebug.executeselection"),
-                command: function() {
-                    Firebug.CommandLine.enter(Firebug.currentContext, editorText);
-                    self.focus();
-                },
-                disabled: !editorText
-            },
-            {
-                label: $ACESTR("acebug.streamcomment"),
-                command: function() {
-                    Firebug.Ace.env.execCommand('toggleStreamComment');
-                }
-            },
-            "-",
-            {
-                label: $ACESTR("acebug.copy"),
-                command: function() {
-                    gClipboardHelper.copyString(editorText);
-                    self.focus();
-                },
-                disabled: !editorText
-            },
-            {
-                label: $ACESTR("acebug.cut"),
-                command: function() {
-                    gClipboardHelper.copyString(editorText);
-                    editor.onCut();
-                    self.focus();
-                },
-                disabled: !editorText
-            },
-            {
-                label: $ACESTR("acebug.paste"),
-                command: function() {
-                    editor.onTextInput(clipBoardText);
-                    self.focus();
-                },
-                disabled: !clipBoardText
-            },
-            "-",
-            {
-                label: $ACESTR("acebug.reportissue"),
-                command: function() {
-                    var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
-                        .getService(Components.interfaces.nsIWindowMediator);
-                    var mainWindow = wm.getMostRecentWindow("navigator:browser");
-                    mainWindow.gBrowser.selectedTab = mainWindow.gBrowser.addTab("https://github.com/MikeRatcliffe/Acebug/issues");
-                }
-            }
-        );
-        return items;
-    },
-
-    getPopupObject: function(target)
-    {
-        return null;
-    },
-
-    getTooltipObject: function(target)
-    {
-        return null;
-    }
-};
-
+/*
 Firebug.stylesheetEditor.saveEdit=bind(function(){
 	Firebug.CSSModule.freeEdit(this.styleSheet, Firebug.Ace.win1.editor.session.getValue())
 }, Firebug.stylesheetEditor);
+
 Firebug.CSSStyleSheetPanel.prototype.startBuiltInEditing = function(css)
 {
 	var panel=Firebug.chrome.$("fbAceBrowser1")
@@ -682,7 +467,7 @@ Firebug.CSSStyleSheetPanel.prototype.startBuiltInEditing = function(css)
 	this.stylesheetEditor.styleSheet = this.location;	
 }
 Firebug.CSSStyleSheetPanel.prototype.stylesheetEditor = Firebug.stylesheetEditor
-
+*/
 
 var HTMLPanelEditor = function() {
 	this.__noSuchMethod__ = dump;
@@ -692,23 +477,25 @@ var HTMLPanelEditor = function() {
 	this.onInput = bind(this.onInput, this)
 	this.session.on('change', this.onInput)
 	//
-	this.multiLine = true;
-    this.tabNavigation = false;
-    this.arrowCompletion = false;
 }
 
 HTMLPanelEditor.prototype = {
+	multiLine: true,
+    tabNavigation: false,
+    arrowCompletion: false,
+	//
 	getValue: function() {
 		return this.editor.session.getValue()
 	},
 	
 	setValue: function(value) {
+		dump('/*******************************************************/')
 		this.ignoreChange = true
-		this.session.setValue(value);
-		if(this.editor.session != this.session) {
-			this.ignoreChange = true
+		this.session.doc.setValue(value);
+		this.session.selection.moveCursorFileStart();
+		if(this.editor.session != this.session)
 			this.editor.setSession(this.session)
-		}
+		this.ignoreChange = false
 		return value
 	},
 	
@@ -730,6 +517,7 @@ HTMLPanelEditor.prototype = {
 		command.setAttribute("checked", false);
 	
 		Firebug.Ace.switchPanels(false)
+		FirebugChrome.getSelectedPanel().select(this.editingElements[0])
 		
 		delete this.editingElements;
 		delete this.target;
@@ -772,10 +560,10 @@ HTMLPanelEditor.prototype = {
 	// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 	
 	onInput: function(defer) {
-		dump(defer, this.ignoreChange, this.timerId)
+		dump(defer&&defer.data.range, this.ignoreChange, this.timerId)
 	
 		if(this.ignoreChange)
-			return this.ignoreChange = false
+			return
 
 		if(!defer){			
 			this.saveEdit();
@@ -792,6 +580,25 @@ HTMLPanelEditor.prototype = {
 }
 
 Firebug.HTMLPanel.Editors.html = HTMLPanelEditor
+
+var StylesheetEditor = function() {
+	this.__noSuchMethod__ = dump;
+	this.aceWindow = Firebug.Ace.win1
+	this.editor = this.aceWindow.editor
+	this.session = this.aceWindow.createSession('.html')
+	this.onInput = bind(this.onInput, this)
+	this.session.on('change', this.onInput)
+	//
+}
+StylesheetEditor.prototype = extend(HTMLPanelEditor.prototype,
+{
+	saveEdit: function(){
+		Firebug.CSSModule.freeEdit(this.styleSheet, this.getValue())
+	},
+
+})
+
+Firebug.StyleSheetEditor = StylesheetEditor
 // ************************************************************************************************
 
 Firebug.registerModule(Firebug.Ace);

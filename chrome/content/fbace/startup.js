@@ -94,7 +94,7 @@ exports.launch = function(env, options) {
 			env.editor.setKeyboardHandler(null);
 			return;
 		}
-		var path = "ace/keyboard/keybinding/" + name;
+		var path = "ace/keyboard/keybinding/" + name.toLowerCase();
 		var module = require(path);
 		if(!module)
 			require([path], function(module){
