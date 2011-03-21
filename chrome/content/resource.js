@@ -74,17 +74,27 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         Firebug.Panel.initialize.apply(this, arguments);
     },
 	
+	show: function()
+	{
+		this.aceWindow = Firebug.Ace.win1;
+		this.editor = this.aceWindow.editor;
+		this.session = this.aceWindow.createSession('ppp', '.html');
+		this.editor.setSession(this.session)
+	},
+	
+	hide: function()
+	{
+		
+	},
+	
+	getSourceLink: function(target, object)
+    {
+		
+    },
    
 });
 
-/*Firebug.CSSStyleSheetPanel.prototype = extend(Firebug.CSSStyleSheetPanel.prototype,
-{
-	initialize: function(){
-		this.__defineGetter__('browser', function()Firebug.chrome.$("fbAceBrowser1"))
-		
-		Firebug.Panel.initialize.apply(this, arguments);
-	}
-})*/
+
 // ************************************************************************************************
 
 Firebug.registerPanel(Firebug.ResourcePanel);

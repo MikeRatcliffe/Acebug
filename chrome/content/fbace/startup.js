@@ -94,7 +94,7 @@ exports.launch = function(env, options) {
 			env.editor.setKeyboardHandler(null);
 			return;
 		}
-		var path = "ace/keyboard/keybinding/" + name.toLowerCase();
+		var path = "ace/keyboard/keybinding/" + name;
 		var module = require(path);
 		if(!module)
 			require([path], function(module){
@@ -106,7 +106,7 @@ exports.launch = function(env, options) {
 
 	env.setKeybinding(options.keybinding);
 
-	env.editor.addCommands = function(commandSet) {
+	editor.addCommands = function(commandSet) {
 		for (var i in commandSet) {
 			var exec = commandSet[i];
 			if(typeof exec === "function")
@@ -114,7 +114,7 @@ exports.launch = function(env, options) {
 		}
 	};
 
-	env.execCommand = function(name){
+	editor.execCommand = function(name){
 		canon.getCommand(name).exec(env);
 	};
 
@@ -157,8 +157,8 @@ exports.launch = function(env, options) {
 		var map = {html:'HTMLMode', htm:'HTMLMode', js:'JavaScriptMode', css:'CSSMode', xml:'XMLMode'}
 		return new window[map[mode]]();
 	};
-	createSession = function(name) {
-		var s = new EditSession('');
+	createSession = function(value, name) {
+		var s = new EditSession(value);
 		s.setMode(getMode(name));
 		s.setUndoManager(new UndoManager());
 		return s
