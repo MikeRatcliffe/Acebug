@@ -4,9 +4,7 @@
 		<Array type="function">
 			<methods>
 				<method name="concat">
-					<summary>
-						Returns a new array comprised of this array joined with other array(s) and/or value(s).
-					</summary>
+					<summary>Returns a new array comprised of this array joined with other array(s) and/or value(s).</summary>
 					<syntax>var resultArray = array.concat(value1, value2, ..., valueN);</syntax>
 					<params>
 						<param name="valueN">
@@ -17,9 +15,7 @@
 					<link>JavaScript/Reference/Global_Objects/Array/concat</link>
 				</method>
 				<method name="join">
-					<summary>
-						Joins all elements of an array into a string.
-					</summary>
+					<summary>Joins all elements of an array into a string.</summary>
 					<syntax>join(separator)</syntax>
 					<params>
 						<param name="separator">
@@ -30,17 +26,13 @@
 					<link>JavaScript/Reference/Global_Objects/Array/join</link>
 				</method>
 				<method name="pop">
-					<summary>
-						Removes the last element from an array and returns that element.
-					</summary>
+					<summary>Removes the last element from an array and returns that element.</summary>
 					<syntax>array.pop();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/Array/pop</link>
 				</method>
 				<method name="push">
-					<summary>
-						Mutates an array by appending the given elements and returning the new length of the array.
-					</summary>
+					<summary>Mutates an array by appending the given elements and returning the new length of the array.</summary>
 					<syntax>array.push(element1, ..., elementN);</syntax>
 					<params>
 						<param name="element1, ..., elementN">
@@ -51,25 +43,19 @@
 					<link>JavaScript/Reference/Global_Objects/Array/push</link>
 				</method>
 				<method name="reverse">
-					<summary>
-						Reverses an array in place.  The first array element becomes the last and the last becomes the first.
-					</summary>
+					<summary>Reverses an array in place.  The first array element becomes the last and the last becomes the first.</summary>
 					<syntax>array.reverse();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/Array/reverse</link>
 				</method>
 				<method name="shift">
-					<summary>
-						Removes the first element from an array and returns that element. This method changes the length of the array.
-					</summary>
+					<summary>Removes the first element from an array and returns that element. This method changes the length of the array.</summary>
 					<syntax>array.shift();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/Array/shift</link>
 				</method>
 				<method name="slice">
-					<summary>
-						Returns a one-level deep copy of a portion of an array.
-					</summary>
+					<summary>Returns a one-level deep copy of a portion of an array.</summary>
 					<syntax>slice(begin[,end]);</syntax>
 					<params>
 						<param name="begin">
@@ -90,9 +76,7 @@
 					<link>JavaScript/Reference/Global_Objects/Array/slice</link>
 				</method>
 				<method name="sort">
-					<summary>
-						Sorts the elements of an array in place.
-					</summary>
+					<summary>Sorts the elements of an array in place.</summary>
 					<syntax>array.sort(compareFunction);</syntax>
 					<params>
 						<param name="compareFunction">
@@ -103,9 +87,7 @@
 					<link>JavaScript/Reference/Global_Objects/Array/sort</link>
 				</method>
 				<method name="splice">
-					<summary>
-						Changes the content of an array, adding new elements while removing old elements.
-					</summary>
+					<summary>Changes the content of an array, adding new elements while removing old elements.</summary>
 					<syntax>
 					array.splice(index, howMany, [element1][, ..., elementN]);
 					array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey extension
@@ -125,25 +107,19 @@
 					<link>JavaScript/Reference/Global_Objects/Array/splice</link>
 				</method>
 				<method name="toSource">
-					<summary>
-						Returns a string representing the source code of the array.
-					</summary>
+					<summary>Returns a string representing the source code of the array.</summary>
 					<syntax>array.toSource();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/Array/toSource</link>
 				</method>
 				<method name="toString">
-					<summary>
-						Returns a string representing the specified array and its elements.
-					</summary>
+					<summary>Returns a string representing the specified array and its elements.</summary>
 					<syntax>toString();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/Array/toString</link>
 				</method>
 				<method name="unshift">
-					<summary>
-						Adds one or more elements to the beginning of an array and returns the new length of the array.
-					</summary>
+					<summary>Adds one or more elements to the beginning of an array and returns the new length of the array.</summary>
 					<syntax>newArrLen = arrayName.unshift(element1, ..., elementN);</syntax>
 					<params>
 						<param name="element1, ..., elementN">
@@ -154,9 +130,7 @@
 					<link>JavaScript/Reference/Global_Objects/Array/unshift</link>
 				</method>
 				<method name="every">
-					<summary>
-						Tests whether all elements in the array pass the test implemented by the provided function.
-					</summary>
+					<summary>Tests whether all elements in the array pass the test implemented by the provided function.</summary>
 					<syntax>var allPassed = array.every(callback[, thisObject]);</syntax>
 					<params>
 						<param name="callback">
@@ -170,9 +144,7 @@
 					<link>JavaScript/Reference/Global_Objects/Array/every</link>
 				</method>
 				<method name="filter">
-					<summary>
-						Creates a new array with all elements that pass the test implemented by the provided function.
-					</summary>
+					<summary>Creates a new array with all elements that pass the test implemented by the provided function.</summary>
 					<syntax>var filteredArray = array.filter(callback[, thisObject]);</syntax>
 					<params>
 						<param name="callback">
@@ -186,9 +158,7 @@
 					<link>JavaScript/Reference/Global_Objects/Array/filter</link>
 				</method>
 				<method name="forEach">
-					<summary>
-						Executes a provided function once per array element.
-					</summary>
+					<summary>Executes a provided function once per array element.</summary>
 					<syntax>array.forEach(callback[, thisObject]);</syntax>
 					<params>
 						<param name="callback">
@@ -202,9 +172,7 @@
 					<link>JavaScript/Reference/Global_Objects/Array/forEach</link>
 				</method>
 				<method name="indexOf">
-					<summary>
-						Returns the first index at which a given element can be found in the array, or -1 if it is not present.
-					</summary>
+					<summary>Returns the first index at which a given element can be found in the array, or -1 if it is not present.</summary>
 					<syntax>var index = array.indexOf(searchElement[, fromIndex]);</syntax>
 					<params>
 						<param name="searchElement">
@@ -218,9 +186,7 @@
 					<link>JavaScript/Reference/Global_Objects/Array/indexOf</link>
 				</method>
 				<method name="lastIndexOf">
-					<summary>
-						Returns the last index at which a given element can be found in the array, or -1 if it is not present. The array is searched backwards, starting at fromIndex.
-					</summary>
+					<summary>Returns the last index at which a given element can be found in the array, or -1 if it is not present. The array is searched backwards, starting at fromIndex.</summary>
 					<syntax>var index = array.lastIndexOf(searchElement[, fromIndex]);</syntax>
 					<params>
 						<param name="searchElement">
@@ -234,9 +200,7 @@
 					<link>JavaScript/Reference/Global_Objects/Array/lastIndexOf</link>
 				</method>
 				<method name="map">
-					<summary>
-						Creates a new array with the results of calling a provided function on every element in this array.
-					</summary>
+					<summary>Creates a new array with the results of calling a provided function on every element in this array.</summary>
 					<syntax>var mappedArray = array.map(callback[, thisObject]);</syntax>
 					<params>
 						<param name="callback">
@@ -250,9 +214,7 @@
 					<link>JavaScript/Reference/Global_Objects/Array/map</link>
 				</method>
 				<method name="some">
-					<summary>
-						Tests whether some element in the array passes the test implemented by the provided function.
-					</summary>
+					<summary>Tests whether some element in the array passes the test implemented by the provided function.</summary>
 					<syntax>var someElementPassed = array.some(callback[, thisObject]);</syntax>
 					<params>
 						<param name="callback">
@@ -266,9 +228,7 @@
 					<link>JavaScript/Reference/Global_Objects/Array/some</link>
 				</method>
 				<method name="reduce">
-					<summary>
-						Apply a function against an accumulator and each value of the array (from left-to-right) as to reduce it to a single value.
-					</summary>
+					<summary>Apply a function against an accumulator and each value of the array (from left-to-right) as to reduce it to a single value.</summary>
 					<syntax>var result = array.reduce(callback[, initialValue]);</syntax>
 					<params>
 						<param name="callback">
@@ -282,9 +242,7 @@
 					<link>JavaScript/Reference/Global_Objects/Array/reduce</link>
 				</method>
 				<method name="reduceRight">
-					<summary>
-						Apply a function simultaneously against two values of the array (from right-to-left) as to reduce it to a single value.
-					</summary>
+					<summary>Apply a function simultaneously against two values of the array (from right-to-left) as to reduce it to a single value.</summary>
 					<syntax>var result = array.reduceRight(callback[, initialValue]);</syntax>
 					<params>
 						<param name="callback">
@@ -302,9 +260,7 @@
 		<Object type="function">
 			<methods>
 				<method name="__defineGetter__">
-					<summary>
-						Binds an object's property to a function to be called when that property is looked up.
-					</summary>
+					<summary>Binds an object's property to a function to be called when that property is looked up.</summary>
 					<syntax>obj.__defineGetter__(sprop, fun);</syntax>
 					<params>
 						<param name="sprop">
@@ -317,9 +273,7 @@
 					<link>JavaScript/Reference/Global_Objects/Object/defineGetter</link>
 				</method>
 				<method name="__defineSetter__">
-					<summary>
-						Binds an object's property to a function to be called when an attempt is made to set that property.
-					</summary>
+					<summary>Binds an object's property to a function to be called when an attempt is made to set that property.</summary>
 					<syntax>obj.__defineSetter__(sprop, fun);</syntax>
 					<params>
 						<param name="sprop">
@@ -337,9 +291,7 @@
 					<link>JavaScript/Reference/Global_Objects/Object/defineSetter</link>
 				</method>
 				<method name="__lookupGetter__">
-					<summary>
-						Return the function bound as a getter to the specified property.
-					</summary>
+					<summary>Return the function bound as a getter to the specified property.</summary>
 					<syntax>obj.__lookupGetter__(sprop);</syntax>
 					<params>
 						<param name="sprop">
@@ -349,9 +301,7 @@
 					<link>JavaScript/Reference/Global_Objects/Object/lookupGetter</link>
 				</method>
 				<method name="__lookupSetter__">
-					<summary>
-						Return the function bound as a setter to the specified property.
-					</summary>
+					<summary>Return the function bound as a setter to the specified property.</summary>
 					<syntax>obj.__lookupSetter__(sprop)</syntax>
 					<params>
 						<param name="sprop">
@@ -361,9 +311,7 @@
 					<link>JavaScript/Reference/Global_Objects/Object/lookupSetter</link>
 				</method>
 				<method name="hasOwnProperty">
-					<summary>
-						Returns a boolean indicating whether the object has the specified property.
-					</summary>
+					<summary>Returns a boolean indicating whether the object has the specified property.</summary>
 					<syntax>hasOwnProperty(prop);</syntax>
 					<params>
 						<param name="prop">
@@ -374,9 +322,7 @@
 					<link>JavaScript/Reference/Global_Objects/Object/hasOwnProperty</link>
 				</method>
 				<method name="isPrototypeOf">
-					<summary>
-						Tests for an object in another object's prototype chain.
-					</summary>
+					<summary>Tests for an object in another object's prototype chain.</summary>
 					<syntax>prototype.isPrototypeOf(object);</syntax>
 					<params>
 						<param name="prototype">
@@ -393,32 +339,24 @@
 					<link>JavaScript/Reference/Global_Objects/Object/isPrototypeOf</link>
 				</method>
 				<method name="toSource">
-					<summary>
-						Returns a string representing the source code of the object.
-					</summary>
+					<summary>Returns a string representing the source code of the object.</summary>
 					<syntax>obj.toSource();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/Object/toSource</link>
 				</method>
 				<method name="toString">
-					<summary>
-						Returns a string representing the object.
-					</summary>
+					<summary>Returns a string representing the object.</summary>
 					<syntax>object.toString();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/Object/toString</link>
 				</method>
 				<method name="toLocaleString">
-					<summary>
-						Returns a string representing the object. This method is meant to be overriden by derived objects for locale-specific purposes.
-					</summary>
+					<summary>Returns a string representing the object. This method is meant to be overriden by derived objects for locale-specific purposes.</summary>
 					<syntax>toLocaleString();</syntax>
 					<link>JavaScript/Reference/Global_Objects/Object/toLocaleString</link>
 				</method>
 				<method name="watch">
-					<summary>
-						Watches for a property to be assigned a value and runs a function when that occurs.
-					</summary>
+					<summary>Watches for a property to be assigned a value and runs a function when that occurs.</summary>
 					<syntax>object.watch(prop, handler);</syntax>
 					<params>
 						<param name="prop">
@@ -432,9 +370,7 @@
 					<link>JavaScript/Reference/Global_Objects/Object/watch</link>
 				</method>
 				<method name="unwatch">
-					<summary>
-						Removes a watchpoint set with the watch method.
-					</summary>
+					<summary>Removes a watchpoint set with the watch method.</summary>
 					<syntax>unwatch(prop);</syntax>
 					<params>
 						<param name="prop">
@@ -444,16 +380,12 @@
 					<link>JavaScript/Reference/Global_Objects/Object/unwatch</link>
 				</method>
 				<method name="valueOf">
-					<summary>
-						Returns the primitive value of the specified object
-					</summary>
+					<summary>Returns the primitive value of the specified object</summary>
 					<syntax>valueOf();</syntax>
 					<link>JavaScript/Reference/Global_Objects/Object/valueOf</link>
 				</method>
 				<method name="getPrototypeOf">
-					<summary>
-						Returns the prototype of the specified object.
-					</summary>
+					<summary>Returns the prototype of the specified object.</summary>
 					<syntax>Object.getPrototypeOf(object);</syntax>
 					<params>
 						<param name="object">
@@ -463,9 +395,7 @@
 					<link>JavaScript/Reference/Global_Objects/Object/GetPrototypeOf</link>
 				</method>
 				<method name="create">
-					<summary>
-						Creates a new object with the specified prototype object and properties.
-					</summary>
+					<summary>Creates a new object with the specified prototype object and properties.</summary>
 					<syntax>Object.create(proto [, propertiesObject ]);</syntax>
 					<params>
 						<param name="proto">
@@ -479,9 +409,7 @@
 					<link>JavaScript/Reference/Global_Objects/Object/create</link>
 				</method>
 				<method name="defineProperty">
-					<summary>
-						Defines a new property directly on an object, or modifies an existing property on an object, and returns the object.
-					</summary>
+					<summary>Defines a new property directly on an object, or modifies an existing property on an object, and returns the object.</summary>
 					<syntax>Object.defineProperty(obj, prop, descriptor);</syntax>
 					<params>
 						<param name="obj">
@@ -498,9 +426,7 @@
 					<link>JavaScript/Reference/Global_Objects/Object/defineProperty</link>
 				</method>
 				<method name="defineProperties">
-					<summary>
-						Defines new or modifies existing properties directly on an object, returning the object.
-					</summary>
+					<summary>Defines new or modifies existing properties directly on an object, returning the object.</summary>
 					<syntax>Object.defineProperties(obj, props);</syntax>
 					<params>
 						<param name="obj">
@@ -513,9 +439,7 @@
 					<link>JavaScript/Reference/Global_Objects/Object/defineProperties</link>
 				</method>
 				<method name="getOwnPropertyDescriptor">
-					<summary>
-						Returns a property descriptor for an own property (that is, one directly present on an object, not present by dint of being along an object's prototype chain) of a given object.
-					</summary>
+					<summary>Returns a property descriptor for an own property (that is, one directly present on an object, not present by dint of being along an object's prototype chain) of a given object.</summary>
 					<syntax>Object.getOwnPropertyDescriptor(obj, prop);</syntax>
 					<params>
 						<param name="obj">
@@ -529,9 +453,7 @@
 					<link>JavaScript/Reference/Global_Objects/Object/getOwnPropertyDescriptor</link>
 				</method>
 				<method name="keys">
-					<summary>
-						Returns an array of all enumerable properties found directly upon a given object, in the same order as that provided by a for (var p in o) loop.
-					</summary>
+					<summary>Returns an array of all enumerable properties found directly upon a given object, in the same order as that provided by a for (var p in o) loop.</summary>
 					<syntax>var props = Object.keys(obj);</syntax>
 					<params>
 						<param name="obj">
@@ -542,9 +464,7 @@
 					<link>https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Object/keys</link>
 				</method>
 				<method name="getOwnPropertyNames">
-					<summary>
-						Returns an array of all enumerable and non-enumerable properties found directly upon a given object.
-					</summary>
+					<summary>Returns an array of all enumerable and non-enumerable properties found directly upon a given object.</summary>
 					<syntax>var props = Object.getOwnPropertyNames(obj);</syntax>
 					<params>
 						<param name="obj">
@@ -559,9 +479,7 @@
 		<String type="function">
 			<methods>
 				<method name="charAt">
-					<summary>
-						Returns the specified character from a string.
-					</summary>
+					<summary>Returns the specified character from a string.</summary>
 					<syntax>charAt(index);</syntax>
 					<params>
 						<param name="index">
@@ -572,9 +490,7 @@
 					<link>JavaScript/Reference/Global_Objects/String/charAt</link>
 				</method>
 				<method name="charCodeAt">
-					<summary>
-						Returns the numeric Unicode value of the character at the given index.
-					</summary>
+					<summary>Returns the numeric Unicode value of the character at the given index.</summary>
 					<syntax>var codeunit = string.charCodeAt(index);</syntax>
 					<params>
 						<param name="index">
@@ -585,9 +501,7 @@
 					<link>JavaScript/Reference/Global_Objects/String/charCodeAt</link>
 				</method>
 				<method name="concat">
-					<summary>
-						Combines the text of two or more strings and returns a new string.
-					</summary>
+					<summary>Combines the text of two or more strings and returns a new string.</summary>
 					<syntax>concat(string2, string3[, ..., stringN]);</syntax>
 					<params>
 						<param name="string2...stringN">
@@ -598,9 +512,7 @@
 					<link>JavaScript/Reference/Global_Objects/String/concat</link>
 				</method>
 				<method name="indexOf">
-					<summary>
-						Returns the index within the calling String object of the first occurrence of the specified value, starting the search at fromIndex, returns -1 if the value is not found.
-					</summary>
+					<summary>Returns the index within the calling String object of the first occurrence of the specified value, starting the search at fromIndex, returns -1 if the value is not found.</summary>
 					<syntax>indexOf(searchValue[, fromIndex]);</syntax>
 					<params>
 						<param name="searchValue">
@@ -614,9 +526,7 @@
 					<link>JavaScript/Reference/Global_Objects/String/indexOf</link>
 				</method>
 				<method name="lastIndexOf">
-					<summary>
-						Returns the index within the calling String object of the last occurrence of the specified value, or -1 if not found. The calling string is searched backward, starting at fromIndex.
-					</summary>
+					<summary>Returns the index within the calling String object of the last occurrence of the specified value, or -1 if not found. The calling string is searched backward, starting at fromIndex.</summary>
 					<syntax>lastIndexOf(searchValue[, fromIndex]);</syntax>
 					<params>
 						<param name="searchValue">
@@ -630,9 +540,7 @@
 					<link>JavaScript/Reference/Global_Objects/String/lastIndexOf</link>
 				</method>
 				<method name="localeCompare">
-					<summary>
-						Returns a number indicating whether a reference string comes before or after or is the same as the given string in sort order.
-					</summary>
+					<summary>Returns a number indicating whether a reference string comes before or after or is the same as the given string in sort order.</summary>
 					<syntax>localeCompare(compareString);</syntax>
 					<params>
 						<param name="compareString">
@@ -643,9 +551,7 @@
 					<link>Reference/Global_Objects/String/localeCompare</link>
 				</method>
 				<method name="match">
-					<summary>
-						Used to retrieve the matches when matching a string against a regular expression.
-					</summary>
+					<summary>Used to retrieve the matches when matching a string against a regular expression.</summary>
 					<syntax>str.match(regexp);</syntax>
 					<params>
 						<param name="regexp">
@@ -656,15 +562,11 @@
 					<link>JavaScript/Reference/Global_Objects/String/match</link>
 				</method>
 				<method name="quote">
-					<summary>
-						Wraps the string in double quotes (""").  Will backslash any double quotes already in the string. Has no effect on single quotes.
-					</summary>
+					<summary>Wraps the string in double quotes (""").  Will backslash any double quotes already in the string. Has no effect on single quotes.</summary>
 					<link>JavaScript/Reference/Global_Objects/String/quote</link>
 				</method>
 				<method name="replace">
-					<summary>
-						Returns a new string with some or all matches of a pattern replaced by a replacement.  The pattern can be a string or a RegExp, and the replacement can be a string or a function to be called for each match.
-					</summary>
+					<summary>Returns a new string with some or all matches of a pattern replaced by a replacement.  The pattern can be a string or a RegExp, and the replacement can be a string or a function to be called for each match.</summary>
 					<syntax>str.replace(regexp|substr, newSubStr|function[, flags]);</syntax>
 					<params>
 						<param name="regexp">
@@ -687,9 +589,7 @@
 					<link>JavaScript/Reference/Global_Objects/String/replace</link>
 				</method>
 				<method name="search">
-					<summary>
-						Executes the search for a match between a regular expression and this String object.
-					</summary>
+					<summary>Executes the search for a match between a regular expression and this String object.</summary>
 					<syntax>pos = search(regexp);</syntax>
 					<params>
 						<param name="regexp">
@@ -700,9 +600,7 @@
 					<link>JavaScript/Reference/Global_Objects/String/search</link>
 				</method>
 				<method name="slice">
-					<summary>
-						Extracts a section of a string and returns a new string.
-					</summary>
+					<summary>Extracts a section of a string and returns a new string.</summary>
 					<syntax>var sub = string.slice(beginSlice[, endSlice]);</syntax>
 					<params>
 						<param name="beginSlice">
@@ -716,9 +614,7 @@
 					<link>JavaScript/Reference/Global_Objects/String/slice</link>
 				</method>
 				<method name="split">
-					<summary>
-						Splits a String object into an array of strings by separating the string into substrings.
-					</summary>
+					<summary>Splits a String object into an array of strings by separating the string into substrings.</summary>
 					<syntax>var splits = str.split([separator][, limit]);</syntax>
 					<params>
 						<param name="separator">
@@ -732,9 +628,7 @@
 					<link>JavaScript/Reference/Global_Objects/String/split</link>
 				</method>
 				<method name="substr">
-					<summary>
-						Returns the characters in a string beginning at the specified location through the specified number of characters.
-					</summary>
+					<summary>Returns the characters in a string beginning at the specified location through the specified number of characters.</summary>
 					<syntax>var sub = string.substr(start[, length]);</syntax>
 					<params>
 						<param name="start">
@@ -748,9 +642,7 @@
 					<link>JavaScript/Reference/Global_Objects/String/substr</link>
 				</method>
 				<method name="substring">
-					<summary>
-						Returns a subset of a string between one index and another, or through the end of the string.
-					</summary>
+					<summary>Returns a subset of a string between one index and another, or through the end of the string.</summary>
 					<syntax>substring(indexA, [indexB]);</syntax>
 					<params>
 						<param name="indexA">
@@ -764,80 +656,60 @@
 					<link>JavaScript/Reference/Global_Objects/String/substring</link>
 				</method>
 				<method name="toLocaleLowerCase">
-					<summary>
-						Returns the calling string value converted to lower case, according to any locale-specific case mappings.
-					</summary>
+					<summary>Returns the calling string value converted to lower case, according to any locale-specific case mappings.</summary>
 					<syntax>toLocaleLowerCase();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/String/toLocaleLowerCase</link>
 				</method>
 				<method name="toLocaleUpperCase">
-					<summary>
-						Returns the calling string value converted to upper case, according to any locale-specific case mappings.
-					</summary>
+					<summary>Returns the calling string value converted to upper case, according to any locale-specific case mappings.</summary>
 					<syntax>toLocaleUpperCase();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/String/toLocaleUpperCase</link>
 				</method>
 				<method name="toLowerCase">
-					<summary>
-						Returns the calling string value converted to lowercase.
-					</summary>
+					<summary>Returns the calling string value converted to lowercase.</summary>
 					<syntax>toLowerCase();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/String/toLowerCase</link>
 				</method>
 				<method name="toSource">
-					<summary>
-						Returns a string representing the source code of the object.
-					</summary>
+					<summary>Returns a string representing the source code of the object.</summary>
 					<syntax>string.toSource();</syntax>
 					<link>JavaScript/Reference/Global_Objects/String/toSource</link>
 				</method>
 				<method name="toString">
-					<summary>
-						Returns a string representing the specified object.
-					</summary>
+					<summary>Returns a string representing the specified object.</summary>
 					<syntax>toString();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/String/toString</link>
 				</method>
 				<method name="toUpperCase">
-					<summary>
-						Returns the calling string value converted to uppercase.
-					</summary>
+					<summary>Returns the calling string value converted to uppercase.</summary>
 					<syntax>toUpperCase();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/String/toUpperCase</link>
 				</method>
 				<method name="trim">
-					<summary>
-						Removes whitespace from both ends of the string.
-					</summary>
+					<summary>Removes whitespace from both ends of the string.</summary>
 					<syntax>trim();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/String/Trim</link>
 				</method>
 				<method name="trimLeft">
-					<summary>
-						Removes whitespace from the left end of the string.
-					</summary>
+					<summary>Removes whitespace from the left end of the string.</summary>
 					<syntax>trimLeft();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/String/TrimLeft</link>
 				</method>
 				<method name="trimRight">
-					<summary>
-						Removes whitespace from the right end of the string.
-					</summary>
+					<summary>Removes whitespace from the right end of the string.</summary>
 					<syntax>trimRight();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/String/TrimRight</link>
 				</method>
 				<method name="valueOf">
-					<summary>
-						Returns the primitive value of a String object.
-					</summary>
+					<summary>Returns the primitive value of a String object.</summary>
 					<syntax>valueOf();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/String/valueOf</link>
@@ -847,16 +719,12 @@
 		<Number type="function">
 			<methods>
 				<method name="toSource">
-					<summary>
-						Returns a string representing the source code of the object.
-					</summary>
+					<summary>Returns a string representing the source code of the object.</summary>
 					<syntax>number.toSource();</syntax>
 					<link>JavaScript/Reference/Global_Objects/Number/toSource</link>
 				</method>
 				<method name="toString">
-					<summary>
-						Returns a string representing the specified Number object
-					</summary>
+					<summary>Returns a string representing the specified Number object</summary>
 					<syntax>number.toString( [radix] );</syntax>
 					<params>
 						<param name="radix">
@@ -867,16 +735,12 @@
 					<link>JavaScript/Reference/Global_Objects/Number/toString</link>
 				</method>
 				<method name="toLocaleString">
-					<summary>
-						This method available to numbers will convert the number into a string which is suitable for presentation in the given locale.
-					</summary>
+					<summary>This method available to numbers will convert the number into a string which is suitable for presentation in the given locale.</summary>
 					<syntax>number.toLocaleString();</syntax>
 					<link>JavaScript/Reference/Global_Objects/Number/ToLocaleString</link>
 				</method>
 				<method name="valueOf">
-					<summary>
-						Returns the primitive value of a Number object.
-					</summary>
+					<summary>Returns the primitive value of a Number object.</summary>
 					<syntax>var primitiveNumber = number.valueOf();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/Number/valueOf</link>
@@ -886,23 +750,17 @@
 		<Boolean type="function">
 			<methods>
 				<method name="toSource">
-					<summary>
-						Returns a string representing the source code of the object.
-					</summary>
+					<summary>Returns a string representing the source code of the object.</summary>
 					<syntax>boolean.toSource();</syntax>
 					<link>JavaScript/Reference/Global_Objects/Boolean/toSource</link>
 				</method>
 				<method name="toString">
-					<summary>
-						Returns a string representing the specified Boolean object.
-					</summary>
+					<summary>Returns a string representing the specified Boolean object.</summary>
 					<syntax>toString();</syntax>
 					<link>JavaScript/Reference/Global_Objects/Boolean/toString</link>
 				</method>
 				<method name="valueOf">
-					<summary>
-						Returns the primitive value of a Boolean object.
-					</summary>
+					<summary>Returns the primitive value of a Boolean object.</summary>
 					<syntax>valueOf();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/Boolean/valueOf</link>
@@ -912,17 +770,13 @@
 		<Date type="function">
 			<methods>
 				<method name="now">
-					<summary>
-						Returns the number of milliseconds elapsed since 1 January 1970 00:00:00 UTC.
-					</summary>
+					<summary>Returns the number of milliseconds elapsed since 1 January 1970 00:00:00 UTC.</summary>
 					<syntax>var timeInMs = Date.now();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/Date/now</link>
 				</method>
 				<method name="parse">
-					<summary>
-						Parses a string representation of a date, and returns the number of milliseconds since January 1, 1970, 00:00:00 UTC.
-					</summary>
+					<summary>Parses a string representation of a date, and returns the number of milliseconds since January 1, 1970, 00:00:00 UTC.</summary>
 					<syntax>Date.parse(dateString);</syntax>
 					<params>
 						<param name="dateString">
@@ -933,9 +787,7 @@
 					<link>JavaScript/Reference/Global_Objects/Date/parse</link>
 				</method>
 				<method name="UTC">
-					<summary>
-						Accepts the same parameters as the longest form of the constructor, and returns the number of milliseconds in a Date object since January 1, 1970, 00:00:00, universal time.
-					</summary>
+					<summary>Accepts the same parameters as the longest form of the constructor, and returns the number of milliseconds in a Date object since January 1, 1970, 00:00:00, universal time.</summary>
 					<syntax>Date.UTC(year, month[, date[, hrs[, min[, sec[, ms]]]]]);</syntax>
 					<params>
 						<param name="year">
@@ -968,9 +820,7 @@
 		<Math type="function">
 			<methods>
 				<method name="abs">
-					<summary>
-						Returns the absolute value of a number.
-					</summary>
+					<summary>Returns the absolute value of a number.</summary>
 					<syntax>var abs = Math.abs(x);</syntax>
 					<params>
 						<param name="x">
@@ -981,9 +831,7 @@
 					<link>JavaScript/Reference/Global_Objects/Math/abs</link>
 				</method>
 				<method name="acos">
-					<summary>
-						Returns the arccosine (in radians) of a number.
-					</summary>
+					<summary>Returns the arccosine (in radians) of a number.</summary>
 					<syntax>Math.acos(x);</syntax>
 					<params>
 						<param name="x">
@@ -994,9 +842,7 @@
 					<link>JavaScript/Reference/Global_Objects/Math/acos</link>
 				</method>
 				<method name="asin">
-					<summary>
-						Returns the arcsine (in radians) of a number.
-					</summary>
+					<summary>Returns the arcsine (in radians) of a number.</summary>
 					<syntax>Math.asin(x);</syntax>
 					<params>
 						<param name="x">
@@ -1007,9 +853,7 @@
 					<link>JavaScript/Reference/Global_Objects/Math/asin</link>
 				</method>
 				<method name="atan">
-					<summary>
-						Returns the arctangent (in radians) of a number.
-					</summary>
+					<summary>Returns the arctangent (in radians) of a number.</summary>
 					<syntax>Math.atan(x);</syntax>
 					<params>
 						<param name="x">
@@ -1020,9 +864,7 @@
 					<link>JavaScript/Reference/Global_Objects/Math/atan</link>
 				</method>
 				<method name="atan2">
-					<summary>
-						Returns the arctangent of the quotient of its arguments.
-					</summary>
+					<summary>Returns the arctangent of the quotient of its arguments.</summary>
 					<syntax>Math.atan2(y, x);</syntax>
 					<params>
 						<param name="y,x">
@@ -1033,9 +875,7 @@
 					<link>JavaScript/Reference/Global_Objects/Math/atan2</link>
 				</method>
 				<method name="ceil">
-					<summary>
-						Returns the smallest integer greater than or equal to a number.
-					</summary>
+					<summary>Returns the smallest integer greater than or equal to a number.</summary>
 					<syntax>Math.ceil(x);</syntax>
 					<params>
 						<param name="x">
@@ -1046,9 +886,7 @@
 					<link>JavaScript/Reference/Global_Objects/Math/ceil</link>
 				</method>
 				<method name="cos">
-					<summary>
-						Returns the cosine of a number.
-					</summary>
+					<summary>Returns the cosine of a number.</summary>
 					<syntax>Math.cos(x);</syntax>
 					<params>
 						<param name="x">
@@ -1059,9 +897,7 @@
 					<link>JavaScript/Reference/Global_Objects/Math/cos</link>
 				</method>
 				<method name="exp">
-					<summary>
-						Returns Ex, where x is the argument, and E is Euler's constant, the base of the natural logarithms.
-					</summary>
+					<summary>Returns Ex, where x is the argument, and E is Euler's constant, the base of the natural logarithms.</summary>
 					<syntax>Math.exp(x);</syntax>
 					<params>
 						<param name="x">
@@ -1072,9 +908,7 @@
 					<link>JavaScript/Reference/Global_Objects/Math/exp</link>
 				</method>
 				<method name="floor">
-					<summary>
-						Returns the largest integer less than or equal to a number.
-					</summary>
+					<summary>Returns the largest integer less than or equal to a number.</summary>
 					<syntax>Math.floor(x);</syntax>
 					<params>
 						<param name="x">
@@ -1085,9 +919,7 @@
 					<link>JavaScript/Reference/Global_Objects/Math/floor</link>
 				</method>
 				<method name="log">
-					<summary>
-						Returns the natural logarithm (base E) of a number.
-					</summary>
+					<summary>Returns the natural logarithm (base E) of a number.</summary>
 					<syntax>Math.log(x);</syntax>
 					<params>
 						<param name="x">
@@ -1098,9 +930,7 @@
 					<link>JavaScript/Reference/Global_Objects/Math/log</link>
 				</method>
 				<method name="max">
-					<summary>
-						Returns the largest of zero or more numbers.
-					</summary>
+					<summary>Returns the largest of zero or more numbers.</summary>
 					<syntax>Math.max([value1[,value2[, ...]]]);</syntax>
 					<params>
 						<param name="value1, value2, ...">
@@ -1111,9 +941,7 @@
 					<link>JavaScript/Reference/Global_Objects/Math/max</link>
 				</method>
 				<method name="min">
-					<summary>
-						Returns the smallest of zero or more numbers.
-					</summary>
+					<summary>Returns the smallest of zero or more numbers.</summary>
 					<syntax>Math.min([value1[,value2[, ...]]]);</syntax>
 					<params>
 						<param name="value1, value2, ...">
@@ -1124,9 +952,7 @@
 					<link>JavaScript/Reference/Global_Objects/Math/min</link>
 				</method>
 				<method name="pow">
-					<summary>
-						Returns base to the exponent power, that is, baseexponent.
-					</summary>
+					<summary>Returns base to the exponent power, that is, baseexponent.</summary>
 					<syntax>Math.pow(base,exponent);</syntax>
 					<params>
 						<param name="base">
@@ -1140,17 +966,13 @@
 					<link>JavaScript/Reference/Global_Objects/Math/pow</link>
 				</method>
 				<method name="random">
-					<summary>
-						Returns a pseudo-random number in the range [0,1) — that is, between 0 (inclusive) and 1 (exclusive). The random number generator is seeded from the current time, as in Java.
-					</summary>
+					<summary>Returns a pseudo-random number in the range [0,1) — that is, between 0 (inclusive) and 1 (exclusive). The random number generator is seeded from the current time, as in Java.</summary>
 					<syntax>var randomNumber = Math.random();</syntax>
 
 					<link>JavaScript/Reference/Global_Objects/Math/random</link>
 				</method>
 				<method name="round">
-					<summary>
-						Returns the value of a number rounded to the nearest integer.
-					</summary>
+					<summary>Returns the value of a number rounded to the nearest integer.</summary>
 					<syntax>Math.round(x);</syntax>
 					<params>
 						<param name="x">
@@ -1161,9 +983,7 @@
 					<link>JavaScript/Reference/Global_Objects/Math/round</link>
 				</method>
 				<method name="sin">
-					<summary>
-						Returns the sine of a number.
-					</summary>
+					<summary>Returns the sine of a number.</summary>
 					<syntax>Math.sin(x);</syntax>
 					<params>
 						<param name="x">
@@ -1174,9 +994,7 @@
 					<link>JavaScript/Reference/Global_Objects/Math/sin</link>
 				</method>
 				<method name="sqrt">
-					<summary>
-						Returns the square root of a number.
-					</summary>
+					<summary>Returns the square root of a number.</summary>
 					<syntax>Math.sqrt(x);</syntax>
 					<params>
 						<param name="x">
@@ -1187,9 +1005,7 @@
 					<link>JavaScript/Reference/Global_Objects/Math/sqrt</link>
 				</method>
 				<method name="tan">
-					<summary>
-						Returns the tangent of a number.
-					</summary>
+					<summary>Returns the tangent of a number.</summary>
 					<syntax>Math.tan(x);</syntax>
 					<params>
 						<param name="x">
@@ -1206,9 +1022,7 @@
 		<JSON type="object">
 			<methods>
 				<method name="parse">
-					<summary>
-						Convert a JSON string into a JavaScript object
-					</summary>
+					<summary>Convert a JSON string into a JavaScript object</summary>
 					<syntax>var jsObject = JSON.parse(jsonString);</syntax>
 					<params>
 						<param name="jsonString">
@@ -1218,9 +1032,7 @@
 					<link>Using_native_JSON#section_1</link>
 				</method>
 				<method name="stringify">
-					<summary>
-						Convert a JavaScript object into a JSON string
-					</summary>
+					<summary>Convert a JavaScript object into a JSON string</summary>
 					<syntax>var jsonString = JSON.stringify(value [, replacer [, space]]);</syntax>
 					<params>
 						<param name="value">
@@ -1506,9 +1318,7 @@
 		<window>
 			<properties>
 				<property name="applicationCache">
-					<summary>
-						Returns a reference to the application cache object for the window.
-					</summary>
+					<summary>Returns a reference to the application cache object for the window.</summary>
 					<syntax>var cache = window.applicationCache;</syntax>
 					<params>
 						<param name="cache">
@@ -1518,9 +1328,7 @@
 					<link>DOM/window.applicationCache</link>
 				</property>
 				<property name="closed">
-					<summary>
-						This property indicates whether the referenced window is closed or not.
-					</summary>
+					<summary>This property indicates whether the referenced window is closed or not.</summary>
 					<syntax>var isClosed = windowRef.closed;</syntax>
 					<params>
 						<param name="isClosed">
@@ -1531,23 +1339,17 @@
 					<link>DOM/window.closed</link>
 				</property>
 				<property name="content">
-					<summary>
-						Returns a Window object for the primary content window.
-					</summary>
+					<summary>Returns a Window object for the primary content window.</summary>
 					<syntax>var windowObject = window.content;</syntax>
 					<link>DOM/window.content</link>
 				</property>
 				<property name="crypto">
-					<summary>
-						Returns the browser crypto object, which can then be used to manipulate various browser security features.
-					</summary>
+					<summary>Returns the browser crypto object, which can then be used to manipulate various browser security features.</summary>
 					<syntax>var cryptoObj = window.crypto;</syntax>
 					<link>DOM/window.crypto</link>
 				</property>
 				<property name="defaultStatus">
-					<summary>
-						Gets/sets the status bar text for the given window.
-					</summary>
+					<summary>Gets/sets the status bar text for the given window.</summary>
 					<syntax>var sMsg = window.defaultStatus; window.defaultStatus = sMsg;</syntax>
 					<params>
 						<param name="sMsg">
@@ -1557,9 +1359,7 @@
 					<link>DOM/window.defaultStatus</link>
 				</property>
 				<property name="document">
-					<summary>
-						Returns a reference to the document contained in the window.
-					</summary>
+					<summary>Returns a reference to the document contained in the window.</summary>
 					<syntax>var doc = window.document;</syntax>
 					<params>
 						<param name="doc">
@@ -1569,9 +1369,7 @@
 					<link>DOM/window.document</link>
 				</property>
 				<property name="frameElement">
-					<summary>
-						Returns the element (such as &lt;iframe&gt; or &lt;object&gt;) in which the window is embedded, or null if the window is top-level.
-					</summary>
+					<summary>Returns the element (such as &lt;iframe&gt; or &lt;object&gt;) in which the window is embedded, or null if the window is top-level.</summary>
 					<syntax>var frameEl = window.frameElement;</syntax>
 					<params>
 						<param name="frameEl">
@@ -1582,9 +1380,7 @@
 					<link>DOM/window.frameElement</link>
 				</property>
 				<property name="frames">
-					<summary>
-						Returns an array-like object, listing the direct sub-frames of the current window.
-					</summary>
+					<summary>Returns an array-like object, listing the direct sub-frames of the current window.</summary>
 					<syntax>var frameList = window.frames;</syntax>
 					<params>
 						<param name="frameList">
@@ -1594,9 +1390,7 @@
 					<link>DOM/window.frames</link>
 				</property>
 				<property name="fullScreen">
-					<summary>
-						This property indicates whether the window is displayed in full screen mode or not. It is only reliable in Gecko 1.9 (Firefox 3) and later.
-					</summary>
+					<summary>This property indicates whether the window is displayed in full screen mode or not. It is only reliable in Gecko 1.9 (Firefox 3) and later.</summary>
 					<syntax>var isInFullScreen = window.fullScreen;</syntax>
 					<params>
 						<param name="isInFullScreen">
@@ -1606,17 +1400,13 @@
 					<link>DOM/window.fullScreen</link>
 				</property>
 				<property name="globalStorage">
-					<summary>
-						This is a global object (globalStorage) that maintains multiple private storage areas that can be used to hold data over a long period of time (e.g. over multiple pages and browser sessions).
-					</summary>
+					<summary>This is a global object (globalStorage) that maintains multiple private storage areas that can be used to hold data over a long period of time (e.g. over multiple pages and browser sessions).</summary>
 					<syntax>-----</syntax>
 
 					<link>DOM/Storage#globalStorage</link>
 				</property>
 				<property name="history">
-					<summary>
-						Returns a reference to the History object, which provides an interface for manipulating the browser session history (pages visited in the tab or frame that the current page is loaded in).
-					</summary>
+					<summary>Returns a reference to the History object, which provides an interface for manipulating the browser session history (pages visited in the tab or frame that the current page is loaded in).</summary>
 					<syntax>historyObj = window.history;</syntax>
 					<params>
 						<param name="historyObj">
@@ -1627,9 +1417,7 @@
 					<link>DOM/window.history</link>
 				</property>
 				<property name="innerHeight">
-					<summary>
-						Height of the browser window viewport including, if rendered, the horizontal scrollbar.
-					</summary>
+					<summary>Height of the browser window viewport including, if rendered, the horizontal scrollbar.</summary>
 					<syntax>var intViewportHeight = window.innerHeight;</syntax>
 					<params>
 						<param name="intViewportHeight">
@@ -1639,9 +1427,7 @@
 					<link>DOM/window.innerHeight</link>
 				</property>
 				<property name="innerWidth">
-					<summary>
-						Width of the browser window viewport including, if rendered, the vertical scrollbar.
-					</summary>
+					<summary>Width of the browser window viewport including, if rendered, the vertical scrollbar.</summary>
 					<syntax>var intViewportWidth = window.innerWidth;</syntax>
 					<params>
 						<param name="intViewportWidth">
@@ -1651,9 +1437,7 @@
 					<link>DOM/window.innerWidth</link>
 				</property>
 				<property name="location">
-					<summary>
-						Returns a  Location object, which contains information about the URL of the document and provides methods for changing that URL. You can also assign to this property to load another URL.
-					</summary>
+					<summary>Returns a  Location object, which contains information about the URL of the document and provides methods for changing that URL. You can also assign to this property to load another URL.</summary>
 					<syntax>var locationObj = window.location; window.location = newLocation;</syntax>
 					<params>
 						<param name="locationObj">
@@ -1666,16 +1450,12 @@
 					<link>DOM/window.location</link>
 				</property>
 				<property name="localStorage">
-					<summary>
-						-----
-					</summary>
+					<summary>-----</summary>
 					<syntax>-----</syntax>
 					<link>DOM/Storage#localStorage</link>
 				</property>
 				<property name="mozAnimationStartTime">
-					<summary>
-						Returns the time, in milliseconds since the epoch, at which animations started now should be considered to have started. This value should be used instead of, for example, Date.now(), because this value will be the same for all animations started in this window during this refresh interval, allowing them to remain in sync with one another.This also allows JavaScript-based animations to remain synchronized with CSS transitions and SMIL animations triggered during the same refresh interval.
-					</summary>
+					<summary>Returns the time, in milliseconds since the epoch, at which animations started now should be considered to have started. This value should be used instead of, for example, Date.now(), because this value will be the same for all animations started in this window during this refresh interval, allowing them to remain in sync with one another.This also allows JavaScript-based animations to remain synchronized with CSS transitions and SMIL animations triggered during the same refresh interval.</summary>
 					<syntax>var time = window.mozAnimationStartTime;</syntax>
 					<params>
 						<param name="time">
@@ -1685,9 +1465,7 @@
 					<link>DOM/window.mozAnimationStartTime</link>
 				</property>
 				<property name="mozInnerScreenX">
-					<summary>
-						Gets the X coordinate of the top-left corner of the window's viewport, in screen coordinates.
-					</summary>
+					<summary>Gets the X coordinate of the top-left corner of the window's viewport, in screen coordinates.</summary>
 					<syntax>var screenX = window.mozInnerScreenX;</syntax>
 					<params>
 						<param name="screenX">
@@ -1697,9 +1475,7 @@
 					<link>DOM/window.mozInnerScreenX</link>
 				</property>
 				<property name="mozInnerScreenY">
-					<summary>
-						Gets the Y coordinate of the top-left corner of the window's viewport, in screen coordinates.
-					</summary>
+					<summary>Gets the Y coordinate of the top-left corner of the window's viewport, in screen coordinates.</summary>
 					<syntax>var screenY = window.mozInnerScreenY;</syntax>
 					<params>
 						<param name="screenY">
@@ -1709,9 +1485,7 @@
 					<link>DOM/window.mozInnerScreenY</link>
 				</property>
 				<property name="mozPaintCount">
-					<summary>
-						Returns the number of times the current document has been painted to the screen in this window.
-					</summary>
+					<summary>Returns the number of times the current document has been painted to the screen in this window.</summary>
 					<syntax>var paintCount = window.mozPaintCount;</syntax>
 					<params>
 						<param name="paintCount">
@@ -1721,31 +1495,23 @@
 					<link>DOM/window.mozPaintCount</link>
 				</property>
 				<property name="name">
-					<summary>
-						Gets/sets the name of the window.
-					</summary>
+					<summary>Gets/sets the name of the window.</summary>
 					<syntax>var string = window.name; window.name = string;</syntax>
 
 					<link>DOM/window.name</link>
 				</property>
 				<property name="navigator">
-					<summary>
-						Returns a reference to the navigator object, which can be queried for information about the application running the script.
-					</summary>
+					<summary>Returns a reference to the navigator object, which can be queried for information about the application running the script.</summary>
 					<syntax>var navi = window.navigator;</syntax>
 					<link>https://developer.mozilla.org/en/DOM/window.navigator</link>
 				</property>
 				<property name="opener">
-					<summary>
-						Returns a reference to the window that opened this current window.
-					</summary>
+					<summary>Returns a reference to the window that opened this current window.</summary>
 					<syntax>var objRef = window.opener;</syntax>
 					<link>DOM/window.opener</link>
 				</property>
 				<property name="outerHeight">
-					<summary>
-						Gets the height of the outside of the browser window. window.outerHeight represents the height of the whole browser window including toolbars and window chrome.
-					</summary>
+					<summary>Gets the height of the outside of the browser window. window.outerHeight represents the height of the whole browser window including toolbars and window chrome.</summary>
 					<syntax>var intWindowHeight = window.outerHeight;</syntax>
 					<params>
 						<param name="intWindowHeight">
@@ -1755,9 +1521,7 @@
 					<link>DOM/window.outerHeight</link>
 				</property>
 				<property name="outerWidth">
-					<summary>
-						Gets the width of the outside of the browser window. window.outerWidth represents the width of the whole browser window including sidebar (if expanded), window chrome and window [re-]sizing borders/handles.
-					</summary>
+					<summary>Gets the width of the outside of the browser window. window.outerWidth represents the width of the whole browser window including sidebar (if expanded), window chrome and window [re-]sizing borders/handles.</summary>
 					<syntax>var intWindowWidth = window.outerWidth; </syntax>
 					<params>
 						<param name="intWindowWidth">
@@ -1767,9 +1531,7 @@
 					<link>DOM/window.outerWidth</link>
 				</property>
 				<property name="scrollX">
-					<summary>
-						Returns the number of pixels that the document has already been scrolled horizontally.
-					</summary>
+					<summary>Returns the number of pixels that the document has already been scrolled horizontally.</summary>
 					<syntax>var xpix = window.scrollX;</syntax>
 					<params>
 						<param name="xpix">
@@ -1780,9 +1542,7 @@
 					<link>DOM/window.scrollX</link>
 				</property>
 				<property name="scrollY">
-					<summary>
-						Returns the number of pixels that the document has already been scrolled vertically.
-					</summary>
+					<summary>Returns the number of pixels that the document has already been scrolled vertically.</summary>
 					<syntax>var ypix = window.scrollY;</syntax>
 					<params>
 						<param name="ypix">
@@ -1793,23 +1553,17 @@
 					<link>DOM/window.scrollY</link>
 				</property>
 				<property name="parent">
-					<summary>
-						Returns a reference to the parent of the current window or subframe.If a window does not have a parent, its parent property is a reference to itself.When a window is loaded in an &lt;iframe&gt;, &lt;object&gt;, or &lt;frame&gt;, its parent is the window with the element embedding the window.
-					</summary>
+					<summary>Returns a reference to the parent of the current window or subframe.If a window does not have a parent, its parent property is a reference to itself.When a window is loaded in an &lt;iframe&gt;, &lt;object&gt;, or &lt;frame&gt;, its parent is the window with the element embedding the window.</summary>
 					<syntax>var parentWindow = window.parent;</syntax>
 					<link>DOM/window.parent</link>
 				</property>
 				<property name="screen">
-					<summary>
-						Returns a reference to the screen object associated with the window.
-					</summary>
+					<summary>Returns a reference to the screen object associated with the window.</summary>
 					<syntax>var screenObj = window.screen;</syntax>
 					<link>DOM/window.screen</link>
 				</property>
 				<property name="screenX">
-					<summary>
-						Returns the horizontal distance of the left border of the user's browser from the left side of the screen.
-					</summary>
+					<summary>Returns the horizontal distance of the left border of the user's browser from the left side of the screen.</summary>
 					<syntax>var lLoc = window.screenX;</syntax>
 					<params>
 						<param name="lLoc">
@@ -1819,9 +1573,7 @@
 					<link>DOM/window.screenX</link>
 				</property>
 				<property name="screenY">
-					<summary>
-						Returns the vertical distance of the top border of the user's browser from the top edge of the screen.
-					</summary>
+					<summary>Returns the vertical distance of the top border of the user's browser from the top edge of the screen.</summary>
 					<syntax>var lLoc = window.screenY;</syntax>
 					<params>
 						<param name="lLoc">
@@ -1831,65 +1583,47 @@
 					<link>DOM/window.screenY</link>
 				</property>
 				<property name="scrollMaxX">
-					<summary>
-						Returns the maximum number of pixels that the document can be scrolled horizontally.
-					</summary>
+					<summary>Returns the maximum number of pixels that the document can be scrolled horizontally.</summary>
 					<syntax>var xpix = window.scrollMaxX;</syntax>
 					<params>
-						<param name="xpix">
-							xpix is the number of pixels.
-						</param>
+						<param name="xpix">xpix is the number of pixels.</param>
 					</params>
 
 					<link>DOM/window.scrollMaxX</link>
 				</property>
 				<property name="scrollMaxY">
-					<summary>
-						Returns the maximum number of pixels that the document can be scrolled vertically.
-					</summary>
+					<summary>Returns the maximum number of pixels that the document can be scrolled vertically.</summary>
 					<syntax>var ypix = window.scrollMaxY;</syntax>
 					<params>
-						<param name="ypix">
-							ypix is the number of pixels.
-						</param>
+						<param name="ypix">ypix is the number of pixels.</param>
 					</params>
 
 					<link>DOM/window.scrollMaxY</link>
 				</property>
 				<property name="self">
-					<summary>
-						Returns an object reference to the window object.
-					</summary>
+					<summary>Returns an object reference to the window object.</summary>
 					<syntax>var objRef = window.self</syntax>
 					<link>DOM/window.self</link>
 				</property>
 				<property name="sessionStorage">
-					<summary>
-						This is a global object (sessionStorage) that maintains a storage area that's available for the duration of the page session. A page session lasts for as long as the browser is open and survives over page reloads and restores. Opening a page in a new tab or window will cause a new session to be initiated.
-					</summary>
+					<summary>This is a global object (sessionStorage) that maintains a storage area that's available for the duration of the page session. A page session lasts for as long as the browser is open and survives over page reloads and restores. Opening a page in a new tab or window will cause a new session to be initiated.</summary>
 					<syntax>-----</syntax>
 					<link>DOM/Storage#sessionStorage</link>
 				</property>
 				<property name="status">
-					<summary>
-						Sets the text in the status bar at the bottom of the browser or returns the previously set text.This property does not work in default configuration of Firefox and some other browsers: setting window.status has no effect on the text displayed in the status bar. To allow scripts change the the status bar text, the user must set the dom.disable_window_status_change preference to false in the about:config screen.
-					</summary>
+					<summary>Sets the text in the status bar at the bottom of the browser or returns the previously set text.This property does not work in default configuration of Firefox and some other browsers: setting window.status has no effect on the text displayed in the status bar. To allow scripts change the the status bar text, the user must set the dom.disable_window_status_change preference to false in the about:config screen.</summary>
 					<syntax>var string = window.status; window.status = string;</syntax>
 					<link>DOM/window.status</link>
 				</property>
 				<property name="top">
-					<summary>
-						Returns a reference to the topmost window in the window hierarchy.
-					</summary>
+					<summary>Returns a reference to the topmost window in the window hierarchy.</summary>
 					<syntax>var topWindow = window.top;</syntax>
 					<link>DOM/window.top</link>
 				</property>
 			</properties>
 			<methods>
 				<method name="alert">
-					<summary>
-						Display an alert dialog with the specified content and an OK button.
-					</summary>
+					<summary>Display an alert dialog with the specified content and an OK button.</summary>
 					<syntax>window.alert(message);</syntax>
 					<params>
 						<param name="message">
@@ -1900,32 +1634,24 @@
 					<link>DOM/window.alert</link>
 				</method>
 				<method name="atob">
-					<summary>
-						Decodes a string of data which has been encoded using base-64 encoding.
-					</summary>
+					<summary>Decodes a string of data which has been encoded using base-64 encoding.</summary>
 					<syntax>var decodedData = window.atob(encodedData);</syntax>
 
 					<link>DOM/window.atob</link>
 				</method>
 				<method name="back">
-					<summary>
-						Returns the window to the previous item in the history.
-					</summary>
+					<summary>Returns the window to the previous item in the history.</summary>
 					<syntax>window.back();</syntax>
 					<link>DOM/window.back</link>
 				</method>
 				<method name="btoa">
-					<summary>
-						Creates a base-64 encoded ASCII string from a string of binary data.
-					</summary>
+					<summary>Creates a base-64 encoded ASCII string from a string of binary data.</summary>
 					<syntax>var encodedData = window.btoa(stringToEncode);</syntax>
 
 					<link>DOM/window.btoa</link>
 				</method>
 				<method name="clearInterval">
-					<summary>
-						Cancels repeated action which was set up using setInterval().
-					</summary>
+					<summary>Cancels repeated action which was set up using setInterval().</summary>
 					<syntax>window.clearInterval(intervalID);</syntax>
 					<params>
 						<param name="intervalID">
@@ -1935,9 +1661,7 @@
 					<link>DOM/window.clearInterval</link>
 				</method>
 				<method name="clearTimeout">
-					<summary>
-						Clears the delay set by window.setTimeout().
-					</summary>
+					<summary>Clears the delay set by window.setTimeout().</summary>
 					<syntax>window.clearTimeout(timeoutID);</syntax>
 					<params>
 						<param name="timeoutID">
@@ -1948,17 +1672,13 @@
 					<link>DOM/window.clearTimeout</link>
 				</method>
 				<method name="close">
-					<summary>
-						Closes the current window, or a referenced window.
-					</summary>
+					<summary>Closes the current window, or a referenced window.</summary>
 					<syntax>window.close();</syntax>
 
 					<link>DOM/window.close</link>
 				</method>
 				<method name="confirm">
-					<summary>
-						Displays a modal dialog with a message and two buttons, OK and Cancel.
-					</summary>
+					<summary>Displays a modal dialog with a message and two buttons, OK and Cancel.</summary>
 					<syntax>result = window.confirm(message);</syntax>
 					<params>
 						<param name="result">
@@ -1972,9 +1692,7 @@
 					<link>DOM/window.confirm</link>
 				</method>
 				<method name="createBlobURL">
-					<summary>
-						Creates a new blob URL, whose lifetime is tied to the document in the window on which it was created. The new blob URL represents the specified File object.
-					</summary>
+					<summary>Creates a new blob URL, whose lifetime is tied to the document in the window on which it was created. The new blob URL represents the specified File object.</summary>
 					<syntax>blobURL = window.createBlobURL(file);</syntax>
 					<params>
 						<param name="blobURL">
@@ -1987,9 +1705,7 @@
 					<link>DOM/window.createBlobURL</link>
 				</method>
 				<method name="dump">
-					<summary>
-						Prints messages to the console.
-					</summary>
+					<summary>Prints messages to the console.</summary>
 					<syntax>dump(message);</syntax>
 					<params>
 						<param name="message">
@@ -1999,9 +1715,7 @@
 					<link>DOM/window.dump</link>
 				</method>
 				<method name="escape">
-					<summary>
-						Encodes a string, replacing certain characters with a hexadecimal escape sequence.
-					</summary>
+					<summary>Encodes a string, replacing certain characters with a hexadecimal escape sequence.</summary>
 					<syntax>escape(regular);</syntax>
 					<params>
 						<param name="regular">
@@ -2012,9 +1726,7 @@
 					<link>DOM/window.escape</link>
 				</method>
 				<method name="unescape">
-					<summary>
-						Decodes a value that has been encoded in hexadecimal (e.g., a cookie).
-					</summary>
+					<summary>Decodes a value that has been encoded in hexadecimal (e.g., a cookie).</summary>
 					<syntax>unescape(escaped);</syntax>
 					<params>
 						<param name="escaped">
@@ -2024,9 +1736,7 @@
 					<link>DOM/window.unescape</link>
 				</method>
 				<method name="find">
-					<summary>
-						Finds a string in a window.
-					</summary>
+					<summary>Finds a string in a window.</summary>
 					<syntax>window.find(aString, aCaseSensitive, aBackwards, aWrapAround, aWholeWord, aSearchInFrames, aShowDialog);</syntax>
 					<params>
 						<param name="aString">
@@ -2054,16 +1764,12 @@
 					<link>DOM/window.find</link>
 				</method>
 				<method name="forward">
-					<summary>
-						Moves the window one document forward in the history.
-					</summary>
+					<summary>Moves the window one document forward in the history.</summary>
 					<syntax>window.forward();</syntax>
 					<link>DOM/window.forward</link>
 				</method>
 				<method name="getComputedStyle">
-					<summary>
-						getComputedStyle() gives the final used values of all the CSS properties of an element.
-					</summary>
+					<summary>getComputedStyle() gives the final used values of all the CSS properties of an element.</summary>
 					<syntax>var style = window.getComputedStyle(element, pseudoElt);</syntax>
 					<params>
 						<param name="style">
@@ -2080,9 +1786,7 @@
 					<link>DOM/window.getComputedStyle</link>
 				</method>
 				<method name="getSelection">
-					<summary>
-						Returns a selection object representing the range of text selected by the user.
-					</summary>
+					<summary>Returns a selection object representing the range of text selected by the user.</summary>
 					<syntax>selection = window.getSelection();</syntax>
 					<params>
 						<param name="selection">
@@ -2093,16 +1797,12 @@
 					<link>DOM/window.getSelection</link>
 				</method>
 				<method name="home">
-					<summary>
-						Returns the window to the home page.
-					</summary>
+					<summary>Returns the window to the home page.</summary>
 					<syntax>window.home();</syntax>
 					<link>DOM/window.home</link>
 				</method>
 				<method name="moveBy">
-					<summary>
-						Moves the current window by a specified amount.
-					</summary>
+					<summary>Moves the current window by a specified amount.</summary>
 					<syntax>window.moveBy(deltaX, deltaY);</syntax>
 					<params>
 						<param name="deltaX">
@@ -2116,9 +1816,7 @@
 					<link>DOM/window.moveBy</link>
 				</method>
 				<method name="moveTo">
-					<summary>
-						Moves the window to the specified coordinates.
-					</summary>
+					<summary>Moves the window to the specified coordinates.</summary>
 					<syntax>window.moveTo(x, y);</syntax>
 					<params>
 						<param name="x">
@@ -2132,9 +1830,7 @@
 					<link>DOM/window.moveTo</link>
 				</method>
 				<method name="mozRequestAnimationFrame">
-					<summary>
-						Tells the browser that you wish to perform an animation; this requests that the browser schedule a repaint of the window for the next animation frame.
-					</summary>
+					<summary>Tells the browser that you wish to perform an animation; this requests that the browser schedule a repaint of the window for the next animation frame.</summary>
 					<syntax>window.mozRequestAnimationFrame([callback]);</syntax>
 					<params>
 						<param name="callback">
@@ -2145,9 +1841,7 @@
 					<link>DOM/window.mozRequestAnimationFrame</link>
 				</method>
 				<method name="open">
-					<summary>
-						Creates a new secondary browser window and loads the referenced resource.
-					</summary>
+					<summary>Creates a new secondary browser window and loads the referenced resource.</summary>
 					<syntax>var win = window.open(url, name [, features]);</syntax>
 					<params>
 						<param name="win">
@@ -2167,9 +1861,7 @@
 					<link>DOM/window.open</link>
 				</method>
 				<method name="openDialog">
-					<summary>
-						window.openDialog is an extension to window.open. It behaves the same, except that it can optionally take one or more parameters past windowFeatures, and windowFeatures itself is treated a little differently.
-					</summary>
+					<summary>window.openDialog is an extension to window.open. It behaves the same, except that it can optionally take one or more parameters past windowFeatures, and windowFeatures itself is treated a little differently.</summary>
 					<syntax>newWindow = openDialog(url, name, features, arg1, arg2, ...);</syntax>
 					<params>
 						<param name="newWindow">
@@ -2191,9 +1883,7 @@
 					<link>DOM/window.openDialog</link>
 				</method>
 				<method name="postMessage">
-					<summary>
-						window.postMessage, when called, causes a MessageEvent  to be dispatched at the target window when any pending script that must be executed completes (e.g. remaining event handlers if window.postMessage is called from an event handler, previously-set pending timeouts, etc.). The MessageEvent has the type message, a data property which is set to the string value of the first argument provided to window.postMessage, an origin property corresponding to the origin of the main document in the window calling window.postMessage at the time window.postMessage was called, and a source property which is the window from which window.postMessage is called. (Other standard properties of events are present with their expected values.)
-					</summary>
+					<summary>window.postMessage, when called, causes a MessageEvent  to be dispatched at the target window when any pending script that must be executed completes (e.g. remaining event handlers if window.postMessage is called from an event handler, previously-set pending timeouts, etc.). The MessageEvent has the type message, a data property which is set to the string value of the first argument provided to window.postMessage, an origin property corresponding to the origin of the main document in the window calling window.postMessage at the time window.postMessage was called, and a source property which is the window from which window.postMessage is called. (Other standard properties of events are present with their expected values.)</summary>
 					<syntax>otherWindow.postMessage(message, targetOrigin);</syntax>
 					<params>
 						<param name="otherWindow">
@@ -2209,16 +1899,12 @@
 					<link>DOM/window.postMessage</link>
 				</method>
 				<method name="print">
-					<summary>
-						Opens the Print Dialog to print the current document.
-					</summary>
+					<summary>Opens the Print Dialog to print the current document.</summary>
 					<syntax>window.print();</syntax>
 					<link>DOM/window.print</link>
 				</method>
 				<method name="prompt">
-					<summary>
-						Displays a dialog with a message prompting the user to input some text.
-					</summary>
+					<summary>Displays a dialog with a message prompting the user to input some text.</summary>
 					<syntax>result = window.prompt(text, value);</syntax>
 					<params>
 						<param name="result">
@@ -2235,9 +1921,7 @@
 					<link>DOM/window.prompt</link>
 				</method>
 				<method name="resizeBy">
-					<summary>
-						Resizes the current window by a certain amount.
-					</summary>
+					<summary>Resizes the current window by a certain amount.</summary>
 					<syntax>window.resizeBy(xDelta, yDelta);</syntax>
 					<params>
 						<param name="xDelta">
@@ -2251,9 +1935,7 @@
 					<link>DOM/window.resizeBy</link>
 				</method>
 				<method name="resizeTo">
-					<summary>
-						Dynamically resizes window.
-					</summary>
+					<summary>Dynamically resizes window.</summary>
 					<syntax>window.resizeTo(iWidth, iHeight);</syntax>
 					<params>
 						<param name="iWidth">
@@ -2266,9 +1948,7 @@
 					<link>DOM/window.resizeTo</link>
 				</method>
 				<method name="revokeBlobURL">
-					<summary>
-						Releases an existing blob URL which was previously created by calling window.createBlobURL().  Call this method when you've finished using a blob URL, in order to let the browser know it doesn't need to keep the reference to the file any longer.
-					</summary>
+					<summary>Releases an existing blob URL which was previously created by calling window.createBlobURL().  Call this method when you've finished using a blob URL, in order to let the browser know it doesn't need to keep the reference to the file any longer.</summary>
 					<syntax>blogURL = window.createBlobURL(file);</syntax>
 					<params>
 						<param name="blogURL">
@@ -2281,9 +1961,7 @@
 					<link>DOM/window.revokeBlobURL</link>
 				</method>
 				<method name="scroll">
-					<summary>
-						Scrolls the window to a particular place in the document.
-					</summary>
+					<summary>Scrolls the window to a particular place in the document.</summary>
 					<syntax>window.scroll(x-coord, y-coord);</syntax>
 					<params>
 						<param name="x-coord">
@@ -2297,9 +1975,7 @@
 					<link>DOM/window.scroll</link>
 				</method>
 				<method name="scrollBy">
-					<summary>
-						Scrolls the document in the window by the given amount.
-					</summary>
+					<summary>Scrolls the document in the window by the given amount.</summary>
 					<syntax>window.scrollBy(X,Y);</syntax>
 					<params>
 						<param name="X">
@@ -2313,9 +1989,7 @@
 					<link>DOM/window.scrollBy</link>
 				</method>
 				<method name="scrollByLines">
-					<summary>
-						Scrolls the document by the given number of lines.
-					</summary>
+					<summary>Scrolls the document by the given number of lines.</summary>
 					<syntax>window.scrollByLines(lines);</syntax>
 					<params>
 						<param name="lines">
@@ -2325,9 +1999,7 @@
 					<link>DOM/window.scrollByLines</link>
 				</method>
 				<method name="scrollByPages">
-					<summary>
-						Scrolls the current document by the specified number of pages.
-					</summary>
+					<summary>Scrolls the current document by the specified number of pages.</summary>
 					<syntax>window.scrollByPages(pages);</syntax>
 					<params>
 						<param name="pages">
@@ -2337,9 +2009,7 @@
 					<link>DOM/window.scrollByPages</link>
 				</method>
 				<method name="scrollTo">
-					<summary>
-						Scrolls to a particular set of coordinates in the document.
-					</summary>
+					<summary>Scrolls to a particular set of coordinates in the document.</summary>
 					<syntax>window.scrollTo(x-coord, y-coord);</syntax>
 					<params>
 						<param name="x-coord">
@@ -2353,17 +2023,13 @@
 					<link>DOM/window.scrollTo</link>
 				</method>
 				<method name="setCursor">
-					<summary>
-						Changes the cursor for the current window.
-					</summary>
+					<summary>Changes the cursor for the current window.</summary>
 					<syntax>window.setCursor(str);</syntax>
 
 					<link>DOM/window.setCursor</link>
 				</method>
 				<method name="setInterval">
-					<summary>
-						Calls a function repeatedly, with a fixed time delay between each call to that function.
-					</summary>
+					<summary>Calls a function repeatedly, with a fixed time delay between each call to that function.</summary>
 					<syntax>intervalID = window.setInterval(func, delay);</syntax>
 					<params>
 						<param name="intervalID">
@@ -2380,9 +2046,7 @@
 					<link>DOM/window.setInterval</link>
 				</method>
 				<method name="setTimeout">
-					<summary>
-						Executes a code snippet or a function after specified delay.
-					</summary>
+					<summary>Executes a code snippet or a function after specified delay.</summary>
 					<syntax>timeoutID = window.setTimeout(func, delay);</syntax>
 					<params>
 						<param name="timeoutID">
@@ -2399,16 +2063,12 @@
 					<link>DOM/window.setTimeout</link>
 				</method>
 				<method name="sizeToContent">
-					<summary>
-						Sizes the window according to its content.The DOM content should be loaded when this function is called, for example after the DOMContentLoaded event. 
-					</summary>
+					<summary>Sizes the window according to its content.The DOM content should be loaded when this function is called, for example after the DOMContentLoaded event. </summary>
 					<syntax>window.sizeToContent();</syntax>
 					<link>DOM/window.sizeToContent</link>
 				</method>
 				<method name="stop">
-					<summary>
-						This method stops window loading.
-					</summary>
+					<summary>This method stops window loading.</summary>
 					<syntax>window.stop();</syntax>
 					<link>DOM/window.stop</link>
 				</method>
@@ -2417,24 +2077,18 @@
 		<document>
 			<properties>
 				<property name="activeElement">
-					<summary>
-						Returns the currently focused element, that is, the element that will get keystroke events if the user types any. Attribute is read only.
-					</summary>
+					<summary>Returns the currently focused element, that is, the element that will get keystroke events if the user types any. Attribute is read only.</summary>
 					<syntax>var curElement = document.activeElement;</syntax>
 					<link>DOM/document.activeElement</link>
 				</property>
 				<property name="anchors">
-					<summary>
-						anchors returns a list of all of the anchors in the document.
-					</summary>
+					<summary>anchors returns a list of all of the anchors in the document.</summary>
 					<syntax>var nodeList = document.anchors;</syntax>
 
 					<link>DOM/document.anchors</link>
 				</property>
 				<property name="alinkColor">
-					<summary>
-						Returns or sets the color of an active link in the document body. A link is active during the time between mousedown and mouseup events.
-					</summary>
+					<summary>Returns or sets the color of an active link in the document body. A link is active during the time between mousedown and mouseup events.</summary>
 					<syntax>var color = document.alinkColor; document.alinkColor = color</syntax>
 					<params>
 						<param name="color">
@@ -2444,23 +2098,17 @@
 					<link>DOM/document.alinkColor</link>
 				</property>
 				<property name="applets">
-					<summary>
-						applets returns an ordered list of the applets within a document.
-					</summary>
+					<summary>applets returns an ordered list of the applets within a document.</summary>
 					<syntax>var nodeList = document.applets;</syntax>
 					<link>DOM/document.applets</link>
 				</property>
 				<property name="async">
-					<summary>
-						document.async can be set to indicate whether a document.load call should be an asynchronous or synchronous request. true is the default value, indicating that documents should be loaded asynchronously.
-					</summary>
+					<summary>document.async can be set to indicate whether a document.load call should be an asynchronous or synchronous request. true is the default value, indicating that documents should be loaded asynchronously.</summary>
 					<syntax>-----</syntax>
 					<link>DOM/document.async</link>
 				</property>
 				<property name="bgColor">
-					<summary>
-						bgColor gets/sets the background color of the current document.
-					</summary>
+					<summary>bgColor gets/sets the background color of the current document.</summary>
 					<syntax>var color = document.bgColor; document.bgColor = color</syntax>
 					<params>
 						<param name="color">
@@ -2471,25 +2119,19 @@
 					<link>DOM/document.bgColor</link>
 				</property>
 				<property name="body">
-					<summary>
-						Returns the &lt;body&gt; or &lt;frameset&gt; node of the current document.
-					</summary>
+					<summary>Returns the &lt;body&gt; or &lt;frameset&gt; node of the current document.</summary>
 					<syntax>var objRef = document.body; document.body = objRef;</syntax>
 
 					<link>DOM/document.body</link>
 				</property>
 				<property name="characterSet">
-					<summary>
-						Returns the character encoding of the current document.
-					</summary>
+					<summary>Returns the character encoding of the current document.</summary>
 					<syntax>var string = document.characterSet;</syntax>
 
 					<link>DOM/document.characterSet</link>
 				</property>
 				<property name="compatMode">
-					<summary>
-						Indicates whether the document is rendered in Quirks mode or Strict mode.
-					</summary>
+					<summary>Indicates whether the document is rendered in Quirks mode or Strict mode.</summary>
 					<syntax>var mode = document.compatMode;</syntax>
 					<params>
 						<param name="mode">
@@ -2500,9 +2142,7 @@
 					<link>DOM/document.compatMode</link>
 				</property>
 				<property name="contentType">
-					<summary>
-						Returns the Content-Type from the HTTP headers of the document.
-					</summary>
+					<summary>Returns the Content-Type from the HTTP headers of the document.</summary>
 					<syntax>var contentType = document.contentType;</syntax>
 					<params>
 						<param name="contentType">
@@ -2512,9 +2152,7 @@
 					<link>DOM/document.contentType</link>
 				</property>
 				<property name="cookie">
-					<summary>
-						Get and set the cookies associated with the current document.
-					</summary>
+					<summary>Get and set the cookies associated with the current document.</summary>
 					<syntax>var allCookies = document.cookie;</syntax>
 					<params>
 						<param name="allCookies">
@@ -2525,30 +2163,22 @@
 					<link>DOM/document.cookie</link>
 				</property>
 				<property name="defaultView">
-					<summary>
-						document.defaultView returns a reference to the default AbstractView for the document, or null if none available.
-					</summary>
+					<summary>document.defaultView returns a reference to the default AbstractView for the document, or null if none available.</summary>
 					<syntax>var docDView = document.defaultView;</syntax>
 					<link>DOM/document.defaultView</link>
 				</property>
 				<property name="designMode">
-					<summary>
-						Gets/sets WYSYWIG editing capability of Midas. It can only be used for HTML documents.
-					</summary>
+					<summary>Gets/sets WYSYWIG editing capability of Midas. It can only be used for HTML documents.</summary>
 					<syntax>var mode = document.designMode;</syntax>
 					<link>DOM/document.designMode</link>
 				</property>
 				<property name="dir">
-					<summary>
-						Gets/sets directionality (rtl/ltr) of the document
-					</summary>
+					<summary>Gets/sets directionality (rtl/ltr) of the document</summary>
 					<syntax>-----</syntax>
 					<link>DOM/Document.dir</link>
 				</property>
 				<property name="doctype">
-					<summary>
-						Returns the Document Type Declaration (DTD) associated with current document. The returned object implements the DocumentType interface. Use DOMImplementation.createDocumentType to create a DocumentType.
-					</summary>
+					<summary>Returns the Document Type Declaration (DTD) associated with current document. The returned object implements the DocumentType interface. Use DOMImplementation.createDocumentType to create a DocumentType.</summary>
 					<syntax>var doctype = document.doctype;</syntax>
 					<params>
 						<param name="doctype">
@@ -2558,39 +2188,29 @@
 					<link>DOM/document.doctype</link>
 				</property>
 				<property name="documentElement">
-					<summary>
-						Returns the Element that is the root element of the document (for example, the &lt;html&gt; element for HTML documents).
-					</summary>
+					<summary>Returns the Element that is the root element of the document (for example, the &lt;html&gt; element for HTML documents).</summary>
 					<syntax>var element = document.documentElement;</syntax>
 
 					<link>DOM/document.documentElement</link>
 				</property>
 				<property name="documentURI">
-					<summary>
-						Returns the document location.
-					</summary>
+					<summary>Returns the document location.</summary>
 					<syntax>-----</syntax>
 					<link>DOM/document.documentURI</link>
 				</property>
 				<property name="domain">
-					<summary>
-						Gets/sets the domain portion of the origin of the current document, as used by the same origin policy.
-					</summary>
+					<summary>Gets/sets the domain portion of the origin of the current document, as used by the same origin policy.</summary>
 					<syntax>var domainString = document.domain; document.domain = string;</syntax>
 
 					<link>DOM/document.domain</link>
 				</property>
 				<property name="embeds">
-					<summary>
-						embeds returns a list of the embedded OBJECTS within the current document.
-					</summary>
+					<summary>embeds returns a list of the embedded OBJECTS within the current document.</summary>
 					<syntax>var nodeList = document.embeds;</syntax>
 					<link>DOM/document.embeds</link>
 				</property>
 				<property name="fgColor">
-					<summary>
-						fgColor gets/sets the foreground color, or text color, of the current document.
-					</summary>
+					<summary>fgColor gets/sets the foreground color, or text color, of the current document.</summary>
 					<syntax>var color = document.fgColor; document.fgColor = color;</syntax>
 					<params>
 						<param name="color">
@@ -2601,16 +2221,12 @@
 					<link>DOM/document.fgColor</link>
 				</property>
 				<property name="forms">
-					<summary>
-						forms returns a list of the form elements within the current document.
-					</summary>
+					<summary>forms returns a list of the form elements within the current document.</summary>
 					<syntax>var nodeList = document.forms;</syntax>
 					<link>DOM/document.forms</link>
 				</property>
 				<property name="height">
-					<summary>
-						Returns the height of the body element of the current document.
-					</summary>
+					<summary>Returns the height of the body element of the current document.</summary>
 					<syntax>var height_value = document.height;</syntax>
 					<params>
 						<param name="height_value">
@@ -2620,25 +2236,19 @@
 					<link>DOM/document.height</link>
 				</property>
 				<property name="images">
-					<summary>
-						document.images returns a collection of the images in the current HTML document.
-					</summary>
+					<summary>document.images returns a collection of the images in the current HTML document.</summary>
 					<syntax>var htmlCollection = document.images;</syntax>
 
 					<link>https://developer.mozilla.org/en/DOM/document.images</link>
 				</property>
 				<property name="implementation">
-					<summary>
-						Returns a DOMImplementation object associated with the current document.
-					</summary>
+					<summary>Returns a DOMImplementation object associated with the current document.</summary>
 					<syntax>var DOMImpObj = document.implementation;</syntax>
 
 					<link>DOM/document.implementation</link>
 				</property>
 				<property name="inputEncoding">
-					<summary>
-						Returns a string representing the encoding under which the document was parsed (e.g. ISO-8859-1).
-					</summary>
+					<summary>Returns a string representing the encoding under which the document was parsed (e.g. ISO-8859-1).</summary>
 					<syntax>var encoding = document.inputEncoding;</syntax>
 					<params>
 						<param name="encoding">
@@ -2648,17 +2258,13 @@
 					<link>DOM/document.inputEncoding</link>
 				</property>
 				<property name="lastModified">
-					<summary>
-						Returns a string containing the date and time on which the current document was last modified.
-					</summary>
+					<summary>Returns a string containing the date and time on which the current document was last modified.</summary>
 					<syntax>var string = document.lastModified;</syntax>
 
 					<link>DOM/document.lastModified</link>
 				</property>
 				<property name="linkColor">
-					<summary>
-						linkColor gets/sets the color of links within the document.
-					</summary>
+					<summary>linkColor gets/sets the color of links within the document.</summary>
 					<syntax>var color = document.linkColor; document.linkColor = color;</syntax>
 					<params>
 						<param name="color">
@@ -2669,66 +2275,48 @@
 					<link>DOM/document.linkColor</link>
 				</property>
 				<property name="width">
-					<summary>
-						Returns the width of the body element of the current document in pixels.
-					</summary>
+					<summary>Returns the width of the body element of the current document in pixels.</summary>
 					<syntax>var pixels = document.width;</syntax>
 					<link>DOM/document.width</link>
 				</property>
 				<property name="xmlEncoding">
-					<summary>
-						Returns the encoding as determined by the XML declaration. Should be null if unspecified or unknown.
-					</summary>
+					<summary>Returns the encoding as determined by the XML declaration. Should be null if unspecified or unknown.</summary>
 					<syntax>-----</syntax>
 					<link>DOM/Document.xmlEncoding</link>
 				</property>
 				<property name="links">
-					<summary>
-						The links property returns a collection of all AREA elements and anchor elements in a document with a value for the href attribute.
-					</summary>
+					<summary>The links property returns a collection of all AREA elements and anchor elements in a document with a value for the href attribute.</summary>
 					<syntax>var nodeList = document.links;</syntax>
 					<link>DOM/document.links</link>
 				</property>
 				<property name="location">
-					<summary>
-						Returns a Location object, which contains information about the URL of the document and provides methods for changing that URL. In Gecko browsers you can also assign to this property to load another URL.
-					</summary>
+					<summary>Returns a Location object, which contains information about the URL of the document and provides methods for changing that URL. In Gecko browsers you can also assign to this property to load another URL.</summary>
 					<syntax>var locationObj = document.location; document.location = 'http://www.mozilla.org';</syntax>
 
 					<link>DOM/document.location</link>
 				</property>
 				<property name="plugins">
-					<summary>
-						Returns an HTMLCollection object containing one or more HTMLEmbedElements or null which represent the &lt;embed&gt; elements in the current document.
-					</summary>
+					<summary>Returns an HTMLCollection object containing one or more HTMLEmbedElements or null which represent the &lt;embed&gt; elements in the current document.</summary>
 					<syntax>var embedArrayObj = document.plugins;</syntax>
 					<link>DOM/document.plugins</link>
 				</property>
 				<property name="readyState">
-					<summary>
-						Returns "loading" while the document is loading, and "complete" once it has loaded.
-					</summary>
+					<summary>Returns "loading" while the document is loading, and "complete" once it has loaded.</summary>
 					<syntax>var string = document.readyState;</syntax>
 					<link>DOM/document.readyState</link>
 				</property>
 				<property name="referrer">
-					<summary>
-						Returns the URI of the page that linked to this page.
-					</summary>
+					<summary>Returns the URI of the page that linked to this page.</summary>
 					<syntax>var string = document.referrer;</syntax>
 					<link>DOM/document.referrer</link>
 				</property>
 				<property name="styleSheets">
-					<summary>
-						Returns a list of stylesheet objects for stylesheets explicitly linked into or embedded in a document.
-					</summary>
+					<summary>Returns a list of stylesheet objects for stylesheets explicitly linked into or embedded in a document.</summary>
 					<syntax>var styleSheetList = document.styleSheets;</syntax>
 					<link>DOM/document.styleSheets</link>
 				</property>
 				<property name="title">
-					<summary>
-						Gets or sets the title of the document.
-					</summary>
+					<summary>Gets or sets the title of the document.</summary>
 					<syntax>var docTitle = document.title;</syntax>
 					<params>
 						<param name="docTitle">
@@ -2739,17 +2327,13 @@
 					<link>DOM/document.title</link>
 				</property>
 				<property name="URL">
-					<summary>
-						Returns the URL of the current document.
-					</summary>
+					<summary>Returns the URL of the current document.</summary>
 					<syntax>var string = document.URL;</syntax>
 
 					<link>DOM/document.URL</link>
 				</property>
 				<property name="vlinkColor">
-					<summary>
-						Gets/sets the color of links that the user has visited in the document.
-					</summary>
+					<summary>Gets/sets the color of links that the user has visited in the document.</summary>
 					<syntax>var color = document.vlinkColor; document.vlinkColor = color;</syntax>
 					<params>
 						<param name="color">
@@ -2759,18 +2343,14 @@
 					<link>DOM/document.vlinkColor</link>
 				</property>
 				<property name="xmlVersion">
-					<summary>
-						Returns the version number as specified in the XML declaration (e.g., &lt;?xml version="1.0"?&gt;) or "1.0" if the declaration is absent.
-					</summary>
+					<summary>Returns the version number as specified in the XML declaration (e.g., &lt;?xml version="1.0"?&gt;) or "1.0" if the declaration is absent.</summary>
 					<syntax>var string = document.xmlVersion;</syntax>
 					<link>DOM/document.xmlVersion</link>
 				</property>
 			</properties>
 			<methods>
 				<method name="adoptNode">
-					<summary>
-						Adopts a node from an external document. The node and its subtree is removed from the document it's in (if any), and its ownerDocument is changed to the current document. The node can then be inserted into the current document.
-					</summary>
+					<summary>Adopts a node from an external document. The node and its subtree is removed from the document it's in (if any), and its ownerDocument is changed to the current document. The node can then be inserted into the current document.</summary>
 					<syntax>document.adoptNode(externalNode);</syntax>
 					<params>
 						<param name="externalNode">
@@ -2780,23 +2360,17 @@
 					<link>DOM/document.adoptNode</link>
 				</method>
 				<method name="clear">
-					<summary>
-						This method used to clear the whole specified document in early (pre-1.0) versions of Mozilla. In recent versions of Mozilla-based applications as well as in Internet Explorer and Netscape 4 this method does nothing.
-					</summary>
+					<summary>This method used to clear the whole specified document in early (pre-1.0) versions of Mozilla. In recent versions of Mozilla-based applications as well as in Internet Explorer and Netscape 4 this method does nothing.</summary>
 					<syntax>document.clear();</syntax>
 					<link>DOM/document.clear</link>
 				</method>
 				<method name="close">
-					<summary>
-						The document.close() method finishes writing to a document, opened with document.open(). 
-					</summary>
+					<summary>The document.close() method finishes writing to a document, opened with document.open(). </summary>
 					<syntax>document.close();</syntax>
 					<link>DOM/document.close</link>
 				</method>
 				<method name="createAttribute">
-					<summary>
-						createAttribute creates a new attribute node, and returns it.
-					</summary>
+					<summary>createAttribute creates a new attribute node, and returns it.</summary>
 					<syntax>attribute = document.createAttribute(name);</syntax>
 					<params>
 						<param name="attribute">
@@ -2809,9 +2383,7 @@
 					<link>DOM/document.createAttribute</link>
 				</method>
 				<method name="createCDATASection">
-					<summary>
-						createCDATASection() creates a new CDATA section node, and returns it.
-					</summary>
+					<summary>createCDATASection() creates a new CDATA section node, and returns it.</summary>
 					<syntax>CDATA Section node = document.createCDATASection(data);</syntax>
 					<params>
 						<param name="CDATA Section node">
@@ -2824,9 +2396,7 @@
 					<link>DOM/document.createCDATASection</link>
 				</method>
 				<method name="createComment">
-					<summary>
-						createComment() creates a new comment node, and returns it.
-					</summary>
+					<summary>createComment() creates a new comment node, and returns it.</summary>
 					<syntax>Comment node = document.createComment(data);</syntax>
 					<params>
 						<param name="Comment node">
@@ -2839,9 +2409,7 @@
 					<link>DOM/document.createComment</link>
 				</method>
 				<method name="createDocumentFragment">
-					<summary>
-						Creates an empty document fragment.
-					</summary>
+					<summary>Creates an empty document fragment.</summary>
 					<syntax>var docFragment = document.createDocumentFragment();</syntax>
 					<params>
 						<param name="docFragment">
@@ -2851,9 +2419,7 @@
 					<link>DOM/document.createDocumentFragment</link>
 				</method>
 				<method name="createElement">
-					<summary>
-						Creates an element with the specified tag name defaulting namespace depending on the document.
-					</summary>
+					<summary>Creates an element with the specified tag name defaulting namespace depending on the document.</summary>
 					<syntax>var element = document.createElement(tagName);</syntax>
 					<params>
 						<param name="element">
@@ -2866,9 +2432,7 @@
 					<link>DOM/document.createElement</link>
 				</method>
 				<method name="createElementNS">
-					<summary>
-						Creates an element with the specified namespace URI and qualified name.
-					</summary>
+					<summary>Creates an element with the specified namespace URI and qualified name.</summary>
 					<syntax>element = document.createElementNS(namespaceURI, qualifiedName);</syntax>
 					<params>
 						<param name="element">
@@ -2884,9 +2448,7 @@
 					<link>DOM/document.createElementNS</link>
 				</method>
 				<method name="createEvent">
-					<summary>
-						Creates an event of the type specified. The returned object should be first initialized and can then be passed to element.dispatchEvent.
-					</summary>
+					<summary>Creates an event of the type specified. The returned object should be first initialized and can then be passed to element.dispatchEvent.</summary>
 					<syntax>var event = document.createEvent(type);</syntax>
 					<params>
 						<param name="event">
@@ -2899,9 +2461,7 @@
 					<link>DOM/document.createEvent</link>
 				</method>
 				<method name="createExpression">
-					<summary>
-						This method compiles an XPathExpression which can then be used for (repeated) evaluations.
-					</summary>
+					<summary>This method compiles an XPathExpression which can then be used for (repeated) evaluations.</summary>
 					<syntax>xpathExpr = document.createExpression(xpathText, namespaceURLMapper);</syntax>
 					<params>
 						<param name="xpathText">
@@ -2914,9 +2474,7 @@
 					<link>DOM/document.createExpression</link>
 				</method>
 				<method name="createNSResolver">
-					<summary>
-						Creates an XPathNSResolver which resolves namespaces with respect to the definitions in scope for a specified node.
-					</summary>
+					<summary>Creates an XPathNSResolver which resolves namespaces with respect to the definitions in scope for a specified node.</summary>
 					<syntax>nsResolver = document.createNSResolver(node);</syntax>
 					<params>
 						<param name="nsResolver">
@@ -2929,9 +2487,7 @@
 					<link>DOM/document.createNSResolver</link>
 				</method>
 				<method name="createProcessingInstruction">
-					<summary>
-						createProcessingInstruction() creates a new processing instruction node, and returns it.
-					</summary>
+					<summary>createProcessingInstruction() creates a new processing instruction node, and returns it.</summary>
 					<syntax>Processing instruction node = document.createProcessingInstruction(target, data);</syntax>
 					<params>
 						<param name="Processing instruction node">
@@ -2947,16 +2503,12 @@
 					<link>DOM/document.createProcessingInstruction</link>
 				</method>
 				<method name="createRange">
-					<summary>
-						Returns a new Range object.
-					</summary>
+					<summary>Returns a new Range object.</summary>
 					<syntax>range = document.createRange();</syntax>
 					<link>DOM/document.createRange</link>
 				</method>
 				<method name="createTextNode">
-					<summary>
-						Creates a new Text node.
-					</summary>
+					<summary>Creates a new Text node.</summary>
 					<syntax>var text = document.createTextNode(data);</syntax>
 					<params>
 						<param name="text">
@@ -2969,9 +2521,7 @@
 					<link>DOM/document.createTextNode</link>
 				</method>
 				<method name="createTreeWalker">
-					<summary>
-						Returns a new TreeWalker object.
-					</summary>
+					<summary>Returns a new TreeWalker object.</summary>
 					<syntax>var treeWalker = document.createTreeWalker(root, whatToShow, filter, entityReferenceExpansion);</syntax>
 					<params>
 						<param name="root">
@@ -2990,9 +2540,7 @@
 					<link>DOM/document.createTreeWalker</link>
 				</method>
 				<method name="elementFromPoint">
-					<summary>
-						Returns the element from the document whose elementFromPoint method is being called which is the topmost element which lies under the given point.  The point is specified via coordinates, in CSS pixels, relative to the upper-left-most point in the window or frame containing the document.
-					</summary>
+					<summary>Returns the element from the document whose elementFromPoint method is being called which is the topmost element which lies under the given point.  The point is specified via coordinates, in CSS pixels, relative to the upper-left-most point in the window or frame containing the document.</summary>
 					<syntax>var element = document.elementFromPoint(x, y);</syntax>
 					<params>
 						<param name="element">
@@ -3006,9 +2554,7 @@
 					<link>DOM/document.elementFromPoint</link>
 				</method>
 				<method name="evaluate">
-					<summary>
-						Returns an XPathResult based on an XPath expression and other given parameters.
-					</summary>
+					<summary>Returns an XPathResult based on an XPath expression and other given parameters.</summary>
 					<syntax>var xpathResult = document.evaluate(xpathExpression, contextNode, namespaceResolver, resultType, result);</syntax>
 					<params>
 						<param name="xpathExpression">
@@ -3031,9 +2577,7 @@
 					<link>DOM/document.evaluate</link>
 				</method>
 				<method name="execCommand">
-					<summary>
-						When an HTML document has been switched to designMode, the document object exposes the execCommand  method which allows one to run commands to manipulate the contents of the editable region. Most commands affect the document's selection (bold, italics, etc), while others insert new elements (adding a link) or affect an entire line (indenting). When using contentEditable, calling execCommand will affect the currently active editable element.
-					</summary>
+					<summary>When an HTML document has been switched to designMode, the document object exposes the execCommand  method which allows one to run commands to manipulate the contents of the editable region. Most commands affect the document's selection (bold, italics, etc), while others insert new elements (adding a link) or affect an entire line (indenting). When using contentEditable, calling execCommand will affect the currently active editable element.</summary>
 					<syntax>execCommand(String aCommandName, Boolean aShowDefaultUI, String aValueArgument);</syntax>
 					<params>
 						<param name="String aCommandName">
@@ -3049,9 +2593,7 @@
 					<link>Rich-Text_Editing_in_Mozilla#Executing_Commands</link>
 				</method>
 				<method name="getElementById">
-					<summary>
-						Returns the element whose ID is specified.
-					</summary>
+					<summary>Returns the element whose ID is specified.</summary>
 					<syntax>element = document.getElementById(id);</syntax>
 					<params>
 						<param name="element">
@@ -3065,9 +2607,7 @@
 					<link>DOM/document.getElementById</link>
 				</method>
 				<method name="getElementsByName">
-					<summary>
-						Returns a list of elements with a given name in the HTML document.
-					</summary>
+					<summary>Returns a list of elements with a given name in the HTML document.</summary>
 					<syntax>elements = document.getElementsByName(name);</syntax>
 					<params>
 						<param name="elements">
@@ -3081,16 +2621,12 @@
 					<link>DOM/document.getElementsByName</link>
 				</method>
 				<method name="hasFocus">
-					<summary>
-						The hasFocus method returns true if the focus is currently located anywhere inside the specified document.
-					</summary>
+					<summary>The hasFocus method returns true if the focus is currently located anywhere inside the specified document.</summary>
 					<syntax>focused = document.hasFocus();</syntax>
 					<link>DOM/document.hasFocus</link>
 				</method>
 				<method name="importNode">
-					<summary>
-						Creates a copy of a node from an external document that can be inserted into the current document.
-					</summary>
+					<summary>Creates a copy of a node from an external document that can be inserted into the current document.</summary>
 					<syntax>var node = document.importNode(externalNode, deep);</syntax>
 					<params>
 						<param name="node">
@@ -3107,17 +2643,13 @@
 					<link>DOM/document.importNode</link>
 				</method>
 				<method name="open">
-					<summary>
-						The document.open() method opens a document for writing.
-					</summary>
+					<summary>The document.open() method opens a document for writing.</summary>
 					<syntax>document.open();</syntax>
 
 					<link>DOM/document.open</link>
 				</method>
 				<method name="mozSetImageElement">
-					<summary>
-						Changes the element being used as the CSS background for a background with a given background element ID.
-					</summary>
+					<summary>Changes the element being used as the CSS background for a background with a given background element ID.</summary>
 					<syntax>document.mozSetImageElement(imageElementId, imageElement);</syntax>
 					<params>
 						<param name="imageElementId">
@@ -3130,9 +2662,7 @@
 					<link>DOM/document.mozSetImageElement</link>
 				</method>
 				<method name="write">
-					<summary>
-						Writes a string of text to a document stream opened by document.open().
-					</summary>
+					<summary>Writes a string of text to a document stream opened by document.open().</summary>
 					<syntax>document.write(markup);</syntax>
 					<params>
 						<param name="markup">
@@ -3143,9 +2673,7 @@
 					<link>DOM/document.write</link>
 				</method>
 				<method name="writeln">
-					<summary>
-						Writes a string of text followed by a newline character to a document.
-					</summary>
+					<summary>Writes a string of text followed by a newline character to a document.</summary>
 					<syntax>document.writeln(line);</syntax>
 					<params>
 						<param name="line">
@@ -3160,9 +2688,7 @@
 		<element>
 			<properties>
 				<property name="attributes">
-					<summary>
-						The .attributes NamedNodeMap is a collection of Attr nodes. The numerical order the nodes appear in may differ among implementations.
-					</summary>
+					<summary>The .attributes NamedNodeMap is a collection of Attr nodes. The numerical order the nodes appear in may differ among implementations.</summary>
 					<syntax>var namedNodeMap = element.attributes;</syntax>
 					<params>
 						<param name="namedNodeMap">
@@ -3173,9 +2699,7 @@
 					<link>DOM/Node.attributes</link>
 				</property>
 				<property name="childElementCount">
-					<summary>
-						childElementCount returns the number of child elements of the given element.
-					</summary>
+					<summary>childElementCount returns the number of child elements of the given element.</summary>
 					<syntax>var elCount = elementNodeReference.childElementCount;</syntax>
 					<params>
 						<param name="elCount">
@@ -3185,9 +2709,7 @@
 					<link>DOM/Element.childElementCount</link>
 				</property>
 				<property name="childNodes">
-					<summary>
-						childNodes  returns a collection of child nodes of the given element.
-					</summary>
+					<summary>childNodes  returns a collection of child nodes of the given element.</summary>
 					<syntax>var ndList = elementNodeReference.childNodes;</syntax>
 					<params>
 						<param name="ndList">
@@ -3198,9 +2720,7 @@
 					<link>DOM/Node.childNodes</link>
 				</property>
 				<property name="children">
-					<summary>
-						children returns a collection of child elements of the given element.
-					</summary>
+					<summary>children returns a collection of child elements of the given element.</summary>
 					<syntax>var elList = elementNodeReference.children;</syntax>
 					<params>
 						<param name="elList">
@@ -3211,9 +2731,7 @@
 					<link>DOM/Element.children</link>
 				</property>
 				<property name="classList">
-					<summary>
-						classList returns a token list of the class attribute of the element.
-					</summary>
+					<summary>classList returns a token list of the class attribute of the element.</summary>
 					<syntax>var elementClasses = elementNodeReference.classList;</syntax>
 					<params>
 						<param name="elementClasses">
@@ -3223,9 +2741,7 @@
 					<link>DOM/element.classList</link>
 				</property>
 				<property name="className">
-					<summary>
-						className  gets and sets the value of the class attribute of the specified element.
-					</summary>
+					<summary>className  gets and sets the value of the class attribute of the specified element.</summary>
 					<syntax>var cName = elementNodeReference.className; elementNodeReference.className = cName;</syntax>
 					<params>
 						<param name="cName">
@@ -3236,9 +2752,7 @@
 					<link>DOM/element.className</link>
 				</property>
 				<property name="clientHeight">
-					<summary>
-						Returns the inner height of an element in pixels, including padding but not the horizontal scrollbar height, border, or margin.clientHeight can be calculated as CSS height + CSS padding - height of horizontal scrollbar (if present).
-					</summary>
+					<summary>Returns the inner height of an element in pixels, including padding but not the horizontal scrollbar height, border, or margin.clientHeight can be calculated as CSS height + CSS padding - height of horizontal scrollbar (if present).</summary>
 					<syntax>var h = element.clientHeight;</syntax>
 					<params>
 						<param name="h">
@@ -3249,23 +2763,17 @@
 					<link>DOM/element.clientHeight</link>
 				</property>
 				<property name="clientLeft">
-					<summary>
-						The width of the left border of an element in pixels. It includes the width of the vertical scrollbar if the text direction of the element is right–to–left and if there is an overflow causing a left vertical scrollbar to be rendered. clientLeft does not include the left margin or the left padding. clientLeft is read-only.
-					</summary>
+					<summary>The width of the left border of an element in pixels. It includes the width of the vertical scrollbar if the text direction of the element is right–to–left and if there is an overflow causing a left vertical scrollbar to be rendered. clientLeft does not include the left margin or the left padding. clientLeft is read-only.</summary>
 					<syntax>var left = element.clientLeft;</syntax>
 					<link>DOM/element.clientLeft</link>
 				</property>
 				<property name="clientTop">
-					<summary>
-						The width of the top border of an element in pixels. It does not include the top margin or padding. clientTop is read-only.
-					</summary>
+					<summary>The width of the top border of an element in pixels. It does not include the top margin or padding. clientTop is read-only.</summary>
 					<syntax>var top = element.clientTop;</syntax>
 					<link>DOM/element.clientTop</link>
 				</property>
 				<property name="clientWidth">
-					<summary>
-						clientWidth  is the inner width of an element in pixels. It includes padding but not the vertical scrollbar (if present, if rendered), border or margin.
-					</summary>
+					<summary>clientWidth  is the inner width of an element in pixels. It includes padding but not the vertical scrollbar (if present, if rendered), border or margin.</summary>
 					<syntax>var intElemClientWidth = element.clientWidth;</syntax>
 					<params>
 						<param name="intElemClientWidth">
@@ -3275,16 +2783,12 @@
 					<link>DOM/element.clientWidth</link>
 				</property>
 				<property name="contentEditable">
-					<summary>
-						contentEditable is used to indicate whether or not the element is editable. An empty string or "true" indicates that the element is editable; a value of "false" indicates that the element cannot be edited, and a value of "inherit" indicates that the element inherits its parent's editable status.
-					</summary>
+					<summary>contentEditable is used to indicate whether or not the element is editable. An empty string or "true" indicates that the element is editable; a value of "false" indicates that the element cannot be edited, and a value of "inherit" indicates that the element inherits its parent's editable status.</summary>
 					<syntax>var editable = element.contentEditable; element.contentEditable = "true";</syntax>
 					<link>DOM/Element.contentEditable</link>
 				</property>
 				<property name="dir">
-					<summary>
-						The dir attribute gets or sets the text writing directionality of the content of the current element.
-					</summary>
+					<summary>The dir attribute gets or sets the text writing directionality of the content of the current element.</summary>
 					<syntax>var CurrentWritingDirection = elementNodeReference.dir; elementNodeReference.dir = NewWritingDirection;</syntax>
 					<params>
 						<param name="CurrentWritingDirection">
@@ -3295,9 +2799,7 @@
 					<link>DOM/element.dir</link>
 				</property>
 				<property name="firstChild">
-					<summary>
-						Returns the node's first child in the tree, or null if the node is childless. If the node is a Document, it returns the first node in the list of its direct children.
-					</summary>
+					<summary>Returns the node's first child in the tree, or null if the node is childless. If the node is a Document, it returns the first node in the list of its direct children.</summary>
 					<syntax>var childNode = node.firstChild;</syntax>
 					<params>
 						<param name="childNode">
@@ -3307,9 +2809,7 @@
 					<link>DOM/Node.firstChild</link>
 				</property>
 				<property name="firstElementChild">
-					<summary>
-						firstElementChild returns the element's first child element or null if there are no child elements.
-					</summary>
+					<summary>firstElementChild returns the element's first child element or null if there are no child elements.</summary>
 					<syntax>var childNode = elementNodeReference.firstElementChild;</syntax>
 					<params>
 						<param name="childNode">
@@ -3319,9 +2819,7 @@
 					<link>DOM/Element.firstElementChild</link>
 				</property>
 				<property name="id">
-					<summary>
-						Gets or sets the element's identifier (attribute id).
-					</summary>
+					<summary>Gets or sets the element's identifier (attribute id).</summary>
 					<syntax>var idStr = element.id; element.id = idStr;</syntax>
 					<params>
 						<param name="idStr">
@@ -3331,9 +2829,7 @@
 					<link>DOM/element.id</link>
 				</property>
 				<property name="innerHTML">
-					<summary>
-						innerHTML sets or gets the HTML syntax describing the element's descendants.
-					</summary>
+					<summary>innerHTML sets or gets the HTML syntax describing the element's descendants.</summary>
 					<syntax>var markup = element.innerHTML; element.innerHTML = markup;</syntax>
 					<params>
 						<param name="markup">
@@ -3344,16 +2840,12 @@
 					<link>DOM/element.innerHTML</link>
 				</property>
 				<property name="isContentEditable">
-					<summary>
-						isContentEditable returns true if the contents of the element are editable; otherwise it returns false.
-					</summary>
+					<summary>isContentEditable returns true if the contents of the element are editable; otherwise it returns false.</summary>
 					<syntax>var editable = element.isContentEditable</syntax>
 					<link>DOM/Element.isContentEditable</link>
 				</property>
 				<property name="lang">
-					<summary>
-						This property gets or sets the base language of an element's attribute values and text content.
-					</summary>
+					<summary>This property gets or sets the base language of an element's attribute values and text content.</summary>
 					<syntax>var languageUsed = elementNodeReference.lang; elementNodeReference.lang = NewLanguage;</syntax>
 					<params>
 						<param name="languageUsed">
@@ -3364,9 +2856,7 @@
 					<link>DOM/element.lang</link>
 				</property>
 				<property name="lastChild">
-					<summary>
-						lastChild returns the last child of a node.
-					</summary>
+					<summary>lastChild returns the last child of a node.</summary>
 					<syntax>var last_child = element.lastChild;</syntax>
 					<params>
 						<param name="last_child">
@@ -3377,9 +2867,7 @@
 					<link>DOM/Node.lastChild</link>
 				</property>
 				<property name="lastElementChild">
-					<summary>
-						lastElementChild returns the element's last child element or null if there are no child elements.
-					</summary>
+					<summary>lastElementChild returns the element's last child element or null if there are no child elements.</summary>
 					<syntax>var childNode = elementNodeReference.lastElementChild;</syntax>
 					<params>
 						<param name="childNode">
@@ -3389,9 +2877,7 @@
 					<link>DOM/Element.lastElementChild</link>
 				</property>
 				<property name="localName">
-					<summary>
-						Returns the local part of the qualified name of this node.
-					</summary>
+					<summary>Returns the local part of the qualified name of this node.</summary>
 					<syntax>var name = element.localName;</syntax>
 					<params>
 						<param name="name">
@@ -3402,17 +2888,13 @@
 					<link>DOM/Node.localName</link>
 				</property>
 				<property name="name">
-					<summary>
-						name gets or sets the name attribute of an DOM object, it only applies to the following elements: &lt;a&gt; , &lt;applet&gt; , &lt;form&gt; , &lt;frame&gt; , &lt;iframe&gt; , &lt;image&gt; , &lt;input&gt; , &lt;map&gt; , &lt;meta&gt; , &lt;object&gt; , &lt;option&gt; , &lt;param&gt; , &lt;select&gt; , and &lt;textarea&gt; .
-					</summary>
+					<summary>name gets or sets the name attribute of an DOM object, it only applies to the following elements: &lt;a&gt; , &lt;applet&gt; , &lt;form&gt; , &lt;frame&gt; , &lt;iframe&gt; , &lt;image&gt; , &lt;input&gt; , &lt;map&gt; , &lt;meta&gt; , &lt;object&gt; , &lt;option&gt; , &lt;param&gt; , &lt;select&gt; , and &lt;textarea&gt; .</summary>
 					<syntax>HTMLElement.name = string; var elName = HTMLElement.name; var fControl = HTMLFormElement.elementName; var controlCollection = HTMLFormElement.elements.elementName;</syntax>
 
 					<link>DOM/element.name</link>
 				</property>
 				<property name="namespaceURI">
-					<summary>
-						The namespace URI of the node, or null if the node is not in a namespace (read-only). When the node is a document, it returns the XML namespace for the current document.
-					</summary>
+					<summary>The namespace URI of the node, or null if the node is not in a namespace (read-only). When the node is a document, it returns the XML namespace for the current document.</summary>
 					<syntax>var namespace = node.namespaceURI;</syntax>
 					<params>
 						<param name="namespace">
@@ -3423,17 +2905,13 @@
 					<link>DOM/Node.namespaceURI</link>
 				</property>
 				<property name="nextSibling">
-					<summary>
-						Returns the node immediately following the specified one in its parent's childNodes list, or null if the specified node is the last node in that list.
-					</summary>
+					<summary>Returns the node immediately following the specified one in its parent's childNodes list, or null if the specified node is the last node in that list.</summary>
 					<syntax>var nextNode = node.nextSibling;</syntax>
 
 					<link>DOM/Node.nextSibling</link>
 				</property>
 				<property name="nextElementSibling">
-					<summary>
-						nextElementSibling returns the element immediately following the specified one in its parent's children list, or null if the specified element is the last one in the list.
-					</summary>
+					<summary>nextElementSibling returns the element immediately following the specified one in its parent's children list, or null if the specified element is the last one in the list.</summary>
 					<syntax>var nextNode = elementNodeReference.nextElementSibling;</syntax>
 					<params>
 						<param name="nextNode">
@@ -3443,9 +2921,7 @@
 					<link>DOM/Element.nextElementSibling</link>
 				</property>
 				<property name="nodeName">
-					<summary>
-						Returns the name of the current node as a string.
-					</summary>
+					<summary>Returns the name of the current node as a string.</summary>
 					<syntax>var str = node.nodeName;</syntax>
 					<params>
 						<param name="str">
@@ -3455,17 +2931,13 @@
 					<link>DOM/Node.nodeName</link>
 				</property>
 				<property name="nodeType">
-					<summary>
-						Returns an integer code representing the type of the node.
-					</summary>
+					<summary>Returns an integer code representing the type of the node.</summary>
 					<syntax>var type = node.nodeType;</syntax>
 
 					<link>DOM/Node.nodeType</link>
 				</property>
 				<property name="nodeValue">
-					<summary>
-						Returns or sets the value of the current node.
-					</summary>
+					<summary>Returns or sets the value of the current node.</summary>
 					<syntax>var value = node.nodeValue;</syntax>
 					<params>
 						<param name="value">
@@ -3475,9 +2947,7 @@
 					<link>DOM/Node.nodeValue</link>
 				</property>
 				<property name="offsetHeight">
-					<summary>
-						Height of an element relative to the element's offsetParent.
-					</summary>
+					<summary>Height of an element relative to the element's offsetParent.</summary>
 					<syntax>var intElemOffsetHeight = node.offsetHeight;</syntax>
 					<params>
 						<param name="intElemOffsetHeight">
@@ -3488,9 +2958,7 @@
 					<link>DOM/element.offsetHeight</link>
 				</property>
 				<property name="offsetLeft">
-					<summary>
-						Returns the number of pixels that the upper left corner of the current element is offset to the left within the offsetParent node.
-					</summary>
+					<summary>Returns the number of pixels that the upper left corner of the current element is offset to the left within the offsetParent node.</summary>
 					<syntax>var left = element.offsetLeft;</syntax>
 					<params>
 						<param name="left">
@@ -3501,9 +2969,7 @@
 					<link>DOM/element.offsetLeft</link>
 				</property>
 				<property name="offsetParent">
-					<summary>
-						offsetParent returns a reference to the object which is the closest (nearest in the containment hierarchy) positioned containing element. If the element is non-positioned, the nearest table cell or root element (html in standards compliant mode; body in quirks rendering mode) is the offsetParent. offsetParent returns null when the element has style.display set to "none". The offsetParent is useful because offsetTop and offsetLeft are relative to its padding edge.
-					</summary>
+					<summary>offsetParent returns a reference to the object which is the closest (nearest in the containment hierarchy) positioned containing element. If the element is non-positioned, the nearest table cell or root element (html in standards compliant mode; body in quirks rendering mode) is the offsetParent. offsetParent returns null when the element has style.display set to "none". The offsetParent is useful because offsetTop and offsetLeft are relative to its padding edge.</summary>
 					<syntax>var parentObj = element.offsetParent;</syntax>
 					<params>
 						<param name="parentObj">
@@ -3513,9 +2979,7 @@
 					<link>DOM/element.offsetParent</link>
 				</property>
 				<property name="offsetTop">
-					<summary>
-						offsetTop returns the distance of the current element relative to the top of the offsetParent node.
-					</summary>
+					<summary>offsetTop returns the distance of the current element relative to the top of the offsetParent node.</summary>
 					<syntax>var topPos = element.offsetTop;</syntax>
 					<params>
 						<param name="topPos">
@@ -3525,9 +2989,7 @@
 					<link>DOM/element.offsetTop</link>
 				</property>
 				<property name="offsetWidth">
-					<summary>
-						Returns the layout width of an element. 
-					</summary>
+					<summary>Returns the layout width of an element. </summary>
 					<syntax>var offsetWidth = element.offsetWidth;</syntax>
 					<params>
 						<param name="offsetWidth">
@@ -3538,9 +3000,7 @@
 					<link>DOM/element.offsetWidth</link>
 				</property>
 				<property name="ownerDocument">
-					<summary>
-						The ownerDocument property returns the top-level document object for this node.
-					</summary>
+					<summary>The ownerDocument property returns the top-level document object for this node.</summary>
 					<syntax>var doc = element.ownerDocument;</syntax>
 					<params>
 						<param name="doc">
@@ -3551,9 +3011,7 @@
 					<link>DOM/Node.ownerDocument</link>
 				</property>
 				<property name="parentNode">
-					<summary>
-						Returns the parent of the specified node in the DOM tree.
-					</summary>
+					<summary>Returns the parent of the specified node in the DOM tree.</summary>
 					<syntax>var parentNode = node.parentNode;</syntax>
 					<params>
 						<param name="parentNode">
@@ -3564,23 +3022,17 @@
 					<link>DOM/Node.parentNode</link>
 				</property>
 				<property name="prefix">
-					<summary>
-						prefix returns the namespace prefix of the specified node, or null if no prefix is specified. 
-					</summary>
+					<summary>prefix returns the namespace prefix of the specified node, or null if no prefix is specified. </summary>
 					<syntax>var string = element.prefix; element.prefix = string;</syntax>
 					<link>DOM/Node.prefix</link>
 				</property>
 				<property name="previousSibling">
-					<summary>
-						Returns the node immediately preceding the specified one in its parent's childNodes list, null if the specified node is the first in that list.
-					</summary>
+					<summary>Returns the node immediately preceding the specified one in its parent's childNodes list, null if the specified node is the first in that list.</summary>
 					<syntax>var previousNode = node.previousSibling;</syntax>
 					<link>DOM/Node.previousSibling</link>
 				</property>
 				<property name="previousElementSibling">
-					<summary>
-						previousElementSibling returns the element immediately prior to the specified one in its parent's children list, or null if the specified element is the first one in the list.
-					</summary>
+					<summary>previousElementSibling returns the element immediately prior to the specified one in its parent's children list, or null if the specified element is the first one in the list.</summary>
 					<syntax>var prevNode = elementNodeReference.previousElementSibling;</syntax>
 					<params>
 						<param name="prevNode">
@@ -3590,9 +3042,7 @@
 					<link>DOM/Element.previousElementSibling</link>
 				</property>
 				<property name="scrollHeight">
-					<summary>
-						Height of the scroll view of an element; it includes the element padding but not its margin.
-					</summary>
+					<summary>Height of the scroll view of an element; it includes the element padding but not its margin.</summary>
 					<syntax>var intElemScrollHeight = node.scrollHeight;</syntax>
 					<params>
 						<param name="intElemScrollHeight">
@@ -3603,9 +3053,7 @@
 					<link>DOM/element.scrollHeight</link>
 				</property>
 				<property name="scrollLeft">
-					<summary>
-						scrollLeft  gets or sets the number of pixels that an element's content is scrolled to the left. 
-					</summary>
+					<summary>scrollLeft  gets or sets the number of pixels that an element's content is scrolled to the left. </summary>
 					<syntax>var sLeft = element.scrollLeft; element.scrollLeft = sLeft;</syntax>
 					<params>
 						<param name="sLeft">
@@ -3616,9 +3064,7 @@
 					<link>DOM/element.scrollLeft</link>
 				</property>
 				<property name="scrollTop">
-					<summary>
-						scrollTop gets or sets the number of pixels that the content of an element is scrolled upward.
-					</summary>
+					<summary>scrollTop gets or sets the number of pixels that the content of an element is scrolled upward.</summary>
 					<syntax>var intElemScrollTop = element.scrollTop; element.scrollTop = intValue;</syntax>
 					<params>
 						<param name="intElemScrollTop">
@@ -3629,9 +3075,7 @@
 					<link>DOM/element.scrollTop</link>
 				</property>
 				<property name="scrollWidth">
-					<summary>
-						scrollWidth is a read–only property that returns either the width in pixels of the content of an element or the width of the element itself, whichever is greater. If the element is wider than its content area (for example, if there are scroll bars for scrolling through the content), the scrollWidth is larger than the clientWidth.
-					</summary>
+					<summary>scrollWidth is a read–only property that returns either the width in pixels of the content of an element or the width of the element itself, whichever is greater. If the element is wider than its content area (for example, if there are scroll bars for scrolling through the content), the scrollWidth is larger than the clientWidth.</summary>
 					<syntax>var xScrollWidth = element.scrollWidth;</syntax>
 					<params>
 						<param name="xScrollWidth">
@@ -3641,17 +3085,13 @@
 					<link>DOM/element.scrollWidth</link>
 				</property>
 				<property name="style">
-					<summary>
-						Returns an object that represents the element's style attribute.
-					</summary>
+					<summary>Returns an object that represents the element's style attribute.</summary>
 					<syntax>node.style.marginTop = "50px";</syntax>
 
 					<link>DOM/element.style</link>
 				</property>
 				<property name="tabIndex">
-					<summary>
-						Gets/sets the tab order of the current element.
-					</summary>
+					<summary>Gets/sets the tab order of the current element.</summary>
 					<syntax>element.tabIndex = iIndex;</syntax>
 					<params>
 						<param name="iIndex">
@@ -3661,9 +3101,7 @@
 					<link>DOM/element.tabIndex</link>
 				</property>
 				<property name="tagName">
-					<summary>
-						Returns the name of the element.
-					</summary>
+					<summary>Returns the name of the element.</summary>
 					<syntax>var elementName = element.tagName;</syntax>
 					<params>
 						<param name="elementName">
@@ -3674,17 +3112,13 @@
 					<link>DOM/element.tagName</link>
 				</property>
 				<property name="textContent">
-					<summary>
-						Gets or sets the text content of a node and its descendants.
-					</summary>
+					<summary>Gets or sets the text content of a node and its descendants.</summary>
 					<syntax>var text = element.textContent; element.textContent = "this is some sample text";</syntax>
 
 					<link>DOM/Node.textContent</link>
 				</property>
 				<property name="title">
-					<summary>
-						Establishes the text to be displayed in a 'tool tip' popup when the mouse is over the displayed node.
-					</summary>
+					<summary>Establishes the text to be displayed in a 'tool tip' popup when the mouse is over the displayed node.</summary>
 					<syntax>var string = element.title; element.title = string;</syntax>
 
 					<link>DOM/element.title</link>
@@ -3692,9 +3126,7 @@
 			</properties>
 			<methods>
 				<method name="addEventListener">
-					<summary>
-						addEventListener registers a single event listener on a single target. The event target may be a single node in a document, the document itself, a window, or an XMLHttpRequest.To register more than one event listeners for the target, call addEventListener for the same target but with different event types or capture parameters.
-					</summary>
+					<summary>addEventListener registers a single event listener on a single target. The event target may be a single node in a document, the document itself, a window, or an XMLHttpRequest.To register more than one event listeners for the target, call addEventListener for the same target but with different event types or capture parameters.</summary>
 					<syntax>target.addEventListener(type, listener, useCapture);</syntax>
 					<params>
 						<param name="type">
@@ -3711,9 +3143,7 @@
 					<link>DOM/element.addEventListener</link>
 				</method>
 				<method name="appendChild">
-					<summary>
-						Adds a node to the end of the list of children of a specified parent node. If the node already exists it is removed from current parent node, then added to new parent node.
-					</summary>
+					<summary>Adds a node to the end of the list of children of a specified parent node. If the node already exists it is removed from current parent node, then added to new parent node.</summary>
 					<syntax>var child = element.appendChild(child);</syntax>
 					<params>
 						<param name="element">
@@ -3727,9 +3157,7 @@
 					<link>DOM/Node.appendChild</link>
 				</method>
 				<method name="cloneNode">
-					<summary>
-						Returns a duplicate of the current node.
-					</summary>
+					<summary>Returns a duplicate of the current node.</summary>
 					<syntax>dupNode = element.cloneNode(deep);</syntax>
 					<params>
 						<param name="deep">
@@ -3740,9 +3168,7 @@
 					<link>DOM/Node.cloneNode</link>
 				</method>
 				<method name="compareDocumentPosition">
-					<summary>
-						Compares the position of the current node against another node in any other document.
-					</summary>
+					<summary>Compares the position of the current node against another node in any other document.</summary>
 					<syntax>node.compareDocumentPosition( otherNode );</syntax>
 					<params>
 						<param name="node">
@@ -3756,9 +3182,7 @@
 					<link>DOM/Node.compareDocumentPosition</link>
 				</method>
 				<method name="dispatchEvent">
-					<summary>
-						Dispatches an event into the event system. The event is subject to the same capturing and bubbling behavior as directly dispatched events.
-					</summary>
+					<summary>Dispatches an event into the event system. The event is subject to the same capturing and bubbling behavior as directly dispatched events.</summary>
 					<syntax>bool = element.dispatchEvent(event);</syntax>
 					<params>
 						<param name="element">
@@ -3775,9 +3199,7 @@
 					<link>DOM/element.dispatchEvent</link>
 				</method>
 				<method name="getAttribute">
-					<summary>
-						getAttribute() returns the value of the named attribute on the specified element. If the named attribute does not exist, the value returned will either be null or "" (the empty string);
-					</summary>
+					<summary>getAttribute() returns the value of the named attribute on the specified element. If the named attribute does not exist, the value returned will either be null or "" (the empty string);</summary>
 					<syntax>var attribute = element.getAttribute(attributeName);</syntax>
 					<params>
 						<param name="attribute">
@@ -3791,9 +3213,7 @@
 					<link>DOM/element.getAttribute</link>
 				</method>
 				<method name="getAttributeNS">
-					<summary>
-						getAttributeNS returns the string value of the attribute with the specified namespace and name. If the named attribute does not exist, the value returned will either be null or "" (the empty string);
-					</summary>
+					<summary>getAttributeNS returns the string value of the attribute with the specified namespace and name. If the named attribute does not exist, the value returned will either be null or "" (the empty string);</summary>
 					<syntax>attrVal = element.getAttributeNS(namespace, name);</syntax>
 					<params>
 						<param name="attrVal">
@@ -3810,9 +3230,7 @@
 					<link>DOM/element.getAttributeNS</link>
 				</method>
 				<method name="getAttributeNode">
-					<summary>
-						Returns the specified attribute of the specified element, as an Attr node.
-					</summary>
+					<summary>Returns the specified attribute of the specified element, as an Attr node.</summary>
 					<syntax>attrNode = element.getAttributeNode(attrName);</syntax>
 					<params>
 						<param name="attrNode">
@@ -3826,9 +3244,7 @@
 					<link>DOM/element.getAttributeNode</link>
 				</method>
 				<method name="getAttributeNodeNS">
-					<summary>
-						Returns the Attr node for the attribute with the given namespace and name.
-					</summary>
+					<summary>Returns the Attr node for the attribute with the given namespace and name.</summary>
 					<syntax>attributeNode = element.getAttributeNodeNS(namespace, nodeName);</syntax>
 					<params>
 						<param name="attributeNode">
@@ -3844,24 +3260,18 @@
 					<link>DOM/element.getAttributeNodeNS</link>
 				</method>
 				<method name="getBoundingClientRect">
-					<summary>
-						Returns a text rectangle object that encloses a group of text rectangles.
-					</summary>
+					<summary>Returns a text rectangle object that encloses a group of text rectangles.</summary>
 					<syntax>var rectObject = object.getBoundingClientRect();</syntax>
 					<link>DOM/element.getBoundingClientRect</link>
 				</method>
 				<method name="getClientRects">
-					<summary>
-						Returns a collection of rectangles that indicate the bounding rectangles for each box in a client.
-					</summary>
+					<summary>Returns a collection of rectangles that indicate the bounding rectangles for each box in a client.</summary>
 					<syntax>var rectCollection = object.getClientRects();</syntax>
 
 					<link>DOM/element.getClientRects</link>
 				</method>
 				<method name="getElementsByClassName">
-					<summary>
-						Returns a set of elements which have all the given class names. When called on the document object, the complete document is searched, including the root node. You may also call getElementsByClassName on any element; it will return only elements which are descendants of the specified root element with the given class names.
-					</summary>
+					<summary>Returns a set of elements which have all the given class names. When called on the document object, the complete document is searched, including the root node. You may also call getElementsByClassName on any element; it will return only elements which are descendants of the specified root element with the given class names.</summary>
 					<syntax>elements = rootElement.getElementsByClassName(name);</syntax>
 					<params>
 						<param name="elements">
@@ -3874,9 +3284,7 @@
 					<link>DOM/document.getElementsByClassName</link>
 				</method>
 				<method name="getElementsByTagName">
-					<summary>
-						Returns a list of elements with the given tag name. The subtree underneath the specified element is searched, excluding the element itself.
-					</summary>
+					<summary>Returns a list of elements with the given tag name. The subtree underneath the specified element is searched, excluding the element itself.</summary>
 					<syntax>elements = element.getElementsByTagName(tagName);</syntax>
 					<params>
 						<param name="elements">
@@ -3892,9 +3300,7 @@
 					<link>DOM/element.getElementsByTagName</link>
 				</method>
 				<method name="getElementsByTagNameNS">
-					<summary>
-						Returns a list of elements with the given tag name belonging to the given namespace.
-					</summary>
+					<summary>Returns a list of elements with the given tag name belonging to the given namespace.</summary>
 					<syntax>elements = element.getElementsByTagNameNS(namespaceURI, localName);</syntax>
 					<params>
 						<param name="elements">
@@ -3913,9 +3319,7 @@
 					<link>DOM/element.getElementsByTagNameNS</link>
 				</method>
 				<method name="getUserData">
-					<summary>
-						Returns any user data set previously on the given node by setUserData().
-					</summary>
+					<summary>Returns any user data set previously on the given node by setUserData().</summary>
 					<syntax>userData = someNode.getUserData(userKey);</syntax>
 					<params>
 						<param name="userData">
@@ -3931,9 +3335,7 @@
 					<link>DOM/Node.getUserData</link>
 				</method>
 				<method name="hasAttribute">
-					<summary>
-						hasAttribute returns a boolean value indicating whether the specified element has the specified attribute or not.
-					</summary>
+					<summary>hasAttribute returns a boolean value indicating whether the specified element has the specified attribute or not.</summary>
 					<syntax>result = element.hasAttribute(attName);</syntax>
 					<params>
 						<param name="result">
@@ -3946,9 +3348,7 @@
 					<link>DOM/element.hasAttribute</link>
 				</method>
 				<method name="hasAttributeNS">
-					<summary>
-						hasAttributeNS returns a boolean value indicating whether the current element has the specified attribute.
-					</summary>
+					<summary>hasAttributeNS returns a boolean value indicating whether the current element has the specified attribute.</summary>
 					<syntax>result = element.hasAttributeNS(namespace, localName);</syntax>
 					<params>
 						<param name="result">
@@ -3964,23 +3364,17 @@
 					<link>DOM/element.hasAttributeNS</link>
 				</method>
 				<method name="hasAttributes">
-					<summary>
-						hasAttributes returns a boolean value of true or false, indicating if the current element has any attributes or not.
-					</summary>
+					<summary>hasAttributes returns a boolean value of true or false, indicating if the current element has any attributes or not.</summary>
 					<syntax>var result = element.hasAttributes();</syntax>
 					<link>DOM/Node.hasAttributes</link>
 				</method>
 				<method name="hasChildNodes">
-					<summary>
-						hasChildNodes returns a Boolean value indicating whether the current element has child nodes or not.
-					</summary>
+					<summary>hasChildNodes returns a Boolean value indicating whether the current element has child nodes or not.</summary>
 					<syntax>result = element.hasChildNodes();</syntax>
 					<link>DOM/Node.hasChildNodes</link>
 				</method>
 				<method name="insertBefore">
-					<summary>
-						Inserts the specified node before a reference element as a child of the current node.
-					</summary>
+					<summary>Inserts the specified node before a reference element as a child of the current node.</summary>
 					<syntax>var insertedElement = parentElement.insertBefore(newElement, referenceElement);</syntax>
 					<params>
 						<param name="insertedElement">
@@ -3999,9 +3393,7 @@
 					<link>DOM/Node.insertBefore</link>
 				</method>
 				<method name="isDefaultNamespace">
-					<summary>
-						isDefaultNamespace accepts a namespace URI as an argument and returns true if the namespace is the default namespace on the given node or false if not.
-					</summary>
+					<summary>isDefaultNamespace accepts a namespace URI as an argument and returns true if the namespace is the default namespace on the given node or false if not.</summary>
 					<syntax>result = node.isDefaultNamespace(namespaceURI);</syntax>
 					<params>
 						<param name="result">
@@ -4014,9 +3406,7 @@
 					<link>DOM/Node.isDefaultNamespace</link>
 				</method>
 				<method name="isSupported">
-					<summary>
-						Tests whether the DOM implementation implements a specific feature and that feature is supported by this node.
-					</summary>
+					<summary>Tests whether the DOM implementation implements a specific feature and that feature is supported by this node.</summary>
 					<syntax>var isSupported = element.isSupported(feature, version);</syntax>
 					<params>
 						<param name="feature">
@@ -4029,9 +3419,7 @@
 					<link>DOM/Node.isSupported</link>
 				</method>
 				<method name="mozMatchesSelector">
-					<summary>
-						Returns true if the element would be selected by the specified selector string; otherwise, returns false.
-					</summary>
+					<summary>Returns true if the element would be selected by the specified selector string; otherwise, returns false.</summary>
 					<syntax>result = node.mozMatchesSelector(selectorString);</syntax>
 					<params>
 						<param name="result">
@@ -4044,16 +3432,12 @@
 					<link>DOM/Node.mozMatchesSelector</link>
 				</method>
 				<method name="normalize">
-					<summary>
-						Puts the specified node and all of its subtree into a "normalized" form. In a normalized subtree, no text nodes in the subtree are empty and there are no adjacent text nodes.
-					</summary>
+					<summary>Puts the specified node and all of its subtree into a "normalized" form. In a normalized subtree, no text nodes in the subtree are empty and there are no adjacent text nodes.</summary>
 					<syntax>element.normalize();</syntax>
 					<link>DOM/Node.normalize</link>
 				</method>
 				<method name="querySelector">
-					<summary>
-						Returns the first element that is a descendent of the element on which it is invoked that matches the specified group of selectors.
-					</summary>
+					<summary>Returns the first element that is a descendent of the element on which it is invoked that matches the specified group of selectors.</summary>
 					<syntax>element = baseElement.querySelector(selectors);</syntax>
 					<params>
 						<param name="element">
@@ -4067,9 +3451,7 @@
 					<link>DOM/Document.querySelector</link>
 				</method>
 				<method name="querySelectorAll">
-					<summary>
-						Returns a list of all elements descended from the element on which it is invoked that match the specified group of selectors.
-					</summary>
+					<summary>Returns a list of all elements descended from the element on which it is invoked that match the specified group of selectors.</summary>
 					<syntax>elementList = baseElement.querySelectorAll(selectors);</syntax>
 					<params>
 						<param name="elementList">
@@ -4086,9 +3468,7 @@
 					<link>DOM/Element.querySelectorAll</link>
 				</method>
 				<method name="removeAttribute">
-					<summary>
-						removeAttribute removes an attribute from the specified element.
-					</summary>
+					<summary>removeAttribute removes an attribute from the specified element.</summary>
 					<syntax>element.removeAttribute(attrName)</syntax>
 					<params>
 						<param name="attrName">
@@ -4099,9 +3479,7 @@
 					<link>DOM/element.removeAttribute</link>
 				</method>
 				<method name="removeAttributeNS">
-					<summary>
-						removeAttributeNS removes the specified attribute from an element.
-					</summary>
+					<summary>removeAttributeNS removes the specified attribute from an element.</summary>
 					<syntax>element.removeAttributeNS(namespace, attrName);</syntax>
 					<params>
 						<param name="namespace">
@@ -4114,9 +3492,7 @@
 					<link>DOM/element.removeAttributeNS</link>
 				</method>
 				<method name="removeAttributeNode">
-					<summary>
-						removeAttributeNode removes the specified attribute from the current element.
-					</summary>
+					<summary>removeAttributeNode removes the specified attribute from the current element.</summary>
 					<syntax>removedAttr = element.removeAttributeNode(attributeNode);</syntax>
 					<params>
 						<param name="removedAttr">
@@ -4130,9 +3506,7 @@
 					<link>DOM/element.removeAttributeNode</link>
 				</method>
 				<method name="removeChild">
-					<summary>
-						Removes a child node from the DOM. Returns removed node.
-					</summary>
+					<summary>Removes a child node from the DOM. Returns removed node.</summary>
 					<syntax>var oldChild = element.removeChild(child);</syntax>
 					<params>
 						<param name="oldChild">
@@ -4149,9 +3523,7 @@
 					<link>DOM/Node.removeChild</link>
 				</method>
 				<method name="removeEventListener">
-					<summary>
-						removeEventListener allows the removal of event listeners from the event target.
-					</summary>
+					<summary>removeEventListener allows the removal of event listeners from the event target.</summary>
 					<syntax>element.removeEventListener(type, listener, useCapture);</syntax>
 					<params>
 						<param name="type">
@@ -4168,9 +3540,7 @@
 					<link>DOM/element.removeEventListener</link>
 				</method>
 				<method name="replaceChild">
-					<summary>
-						Replaces one child node of the specified element with another.
-					</summary>
+					<summary>Replaces one child node of the specified element with another.</summary>
 					<syntax>replacedNode = parentNode.replaceChild(newChild, oldChild);</syntax>
 					<params>
 						<param name="replacedNode">
@@ -4187,9 +3557,7 @@
 					<link>DOM/Node.replaceChild</link>
 				</method>
 				<method name="scrollIntoView">
-					<summary>
-						The scrollIntoView method scrolls the element into view.
-					</summary>
+					<summary>The scrollIntoView method scrolls the element into view.</summary>
 					<syntax>element.scrollIntoView(alignWithTop);</syntax>
 					<params>
 						<param name="alignWithTop">
@@ -4200,9 +3568,7 @@
 					<link>DOM/element.scrollIntoView</link>
 				</method>
 				<method name="setAttribute">
-					<summary>
-						Adds a new attribute or changes the value of an existing attribute on the specified element.
-					</summary>
+					<summary>Adds a new attribute or changes the value of an existing attribute on the specified element.</summary>
 					<syntax>element.setAttribute(name, value);</syntax>
 					<params>
 						<param name="name">
@@ -4216,9 +3582,7 @@
 					<link>DOM/element.setAttribute</link>
 				</method>
 				<method name="setAttributeNS">
-					<summary>
-						setAttributeNS adds a new attribute or changes the value of an attribute with the given namespace and name.
-					</summary>
+					<summary>setAttributeNS adds a new attribute or changes the value of an attribute with the given namespace and name.</summary>
 					<syntax>element.setAttributeNS(namespace, name, value);</syntax>
 					<params>
 						<param name="namespace">
@@ -4234,9 +3598,7 @@
 					<link>DOM/element.setAttributeNS</link>
 				</method>
 				<method name="setAttributeNode">
-					<summary>
-						setAttributeNode() adds a new Attr node to the specified element.
-					</summary>
+					<summary>setAttributeNode() adds a new Attr node to the specified element.</summary>
 					<syntax>var replacedAttr = element.setAttributeNode(attribute);</syntax>
 					<params>
 						<param name="replacedAttr">
@@ -4250,9 +3612,7 @@
 					<link>DOM/element.setAttributeNode</link>
 				</method>
 				<method name="setAttributeNodeNS">
-					<summary>
-						setAttributeNodeNS adds a new namespaced attribute node to an element.
-					</summary>
+					<summary>setAttributeNodeNS adds a new namespaced attribute node to an element.</summary>
 					<syntax>replacedAttr = element.setAttributeNodeNS(attributeNode);</syntax>
 					<params>
 						<param name="replacedAttr">
@@ -4266,9 +3626,7 @@
 					<link>DOM/element.setAttributeNodeNS</link>
 				</method>
 				<method name="setUserData">
-					<summary>
-						Allows a user to attach data to an element, without needing to modify the DOM. Note that such data will not be preserved when imported via importNode, as with cloneNode() and renameNode() operations (though adoptNode does preserve the information), and equality tests in isEqualNode() do not consider user data in making the assessment.
-					</summary>
+					<summary>Allows a user to attach data to an element, without needing to modify the DOM. Note that such data will not be preserved when imported via importNode, as with cloneNode() and renameNode() operations (though adoptNode does preserve the information), and equality tests in isEqualNode() do not consider user data in making the assessment.</summary>
 					<syntax>prevUserData = someNode.setUserData(userKey, userData, handler);</syntax>
 					<params>
 						<param name="prevUserData">

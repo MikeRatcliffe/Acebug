@@ -80,12 +80,11 @@ Firebug.Ace =
 		this.win2Wrapped.document.getElementById('editor').style.fontSize = sizePercent;
     },
 	// context menu
-	getContextMenuItems: function(nada, target)
-    {
-		var env = ownerDocument.defaultView.wrappedJSObject
+	getContextMenuItems: function(nada, target) {
+		var env = target.ownerDocument.defaultView.wrappedJSObject
 		
 		var items = [],
-            editor = Firebug.Ace.env.editor,
+            editor = env.editor,
             clipBoardText = gClipboardHelper.getData(),
             editorText = editor.getCopyText(),
             self = this;
@@ -131,18 +130,22 @@ Firebug.Ace =
             }
         );
 		
-        Firebug.largeCommandLineEditor.addContextMenuItems(items, editor, editorText)
+		var sessionOwner
+		switch(editor.session.owner) {
+			case 'console': sessionOwner = Firebug.largeCommandLineEditor; break;
+			case 'stylesheetEditor': sessionOwner = null; break;
+			case 'htmlEditor': sessionOwner = null; break;
+		}
+        sessionOwner && sessionOwner.addContextMenuItems(items, editor, editorText)
 		
 		return items;		 
 	},
 	
-	getPopupObject: function(target)
-    {
+	getPopupObject: function(target) {
         return null;
     },
 
-    getTooltipObject: function(target)
-    {
+    getTooltipObject: function(target) {
         return null;
     }
 };
@@ -153,6 +156,7 @@ Firebug.largeCommandLineEditor = {
             return;
 
         var editor = Firebug.Ace.win2.editor;
+		editor.session.owner = 'console';
 
         // clean up preload handlers
         this.getValue = this._getValue;
@@ -192,11 +196,11 @@ Firebug.largeCommandLineEditor = {
 
     // activated when ace is loaded
     _getValue: function() {
-        return Firebug.Ace.env.editor.session.getValue();
+        return Firebug.Ace.win2.editor.session.getValue();
     },
 
     _setValue: function(text) {
-        var editor = Firebug.Ace.env.editor;
+        var editor = Firebug.Ace.win2.editor;
         editor.selection.selectAll();
         editor.onTextInput(text);
         return text;
@@ -439,7 +443,7 @@ function writeFile(file, text)
 
 
 // ************************************************************************************************
-// stylesheet panel
+// html panel
 
 var HTMLPanelEditor = function() {
 	this.__noSuchMethod__ = dump;
@@ -448,6 +452,7 @@ var HTMLPanelEditor = function() {
 	this.session = this.aceWindow.createSession('', '.html');
 	this.onInput = bind(this.onInput, this);
 	this.session.on('change', this.onInput);
+	this.session.owner = 'htmlEditor';
 	//
 	this.cmdID = "cmd_toggleHTMLEditing";
 }
@@ -583,6 +588,7 @@ HTMLPanelEditor.prototype = {
 
 Firebug.HTMLPanel.Editors.html = HTMLPanelEditor
 
+// stylesheet panel
 
 var StyleSheetEditor = function() {
 	this.__noSuchMethod__ = dump;
@@ -591,9 +597,11 @@ var StyleSheetEditor = function() {
 	this.session = this.aceWindow.createSession('', '.css')
 	this.onInput = bind(this.onInput, this)
 	this.session.on('change', this.onInput)
+	this.session.owner = 'stylesheetEditor';
 	//
 	this.cmdID = 'cmd_togglecssEditMode'
 }
+
 StyleSheetEditor.prototype = extend(HTMLPanelEditor.prototype, {
 	saveEdit: function(){
 		Firebug.CSSModule.freeEdit(this.styleSheet, this.getValue())

@@ -108,12 +108,12 @@ Firebug.Ace.autocompleter = {
             this.panel.setAttribute('onpopupshown','Firebug.Ace.autocompleter.setView(0)');
             this.panel.setAttribute('onpopuphidden','Firebug.Ace.autocompleter.finish()');
             this.tree.setAttribute('ondblclick','Firebug.Ace.autocompleter.insertSuggestedText();Firebug.Ace.autocompleter.finish()');
-            this.tree.setAttribute('onclick','Firebug.Ace.env.editor.focus()');
+            this.tree.setAttribute('onclick','Firebug.Ace.autocompleter.editor.focus()');
             this.tree.setAttribute('onselect','Firebug.Ace.autocompleter.onSelect()');
             this.panel.getElementsByTagName('toolbarbutton')[0].setAttribute('oncommand','Firebug.Ace.autocompleter.compare()');
         }
         var win = Firebug.Ace.win2;
-        var editor = Firebug.Ace.env.editor;
+        var editor = win.editor;
         var innerPos = editor.renderer.textToScreenCoordinates(editor.getCursorPosition());
         var posX = innerPos.pageX + win.mozInnerScreenX;
         var posY = innerPos.pageY + win.mozInnerScreenY;
@@ -254,10 +254,10 @@ Firebug.Ace.autocompleter = {
             text = text+additionalText;
             //l -= additionalText.length + 1;
         }
-        var range = Firebug.Ace.env.editor.selection.getRange();
+        var range = this.editor.selection.getRange();
         range.start.column = s;
-        Firebug.Ace.env.editor.selection.setSelectionRange(range);
-        Firebug.Ace.env.editor.onTextInput(text);
+        this.editor.selection.setSelectionRange(range);
+        this.editor.onTextInput(text);
     },
     // *****************
     getSpecialEntries: function() {
@@ -953,5 +953,15 @@ jn.compare = function(a, b) {
 };
 
 // ************************************************************************************************
+/*
+var req = new XMLHttpRequest;
+    req.open("GET", 'chrome://acebug/content/reference.xml', false);
+    try {
+        req.send(null);
+    } catch (e) {
+    }
+   doc= req.responseXML;
 
+doc.querySelector('[name="scrollMaxX"]')
+*/
 }});
