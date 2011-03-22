@@ -1,7 +1,26 @@
 define('fbace/startup', function(require, exports, module) {
 
 exports.launch = function(env, options) {
-    env.acebug = {require: require};
+	// global functions
+    toggleGutter = function() {
+        editor.renderer.setShowGutter(!env.editor.renderer.showGutter);
+    };
+	getMode = function(name) {
+		var mode = (name.match(/.(xml|html?|css|js)($|\?|\#)/)||[,'js'])[1]
+		var map = {html:'HTMLMode', htm:'HTMLMode', js:'JavaScriptMode', css:'CSSMode', xml:'XMLMode'}
+		return new window[map[mode]]();
+	};
+	createSession = function(value, name) {
+		var s = new EditSession(value);
+		s.setMode(getMode(name));
+		s.setUndoManager(new UndoManager());
+		s.setUseSoftTabs(options.softtabs);
+		s.setTabSize(options.tabsize);
+		s.setUseWrapMode(options.wordwrap);
+		s.setWrapLimitRange(null, null);
+		return s
+	}
+    
     //since we are using separate window make everything global for now
     window.env = env;
     event = require("pilot/event");
@@ -20,25 +39,18 @@ exports.launch = function(env, options) {
         return null;
     };
 
-    jsDoc = new EditSession('');
-    jsDoc.setMode(new JavaScriptMode());
-    jsDoc.setUndoManager(new UndoManager());
-
+    jsDoc = createSession('', '.js');
+    
     var container = document.getElementById("editor");
     editor = env.editor = new Editor(new Renderer(container, options.theme));
 	editor.setTheme(options.theme);
-    env.editor.setSession(jsDoc);
+    editor.setSession(jsDoc);
 
-    env.editor.setShowInvisibles(options.showinvisiblecharacters);
-    env.editor.setHighlightActiveLine(options.highlightactiveline);
-    env.editor.session.setUseSoftTabs(options.softtabs);
-    env.editor.session.setTabSize(options.tabsize);
-    env.editor.setShowPrintMargin(false);
-    env.editor.session.setUseWrapMode(options.wordwrap);
-    env.editor.session.setWrapLimitRange(null, null);
-
-	env.editor.setHighlightSelectedWord(true);
-    env.editor.renderer.setHScrollBarAlwaysVisible(false);
+    editor.setShowInvisibles(options.showinvisiblecharacters);
+    editor.setHighlightActiveLine(options.highlightactiveline);
+    editor.setShowPrintMargin(false);
+	editor.setHighlightSelectedWord(true);
+    editor.renderer.setHScrollBarAlwaysVisible(false);
 
 	// not needed in acebug
 	editor.renderer.moveTextAreaToCursor =
@@ -59,10 +71,6 @@ exports.launch = function(env, options) {
         return event.preventDefault(e);
     });
 
-    // global functions
-    window.toggleGutter = function() {
-        env.editor.renderer.setShowGutter(!env.editor.renderer.showGutter);
-    };
 
     editor.addCommand = function(cmd) {
         canon.addCommand({
@@ -94,7 +102,7 @@ exports.launch = function(env, options) {
 			env.editor.setKeyboardHandler(null);
 			return;
 		}
-		var path = "ace/keyboard/keybinding/" + name;
+		var path = "ace/keyboard/keybinding/" + name.toLowerCase();
 		var module = require(path);
 		if(!module)
 			require([path], function(module){
@@ -151,18 +159,6 @@ exports.launch = function(env, options) {
 			editor.session.setBreakpoint(lineNo);
 		//editor.session.panel.setBreakpoint(lineNo, state)
 	});
-
-	getMode = function(name) {
-		var mode = (name.match(/.(xml|html?|css|js)($|\?|\#)/)||[,'js'])[1]
-		var map = {html:'HTMLMode', htm:'HTMLMode', js:'JavaScriptMode', css:'CSSMode', xml:'XMLMode'}
-		return new window[map[mode]]();
-	};
-	createSession = function(value, name) {
-		var s = new EditSession(value);
-		s.setMode(getMode(name));
-		s.setUndoManager(new UndoManager());
-		return s
-	}
 
 	editor.addCommands({
 		toggleStreamComment: function() {

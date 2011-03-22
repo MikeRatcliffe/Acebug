@@ -961,6 +961,17 @@ var req = new XMLHttpRequest;
     } catch (e) {
     }
    doc= req.responseXML;
+l=doc.getElementsByTagName('param')
+
+
+for(var i=l.length;i--;){
+l[i].firstChild.replaceWholeText(l[i].firstChild.wholeText.trim())
+}
+
+s=new XMLSerializer()
+
+s.serializeToString(doc)
+
 
 doc.querySelector('[name="scrollMaxX"]')
 */

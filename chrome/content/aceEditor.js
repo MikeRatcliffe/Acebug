@@ -133,7 +133,7 @@ Firebug.Ace =
 		var sessionOwner
 		switch(editor.session.owner) {
 			case 'console': sessionOwner = Firebug.largeCommandLineEditor; break;
-			case 'stylesheetEditor': sessionOwner = null; break;
+			case 'stylesheetEditor': sessionOwner = StyleSheetEditor.prototype; break;
 			case 'htmlEditor': sessionOwner = null; break;
 		}
         sessionOwner && sessionOwner.addContextMenuItems(items, editor, editorText)
@@ -173,7 +173,7 @@ Firebug.largeCommandLineEditor = {
             startAutocompleter: function() {
                 Firebug.Ace.autocompleter.start(editor);
             }
-        });        
+        });          
     },
     // called if ace still loading
     _startLoading: function() {
@@ -291,7 +291,6 @@ Firebug.largeCommandLineEditor = {
 
     addContextMenuItems: function(items, editor, editorText)
     {       
-        var self = this
 		items.unshift(
             {
                 label: $ACESTR("acebug.executeselection"),
@@ -311,7 +310,7 @@ Firebug.largeCommandLineEditor = {
     },
 	
 	// * * * * * * * * * * * * * * * * * * * * * * 	
-    setFontSize: function(sizePercent){
+    setFontSize: function(sizePercent) {
         Firebug.Ace.setFontSize(sizePercent)
     },
 };
@@ -613,12 +612,25 @@ StyleSheetEditor.prototype = extend(HTMLPanelEditor.prototype, {
 	cleanup: function(target){
 		delete this.styleSheet;
 	},
+	
+	addContextMenuItems: function(items, editor, editorText) {       
+        var self = this
+		items.unshift(
+            {
+                label: $ACESTR("acebug.streamcomment"),
+                command: function() {
+                    editor.execCommand('toggleStreamComment');
+                }
+            },
+            "-"
+        );
+    },
+
 })
 
 Firebug.StyleSheetEditor = StyleSheetEditor
 
-Firebug.CSSStyleSheetPanel.prototype.startBuiltInEditing = function(css)
-{
+Firebug.CSSStyleSheetPanel.prototype.startBuiltInEditing = function(css) {
 	if (!this.stylesheetEditor)
 		this.stylesheetEditor = new StyleSheetEditor();
 

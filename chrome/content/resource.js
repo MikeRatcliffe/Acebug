@@ -62,7 +62,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
     // extends Panel
 
     name: "resource",
-    title: "resource",
+    title: "Resource",
 	parentPanel: null,
     searchable: true,
     order: 190,
