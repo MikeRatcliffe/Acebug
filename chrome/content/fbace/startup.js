@@ -5,22 +5,36 @@ exports.launch = function(env, options) {
     toggleGutter = function() {
         editor.renderer.setShowGutter(!env.editor.renderer.showGutter);
     };
-	getMode = function(name) {
-		var mode = (name.match(/.(xml|html?|css|js)($|\?|\#)/)||[,'js'])[1]
-		var map = {html:'HTMLMode', htm:'HTMLMode', js:'JavaScriptMode', css:'CSSMode', xml:'XMLMode'}
-		return new window[map[mode]]();
+	getExtension = function(name) {
+		return (name.match(/.(xml|html?|css|js)($|\?|\#)/)||[,'js'])[1]
 	};
 	createSession = function(value, name) {
 		var s = new EditSession(value);
-		s.setMode(getMode(name));
+		s.extension = getExtension(name)
+		s.setMode(new modeMap[s.extension]);		
 		s.setUndoManager(new UndoManager());
+		
 		s.setUseSoftTabs(options.softtabs);
-		s.setTabSize(options.tabsize);
 		s.setUseWrapMode(options.wordwrap);
+		s.setTabSize(options.tabsize);
 		s.setWrapLimitRange(null, null);
 		return s
 	}
-    
+    env.setKeybinding = function(name){
+		if(name !='Vim' && name != 'Emacs'){
+			env.editor.setKeyboardHandler(null);
+			return;
+		}
+		var path = "ace/keyboard/keybinding/" + name.toLowerCase();
+		var module = require(path);
+		if(!module)
+			require([path], function(module){
+				env.editor.setKeyboardHandler(env.editor.normalKeySet = module[name]);
+			});
+		else
+			env.editor.setKeyboardHandler(env.editor.normalKeySet = module[name]);
+	};
+	
     //since we are using separate window make everything global for now
     window.env = env;
     event = require("pilot/event");
@@ -32,13 +46,20 @@ exports.launch = function(env, options) {
 
     CSSMode = require("ace/mode/css").Mode;
     HTMLMode = require("ace/mode/html").Mode;
-    XMLMode = require("ace/mode/xml").Mode;
+    XMLMode = require("ace/mode/xml").Mode;	
 	JavaScriptMode = require("ace/mode/javascript").Mode;
-    // worker is more of nuisance now
+    // worker is more of a nuisance now
     JavaScriptMode.prototype.createWorker = function(session) {
         return null;
     };
 
+	var modeMap = {
+		html: HTMLMode,
+		htm: HTMLMode,
+		js: JavaScriptMode,
+		css: CSSMode, 
+		xml: XMLMode
+	}
     jsDoc = createSession('', '.js');
     
     var container = document.getElementById("editor");
@@ -97,21 +118,6 @@ exports.launch = function(env, options) {
 	var Search = require("ace/search").Search;
     env.canon = canon = require("pilot/canon");
 
-	env.setKeybinding = function(name){
-		if(name !='Vim' && name != 'Emacs'){
-			env.editor.setKeyboardHandler(null);
-			return;
-		}
-		var path = "ace/keyboard/keybinding/" + name.toLowerCase();
-		var module = require(path);
-		if(!module)
-			require([path], function(module){
-				env.editor.setKeyboardHandler(env.editor.normalKeySet = module[name]);
-			});
-		else
-			env.editor.setKeyboardHandler(env.editor.normalKeySet = module[name]);
-	};
-
 	env.setKeybinding(options.keybinding);
 
 	editor.addCommands = function(commandSet) {
@@ -126,12 +132,13 @@ exports.launch = function(env, options) {
 		canon.getCommand(name).exec(env);
 	};
 
-	//add commands to default binding
+	// add key bindings
 	editor.keyBinding.$defaulKeyboardHandler.$config;
 	var bindings = editor.keyBinding.$defaulKeyboardHandler.$config;
 
 	bindings.startAutocompleter = "Ctrl-Space|Ctrl-.|Alt-.";
 	bindings.execute = "Ctrl-Return";
+	bindings.duplicate = "Ctrl-D|Alt-D";
 	delete bindings.reverse;
 	new HashHandler(bindings);
 
@@ -146,21 +153,24 @@ exports.launch = function(env, options) {
 		previousEntry: 'Up'
 	});
 
-	//editor.setKeyboardHandler(editor.normalKeySet);
-	//breakpoint handlers
-	event.addListener(editor.renderer.$gutter, 'mousedown', function(e){
-		if(e.target.className.indexOf('gutter-cell') === -1)
-			return;
-		var lineNo = parseInt(e.target.textContent, 10) - 1;
-        var state;
-		if(state = editor.session.$breakpoints[lineNo])
-			editor.session.clearBreakpoint(lineNo);
-		else
-			editor.session.setBreakpoint(lineNo);
-		//editor.session.panel.setBreakpoint(lineNo, state)
-	});
-
+    // add commands       
 	editor.addCommands({
+		duplicate: function(env, args, request) { 
+			var editor = env.editor
+			var sel = editor.selection
+			var doc = editor.session
+			var range=sel.getRange()
+			if(range.isEmpty()){
+				var row=range.start.row
+				doc.duplicateLines(row,row)
+				//ed.copyLinesDown();
+			}else{
+				doc.insert(sel.selectionLead, doc.getTextRange(range), false)
+			}
+		},
+		startAutocompleter: function(env, args, request) {
+            gAutocompleter.start(env.editor);
+        },
 		toggleStreamComment: function() {
 			// TODO: handle space in ' */' while toggling
 			var range = editor.getSelection().getRange();
@@ -218,6 +228,19 @@ exports.launch = function(env, options) {
 				editor.moveCursorTo(newPos.row, newPos.column);
 			}
 		}
+	});
+	
+	// breakpoint handler
+	event.addListener(editor.renderer.$gutter, 'mousedown', function(e){
+		if(e.target.className.indexOf('gutter-cell') === -1)
+			return;
+		var lineNo = parseInt(e.target.textContent, 10) - 1;
+        var state;
+		if(state = editor.session.$breakpoints[lineNo])
+			editor.session.clearBreakpoint(lineNo);
+		else
+			editor.session.setBreakpoint(lineNo);
+		//editor.session.panel.setBreakpoint(lineNo, state)
 	});
 };
 });

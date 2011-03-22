@@ -21,6 +21,9 @@ Firebug.Ace =
         this.win1Wrapped = browser.contentWindow;
         this.win1 = this.win1Wrapped.wrappedJSObject;
 		
+		this.win1.gAutocompleter =
+		this.win2.gAutocompleter = this.autocompleter;
+		
 		//set Firebug.largeCommandLineEditor on wrapped window so that Firebug.getElementPanel can access it
         this.win1Wrapped.document.getElementById('editor').ownerPanel = this;
         this.win2Wrapped.document.getElementById('editor').ownerPanel = this;
@@ -70,7 +73,7 @@ Firebug.Ace =
     },
 	
 	switchPanels: function(toAce) {
-		var panelID = toAce?"fbAceBrowser1":'fbPanelBar1-browser'
+		var panelID = toAce?"fbAceBrowser1-parent":'fbPanelBar1-browser'
 		var panel = Firebug.chrome.$(panelID);
 		panel.parentNode.selectedPanel=panel;
 	},
@@ -169,10 +172,7 @@ Firebug.largeCommandLineEditor = {
 
         //add shortcuts
         editor.addCommands({
-            execute: Firebug.largeCommandLineEditor.enter,
-            startAutocompleter: function() {
-                Firebug.Ace.autocompleter.start(editor);
-            }
+            execute: Firebug.largeCommandLineEditor.enter
         });          
     },
     // called if ace still loading
@@ -256,11 +256,11 @@ Firebug.largeCommandLineEditor = {
 
         result = fp.show();
         if( result == Ci.nsIFilePicker.returnOK) {
-            this.value = readEntireFile(fp.file);
+            this.setValue(readEntireFile(fp.file));
         }
     },
 
-    saveFile:function()
+    saveFile: function()
     {
         var file, name, result,
             fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);

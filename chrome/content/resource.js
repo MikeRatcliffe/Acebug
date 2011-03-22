@@ -69,7 +69,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 
     initialize: function()
     {
-        this.__defineGetter__('browser', function()Firebug.chrome.$("fbAceBrowser1"))
+        this.__defineGetter__('browser', function()Firebug.chrome.$("fbAceBrowser1-parent"))
 
         Firebug.Panel.initialize.apply(this, arguments);
     },

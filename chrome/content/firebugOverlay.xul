@@ -11,8 +11,8 @@
     <vbox id="fbContentBox">
         <box id="fbPanelBox" flex="1">
             <panelBar id="fbPanelBar1" class="panelBar" flex="3" persist="width,height">
-                <box id="fbPanelPane" flex="1" persist="orient">
-                    <deck id="fbSidePanelDeck" persist="width,height">
+                <box id="fbPanelPane" flex="1" persist="orient">                   
+					<deck id="fbSidePanelDeck" persist="width,height">
                         <vbox id="fbLargeCommandBox">
                             <textbox id="fbLargeCommandLine" multiline="true" flex="1"
                                 newlines="pasteintact"
@@ -47,9 +47,16 @@
     </vbox>
 	
 	<deck id="fbPanelBar1-deck" >
-		<iframe id="fbAceBrowser1" type="content" flex="1"
-             tooltip="fbTooltip" contextmenu="fbContextMenu"
-             src="chrome://acebug/content/fbace/fbeditor.html" position="1"/>
+		
+		<hbox id='fbAceBrowser1-parent'>
+			<tree position='1' hidden='true'>
+				 <treechildren id="domfly"/>
+			</tree>
+			<splitter position='2' hidden='true'/>
+			<iframe id="fbAceBrowser1" type="content" flex="1"
+				 tooltip="fbTooltip" contextmenu="fbContextMenu"
+				 src="chrome://acebug/content/fbace/fbeditor.html" position="1"/>
+		</hbox>
 	</deck>
 
     <popupset id='mainPopupSet'>

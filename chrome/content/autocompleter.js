@@ -112,8 +112,8 @@ Firebug.Ace.autocompleter = {
             this.tree.setAttribute('onselect','Firebug.Ace.autocompleter.onSelect()');
             this.panel.getElementsByTagName('toolbarbutton')[0].setAttribute('oncommand','Firebug.Ace.autocompleter.compare()');
         }
-        var win = Firebug.Ace.win2;
-        var editor = win.editor;
+        var editor = this.editor;
+        var win = editor.container.ownerDocument.defaultView;
         var innerPos = editor.renderer.textToScreenCoordinates(editor.getCursorPosition());
         var posX = innerPos.pageX + win.mozInnerScreenX;
         var posY = innerPos.pageY + win.mozInnerScreenY;
