@@ -160,6 +160,7 @@ Firebug.largeCommandLineEditor = {
 
         var editor = Firebug.Ace.win2.editor;
 		editor.session.owner = 'console';
+		editor.session.autocompleter = Firebug.Ace.autocompleter
 
         // clean up preload handlers
         this.getValue = this._getValue;

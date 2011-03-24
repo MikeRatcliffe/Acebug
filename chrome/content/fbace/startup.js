@@ -169,7 +169,9 @@ exports.launch = function(env, options) {
 			}
 		},
 		startAutocompleter: function(env, args, request) {
-            gAutocompleter.start(env.editor);
+            var editor = env.editor
+			if(editor.session.autocompleter)
+				editor.session.autocompleter.start(editor);
         },
 		toggleStreamComment: function() {
 			// TODO: handle space in ' */' while toggling
