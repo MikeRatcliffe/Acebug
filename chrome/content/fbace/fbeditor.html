@@ -146,7 +146,9 @@ var startAce = function(callback, options) {
 		return
 	}
 	onLaunch = callback || 'called';
-	var rootDeps = ['ace-uncompressed', "ace/mode/javascript", "ace/mode/css", "ace/mode/xml", "ace/mode/html", "fbace/startup"];
+	// "ace/mode/javascript", "ace/mode/css", are loaded with html
+	// "ace-uncompressed"
+	var rootDeps = ["ace", "ace/mode/xml", "ace/mode/html", "fbace/startup"];
 	if(!options)
 		options = {};
 	//"ace/theme/textmate" is built into ace.js so there's no need to load that

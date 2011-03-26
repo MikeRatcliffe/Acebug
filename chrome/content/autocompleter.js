@@ -45,7 +45,7 @@ function treeView(table) {
 
 /**************************************/
 Firebug.Ace.autocompleter = {
-	initPanel: function(){
+	initPanel: function(panelH, panelW){
 		this.panel=$("aceAutocompletePanel");
 		this.panel.height = panelH;
 		this.panel.width = panelW;
@@ -66,7 +66,7 @@ Firebug.Ace.autocompleter = {
         var panelH = 250, panelW = 200;
 
         if(!this.panel)//get domNodes
-            this.initPanel()
+            this.initPanel(panelH, panelW)
         
         var editor = this.editor;
         var win = editor.container.ownerDocument.defaultView;
@@ -119,22 +119,11 @@ Firebug.Ace.autocompleter = {
     },
 	start: function(editor) {
         this.editor = editor || this.editor;
-        var range = editor.selection.getRange();
-        this.filterRange = range.clone();
-        range.end.column = range.start.column;
-        range.start.column = 0;
-        var evalString = editor.session.getTextRange(range);
-
-        var [objString, filterText] = this.parseJSFragment(evalString);
-
-        range.end.column = range.end.column - filterText.length - 1;
-        range.start.column = range.end.column - objString.length -1;
-        this.baseRange = range;
-
-        this.filterRange.start.column = this.filterRange.end.column - filterText.length;
-
-        this.text = filterText;
-        this.eval(objString);
+       
+		
+		if(editor.session.extension =='js')
+			this.mode = jsMode
+        this.mode.start(editor, this)
     },
 	addComandsToEditor: function(){
         var self = this;
@@ -181,7 +170,7 @@ Firebug.Ace.autocompleter = {
 		var [text, offset] = this.mode.getCompletionText(entry)
 		
         var s = this.baseRange.end.column + 1 - offset;
-
+dump(s)
         if (additionalText) {
             text = text+additionalText;
         }
@@ -358,23 +347,23 @@ var jsMode = {
 	},
 	getHint: function(si, completer){
 		if(si <0 || si >= completer.tree.view.rowCount){
-			return jn.inspect(completer.object);
+			return jn.inspect(this.object);
 		}
 		var o = completer.sortedArray[si];
 		var longName = jn.inspect(o.object, "long");
-		var text = jn.lookupSetter(completer.object, o.name);
+		var text = jn.lookupSetter(this.object, o.name);
 		return longName+'\n'+text
 	},
 		// *****************
 	onEvalSuccess: function(result, context) {
         this.object = result;
-        this.unfilteredArray = getProps(result);
+        this.completer.unfilteredArray = getProps(result);
 
         if(this.specFunc)
             this.getSpecialEntries();
 
-        this.filter(this.unfilteredArray, this.text);
-        this.showPanel();
+        this.completer.filter(this.completer.unfilteredArray, this.completer.text);
+        this.completer.showPanel();
     },
 
     onEvalFail: function(result, context) {
@@ -392,8 +381,26 @@ var jsMode = {
             );
     },
 
-    start: function(){
-	
+    start: function(editor, completer){
+		this.completer = completer
+		
+		var range = editor.selection.getRange();
+        completer.filterRange = this.filterRange = range.clone();
+        range.end.column = range.start.column;
+        range.start.column = 0;
+		
+		var evalString = editor.session.getTextRange(range);
+
+        var [objString, filterText] = this.parseJSFragment(evalString);
+
+        range.end.column = range.end.column - filterText.length - 1;
+        range.start.column = range.end.column - objString.length -1;
+        completer.baseRange = this.baseRange = range;
+
+        this.filterRange.start.column = this.filterRange.end.column - filterText.length;
+
+        this.text = filterText;
+        this.eval(objString);
 	},   
     
     // *****************
