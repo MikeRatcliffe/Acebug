@@ -34,10 +34,10 @@
                                     label="/*" oncommand="Firebug.Ace.env.execCommand('toggleStreamComment')"/>
                                 <toolbarbutton id="fbCmdLoadButton" label="&acebug.fbCmdLoadButton.label;"
                                     tooltip="&acebug.fbCmdLoadButton.tooltip;"
-                                    oncommand="Firebug.largeCommandLineEditor.loadFile()" insertbefore="fbCommandToggleLarge"/>
+                                    oncommand="Firebug.Ace.loadFile(Firebug.Ace.win2.editor)" insertbefore="fbCommandToggleLarge"/>
                                 <toolbarbutton id="fbCmdSaveButton" label="&acebug.fbCmdSaveButton.label;"
                                     tooltip="&acebug.fbCmdSaveButton.tooltip;"
-                                    oncommand="Firebug.largeCommandLineEditor.saveFile()" insertbefore="fbCommandToggleLarge"/>
+                                    oncommand="Firebug.Ace.saveFile(Firebug.Ace.win2.editor)" insertbefore="fbCommandToggleLarge"/>
                             </hbox>
                         </vbox>
                     </deck>
@@ -46,18 +46,23 @@
         </box>
     </vbox>
 	
-	<deck id="fbPanelBar1-deck" >
-		
+	<deck id="fbPanelBar1-deck" >		
 		<hbox id='fbAceBrowser1-parent'>
-			<tree position='1' hidden='true'>
+			<tree position='1' hidden='true' persist='width' id='fbAceFileListTree'>
 				 <treechildren id="domfly"/>
 			</tree>
-			<splitter position='2' hidden='true'/>
+			<splitter position='2' hidden='true' collapse='before'><grippy/></splitter>
 			<iframe id="fbAceBrowser1" type="content" flex="1"
 				 tooltip="fbTooltip" contextmenu="fbContextMenu"
 				 src="chrome://acebug/content/fbace/fbeditor.html" position="1"/>
 		</hbox>
 	</deck>
+	
+	<hbox id='fbCSSButtons'>
+		<toolbarbutton id="fbCmdSaveButton" label="&acebug.fbCmdSaveButton.label;"
+				tooltip="&acebug.fbCmdSaveButton.tooltip;"
+				oncommand="Firebug.Ace.saveFile(Firebug.Ace.win2.editor)"/>
+	</hbox>
 
     <popupset id='mainPopupSet'>
         <panel id="aceAutocompletePanel" noautofocus="true"  ignorekeys='true'>

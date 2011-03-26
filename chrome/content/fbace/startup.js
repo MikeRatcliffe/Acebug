@@ -1,6 +1,21 @@
 define('fbace/startup', function(require, exports, module) {
 
 exports.launch = function(env, options) {
+	// requires
+	event = require("pilot/event");
+    Editor = require("ace/editor").Editor;
+    Renderer = require("ace/virtual_renderer").VirtualRenderer;
+
+    EditSession = require("ace/edit_session").EditSession;
+    UndoManager = require("ace/undomanager").UndoManager;
+
+    CSSMode = require("ace/mode/css").Mode;
+    HTMLMode = require("ace/mode/html").Mode;
+    XMLMode = require("ace/mode/xml").Mode;	
+	JavaScriptMode = require("ace/mode/javascript").Mode;
+	
+	var HashHandler = require("ace/keyboard/hash_handler").HashHandler;
+	var Search = require("ace/search").Search;	
 	// global functions
     toggleGutter = function() {
         editor.renderer.setShowGutter(!env.editor.renderer.showGutter);
@@ -10,7 +25,7 @@ exports.launch = function(env, options) {
 	};
 	createSession = function(value, name) {
 		var s = new EditSession(value);
-		s.extension = getExtension(name)
+		s.setFileInfo(name);
 		s.setMode(new modeMap[s.extension]);		
 		s.setUndoManager(new UndoManager());
 		
@@ -19,6 +34,14 @@ exports.launch = function(env, options) {
 		s.setTabSize(options.tabsize);
 		s.setWrapLimitRange(null, null);
 		return s
+	}
+	EditSession.prototype.setFileInfo = function(path){
+		this.extension = getExtension(path)
+		if(path.slice(0,5) == 'file:')
+			this.filePath = path
+		else
+			this.filePath = ''
+		this.href = path
 	}
     env.setKeybinding = function(name){
 		if(name !='Vim' && name != 'Emacs'){
@@ -37,17 +60,7 @@ exports.launch = function(env, options) {
 	
     //since we are using separate window make everything global for now
     window.env = env;
-    event = require("pilot/event");
-    Editor = require("ace/editor").Editor;
-    Renderer = require("ace/virtual_renderer").VirtualRenderer;
-
-    EditSession = require("ace/edit_session").EditSession;
-    UndoManager = require("ace/undomanager").UndoManager;
-
-    CSSMode = require("ace/mode/css").Mode;
-    HTMLMode = require("ace/mode/html").Mode;
-    XMLMode = require("ace/mode/xml").Mode;	
-	JavaScriptMode = require("ace/mode/javascript").Mode;
+    
     // worker is more of a nuisance now
     JavaScriptMode.prototype.createWorker = function(session) {
         return null;
@@ -113,9 +126,7 @@ exports.launch = function(env, options) {
         bindings[cmd.name] = cmd.key;
         env.editor.setKeyboardHandler(new HashHandler(bindings));
     };
-    /**********  handle keyboard *****/
-	var HashHandler = require("ace/keyboard/hash_handler").HashHandler;
-	var Search = require("ace/search").Search;
+    /**********  handle keyboard *****/	
     env.canon = canon = require("pilot/canon");
 
 	env.setKeybinding(options.keybinding);

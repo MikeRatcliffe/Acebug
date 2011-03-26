@@ -47,6 +47,28 @@ var enumerateRequests = function(fn)
 			fn(file);
 	}
 }
+var getAllLocations = function(){ 
+	var locationList=[document.documentURI]
+	//scripts
+	var list = document.documentElement.getElementsByTagName('script')
+	for(var i = list.length; i--;){
+		src = list[i].getAttribute('src')
+		if(src)locationList.push(src)
+	}
+	//images
+	list = document.documentElement.getElementsByTagName('img')
+	for(var i = list.length; i--;){
+		src = list[i].getAttribute('src')
+		if(src)locationList.push(src)
+	}
+	//stylesheets
+	list = document.styleSheets
+	for(var i = list.length; i--;){
+		src = list[i].href
+		if(src)locationList.push(src)
+	}
+	return locationList
+}
 /*a=[]
 enumerateRequests(function(x)a.push(x))
 a.map(function(a)a.href)
@@ -69,22 +91,40 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 
     initialize: function()
     {
-        this.__defineGetter__('browser', function()Firebug.chrome.$("fbAceBrowser1-parent"))
+        this.__defineGetter__('browser', function() Firebug.chrome.$("fbAceBrowser1-parent"))
 
         Firebug.Panel.initialize.apply(this, arguments);
     },
 	
 	show: function()
 	{
+		var treePane = this.browser.firstChild
+		treePane.hidden = false
+		treePane.nextSibling.hidden = false
 		this.aceWindow = Firebug.Ace.win1;
 		this.editor = this.aceWindow.editor;
+		if (this.editor) {
+			this.session = this.aceWindow.createSession('ppp', '.html');
+			this.editor.setSession(this.session)		
+		} else {
+			this.aceWindow.startAce(bind(function(){
+				this.editor = this.aceWindow.editor;
+				this.setSession()
+			}, this))
+		}
+	},
+	
+	setSession: function()
+	{
 		this.session = this.aceWindow.createSession('ppp', '.html');
-		this.editor.setSession(this.session)
+		this.editor.setSession(this.session)		
 	},
 	
 	hide: function()
 	{
-		
+		var treePane = this.browser.firstChild
+		treePane.hidden = true
+		treePane.nextSibling.hidden = true
 	},
 	
 	getSourceLink: function(target, object)

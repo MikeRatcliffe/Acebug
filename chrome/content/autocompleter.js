@@ -44,8 +44,55 @@ function treeView(table) {
 };
 
 /**************************************/
+
 Firebug.Ace.autocompleter = {
-	initPanel: function(panelH, panelW){
+    onEvalSuccess: function(result, context) {
+        this.object = result;
+        this.unfilteredArray = getProps(result);
+
+        if(this.specFunc)
+            this.getSpecialEntries();
+
+        this.filter(this.unfilteredArray, this.text);
+        this.showPanel();
+    },
+
+    onEvalFail: function(result, context) {
+        alert(result);
+    },
+
+    eval: function(string, context) {
+        context=context || Firebug.currentContext;
+        if(!string)
+            this.onEvalSuccess(context.global, context);
+        else
+            Firebug.CommandLine.evaluate(string, context, context.thisValue, null,
+                bind(this.onEvalSuccess, this),
+                bind(this.onEvalFail, this)
+            );
+    },
+
+    start: function(editor) {
+        this.editor = editor || this.editor;
+        var range = editor.selection.getRange();
+        this.filterRange = range.clone();
+        range.end.column = range.start.column;
+        range.start.column = 0;
+        var evalString = editor.session.getTextRange(range);
+
+        var [objString, filterText] = this.parseJSFragment(evalString);
+
+        range.end.column = range.end.column - filterText.length - 1;
+        range.start.column = range.end.column - objString.length -1;
+        this.baseRange = range;
+
+        this.filterRange.start.column = this.filterRange.end.column - filterText.length;
+
+        this.text = filterText;
+        this.eval(objString);
+    },
+
+    initPanel: function(panelH, panelW){
 		this.panel=$("aceAutocompletePanel");
 		this.panel.height = panelH;
 		this.panel.width = panelW;
@@ -61,7 +108,8 @@ Firebug.Ace.autocompleter = {
 		this.tree.setAttribute('onselect','Firebug.Ace.autocompleter.onSelect()');
 		this.panel.getElementsByTagName('toolbarbutton')[0].setAttribute('oncommand','Firebug.Ace.autocompleter.compare()');
 	},
-	showPanel: function() {
+
+    showPanel: function() {
         this.hidden = false;
         var panelH = 250, panelW = 200;
 
@@ -104,28 +152,22 @@ Firebug.Ace.autocompleter = {
         this.bubble.width = this.bubblePos.w;
         this.bubble.showPopup(null, this.bubblePos.l, this.bubblePos.t, "popup");
     },
-	$selectionListener: function(e) {
+
+    $selectionListener: function(e) {
         e.data = this.editor.selection.getCursor();
         if(this.baseRange.contains(e.data.row, e.data.column) || this.hidden)
             return this.finish();
 
         this.filterRange.end = e.data;
         this.text = this.editor.session.getTextRange(this.filterRange);
-        
-        if( this.mode.finishRe.test(this.text))
+        dump(this.text);
+        if( /[\+\-;,= \(\)\[\]\{\}\!><]/.test(this.text))
             return this.finish();
-        this.filter(this.unfilteredArray, this.text);
+        this.filter(this.unfilteredArray,this.text);
         this.setView(0);
     },
-	start: function(editor) {
-        this.editor = editor || this.editor;
-       
-		
-		if(editor.session.extension =='js')
-			this.mode = jsMode
-        this.mode.start(editor, this)
-    },
-	addComandsToEditor: function(){
+
+    addComandsToEditor: function(){
         var self = this;
         this.editor.addCommands({
             nextEntry: function(){
@@ -162,24 +204,8 @@ Firebug.Ace.autocompleter = {
 
         this.editor.autocompleteCommandsAdded = true;
     },
-	insertSuggestedText: function(additionalText){
-        var c = this.tree.view.selection.currentIndex;        
-        var entry = this.sortedArray[c];
-		if(!entry)
-            return;
-		var [text, offset] = this.mode.getCompletionText(entry)
-		
-        var s = this.baseRange.end.column + 1 - offset;
-dump(s)
-        if (additionalText) {
-            text = text+additionalText;
-        }
-        var range = this.editor.selection.getRange();
-        range.start.column = s;
-        this.editor.selection.setSelectionRange(range);
-        this.editor.onTextInput(text);
-    },
-	onSelect: function(immediate){
+    // *****************
+    onSelect: function(immediate){
         if(!immediate){
             if(this.onSelectTimeOut)
                 clearTimeout(this.onSelectTimeOut);
@@ -191,14 +217,88 @@ dump(s)
         this.onSelectTimeOut = null;
 
         try{
-            var index = this.tree.currentIndex;
-            this.number.value = index + ':' +this.sortedArray.length + "/" + this.unfilteredArray.length;
+            var si = this.tree.currentIndex;
+            this.number.value = si + ':' +this.sortedArray.length + "/" + this.unfilteredArray.length;
 
-            var hint = this.mode.getHint(index, this)
-            this.sayInBubble(hint);
+            if(si <0 || si > this.tree.view.rowCount){
+                this.sayInBubble(jn.inspect(this.object));
+                return;
+            }
+            var o = this.sortedArray[si];
+            var longName = jn.inspect(o.object, "long");
+            var text = jn.lookupSetter(this.object, o.name);
+            this.sayInBubble(longName+'\n'+text);
         } catch(e) {}
     },
-	
+
+    sayInBubble: function(text) {
+        if(this.hidden)
+            return;
+        var item = this.bubble.firstChild;
+        item.value = text;
+    },
+
+    insertSuggestedText: function(additionalText){
+        var c = this.tree.view.selection.currentIndex;
+        if(c<0)
+            return;
+        c = this.sortedArray[c];
+        var isSpecial = c.special;
+        var text = c.name;
+
+        var s = this.baseRange.end.column + 1;
+        if(isSpecial){
+            text=text.substr(1);
+        } else if (/^\d*$/.test(text)) {
+            text = "[" + text + "]";
+            s--;
+        } else if (!/^[a-z$_][a-z$_0-9]*$/i.test(text)) {
+            text = '["' + text + '"]';
+            s--;
+        }
+
+        if (additionalText) {
+            text = text+additionalText;
+            //l -= additionalText.length + 1;
+        }
+        var range = this.editor.selection.getRange();
+        range.start.column = s;
+        this.editor.selection.setSelectionRange(range);
+        this.editor.onTextInput(text);
+    },
+    // *****************
+    getSpecialEntries: function() {
+        var [spo, funcName] = this.specFunc;
+        var ans = [];
+        try {
+            if (funcName === "QueryInterface") {
+                var spo = EJS_evalStringOnTarget(spo);
+                supportedInterfaces(spo).forEach(function(x) {
+                    ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,special:true});
+                });
+            } else if (funcName === "getInterface") {
+                spo = EJS_evalStringOnTarget(spo);
+                supportedgetInterfaces(spo).forEach(function(x){
+                    ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,special:true});
+                });
+            } else if (funcName === "getElementById") {
+                ans = getIDsInDoc();
+            } else if(funcName === "getElementsByClassName") {
+                ans = getIDsInDoc();
+            } else if(funcName === "getAttribute" || funcName === "setAttribute" || funcName === "hasAttribute") {
+                spo = EJS_evalStringOnTarget(spo);
+                var att = spo.attributes;
+                for(var i=0; i < att.length; i++) {
+                    var x = att[i];
+                    ans.push({name:'\u2555"'+x.nodeName+'")',comName: '"'+x.nodeName.toLowerCase(),description:x.value, depth:-1,special:true});
+                }
+            }
+        } catch(e) {
+            Cu.reportError(e);
+        }
+        this.unfilteredArray=ans.concat(this.unfilteredArray);
+    },
+
     setView: function(si) {
         if(typeof si !== "number")
             si = this.tree.currentIndex;
@@ -318,126 +418,10 @@ dump(s)
         this.editor.setKeyboardHandler(this.editor.normalKeySet);
         this.panel.hidePopup();
         this.bubble.hidePopup();
-    },	
-	
-    sayInBubble: function(text) {
-        if(this.hidden)
-            return;
-        var item = this.bubble.firstChild;
-        item.value = text;
-    },
-
-}
-var jsMode = {
-	finishRe: /[\+\-;,= \(\)\[\]\{\}\!><]/,
-	getCompletionText: function(c){
-		var isSpecial = c.special;
-        var text = c.name, offset = 0;
-
-        if(isSpecial){
-            text=text.substr(1);
-        } else if (/^\d*$/.test(text)) {
-            text = "[" + text + "]";
-            offset--;
-        } else if (!/^[a-z$_][a-z$_0-9]*$/i.test(text)) {
-            text = '["' + text + '"]';
-            offset--;
-        }
-		return [text, offset]
-	},
-	getHint: function(si, completer){
-		if(si <0 || si >= completer.tree.view.rowCount){
-			return jn.inspect(this.object);
-		}
-		var o = completer.sortedArray[si];
-		var longName = jn.inspect(o.object, "long");
-		var text = jn.lookupSetter(this.object, o.name);
-		return longName+'\n'+text
-	},
-		// *****************
-	onEvalSuccess: function(result, context) {
-        this.object = result;
-        this.completer.unfilteredArray = getProps(result);
-
-        if(this.specFunc)
-            this.getSpecialEntries();
-
-        this.completer.filter(this.completer.unfilteredArray, this.completer.text);
-        this.completer.showPanel();
-    },
-
-    onEvalFail: function(result, context) {
-        alert(result);
-    },
-
-    eval: function(string, context) {
-        context=context || Firebug.currentContext;
-        if(!string)
-            this.onEvalSuccess(context.global, context);
-        else
-            Firebug.CommandLine.evaluate(string, context, context.thisValue, null,
-                bind(this.onEvalSuccess, this),
-                bind(this.onEvalFail, this)
-            );
-    },
-
-    start: function(editor, completer){
-		this.completer = completer
-		
-		var range = editor.selection.getRange();
-        completer.filterRange = this.filterRange = range.clone();
-        range.end.column = range.start.column;
-        range.start.column = 0;
-		
-		var evalString = editor.session.getTextRange(range);
-
-        var [objString, filterText] = this.parseJSFragment(evalString);
-
-        range.end.column = range.end.column - filterText.length - 1;
-        range.start.column = range.end.column - objString.length -1;
-        completer.baseRange = this.baseRange = range;
-
-        this.filterRange.start.column = this.filterRange.end.column - filterText.length;
-
-        this.text = filterText;
-        this.eval(objString);
-	},   
-    
-    // *****************
-    getSpecialEntries: function() {
-        var [spo, funcName] = this.specFunc;
-        var ans = [];
-        try {
-            if (funcName === "QueryInterface") {
-                var spo = EJS_evalStringOnTarget(spo);
-                supportedInterfaces(spo).forEach(function(x) {
-                    ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,special:true});
-                });
-            } else if (funcName === "getInterface") {
-                spo = EJS_evalStringOnTarget(spo);
-                supportedgetInterfaces(spo).forEach(function(x){
-                    ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,special:true});
-                });
-            } else if (funcName === "getElementById") {
-                ans = getIDsInDoc();
-            } else if(funcName === "getElementsByClassName") {
-                ans = getIDsInDoc();
-            } else if(funcName === "getAttribute" || funcName === "setAttribute" || funcName === "hasAttribute") {
-                spo = EJS_evalStringOnTarget(spo);
-                var att = spo.attributes;
-                for(var i=0; i < att.length; i++) {
-                    var x = att[i];
-                    ans.push({name:'\u2555"'+x.nodeName+'")',comName: '"'+x.nodeName.toLowerCase(),description:x.value, depth:-1,special:true});
-                }
-            }
-        } catch(e) {
-            Cu.reportError(e);
-        }
-        this.unfilteredArray=ans.concat(this.unfilteredArray);
     },
 
     parseJSFragment: function(evalString){
-        var i0, next;
+        var i0, next, iBuff;
         var i = evalString.length - 1;
         var rx = /[a-z$_0-9]/i;
         var skipWord = function() {
@@ -492,37 +476,34 @@ var jsMode = {
         ++i;
         };
 
-        skipWord();
-        var it = i;
-        this.specFunc = false;
-        if(next === ".") {
-            skipStacks();
-            i++;
-        } else if(next === "(") {
-            var irestore = i;
-            i--;
+        var ans = {evalString:'', nameFragment:'', functionName:''};
+    	
+		skipWord();		
+        iBuff = i;
+		ans.nameFragment = evalString.substr(iBuff + 1)
+		
+        if(next === "(") {
+            iBuff = i;
+			i--
             skipWord();
-            dump('-->', next, i0, i, it);
-            var funcName = evalString.substring(i+1, it);
-            if(funcName && "getAttribute,setAttribute,hasAttribute,removeAttribute".indexOf(funcName) !== -1) {
-                var jsf = this.parseJSFragment(evalString.substring(0, i + 1))[0];
-                dump(jsf,funcName,evalString.substr(it+1));
-                this.specFunc = [jsf,funcName];
-            } else if(funcName === "getElementById" || funcName === "getElementsByClassName" || funcName === "$"){
-                this.specFunc=["", funcName];
-            }
-            i = irestore;
+            ans.functionName = evalString.substring(i+1, iBuff);
         }
-        return [evalString.substr(i, it-i), evalString.substr(it + 1)];
+		
+        if(next === ".") {
+			iBuff = i;
+			skipStacks();
+			if(next||i<0)
+				i++
+            ans.evalString = evalString.substr(i, iBuff-i)
+        }
+		dump( ans.evalString, ans.nameFragment, ans.functionName)
+        return [ans.evalString, ans.nameFragment];
     },
 
     compare: function() {
         this.sayInBubble(compareWithPrototype.compare(this.object).join("\n"));
     }
-}
-var cssMode = {
-	finishRe: /[\+\:;,= \(\)\[\]\{\}\!><]/,
-}
+};
 
 
 

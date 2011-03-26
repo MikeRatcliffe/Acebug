@@ -142,12 +142,11 @@ var lookup = function(moduleName) {
 var onLaunch
 var startAce = function(callback, options) {
 	if(onLaunch){
-		onLaunch = onLaunch || callback
+		onLaunch = callback || onLaunch
 		return
 	}
-	onLaunch = callback || 'called';
-	// "ace/mode/javascript", "ace/mode/css", are loaded with html
-	// "ace-uncompressed"
+	onLaunch = callback || function(){};
+	// "ace/mode/javascript", "ace/mode/css", are loaded with html  // "ace-uncompressed" for debugging
 	var rootDeps = ["ace", "ace/mode/xml", "ace/mode/html", "fbace/startup"];
 	if(!options)
 		options = {};
@@ -163,7 +162,7 @@ var startAce = function(callback, options) {
 			var env = require("pilot/environment").create();
 			catalog.startupPlugins({ env: env }).then(function() {
 				require("fbace/startup").launch(env, options);
-			}).then(callback);
+			}).then(onLaunch);
 		});
 	});
 };

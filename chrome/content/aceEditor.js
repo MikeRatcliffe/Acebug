@@ -144,13 +144,90 @@ Firebug.Ace =
 		return items;		 
 	},
 	
+	getSourceLink: function(target, object) { 
+		var env = target.ownerDocument.defaultView.wrappedJSObject		
+		var session = env.editor.session;
+		if(!session.href)
+			return
+		var cursor = Firebug.Ace.win1.editor.session.selection.selectionLead
+		var link = new FBL.SourceLink(session.href, cursor.row);
+		link.column = cursor.column;		
+		return link
+	},
+	
 	getPopupObject: function(target) {
         return null;
     },
 
     getTooltipObject: function(target) {
         return null;
-    }
+    },
+	
+	// save load
+	
+	initFilePicker: function(session, mode){
+		var ext = session.extension,
+            fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker),
+			ios = Cc['@mozilla.org/network/io-service;1'].getService(Ci.nsIIOService);
+		if (mode == 'save')
+			fp.init(window, $ACESTR("acebug.saveas"), Ci.nsIFilePicker.modeSave);
+		else
+			fp.init(window, $ACESTR("acebug.selectafile"), Ci.nsIFilePicker.modeOpen);
+		
+		if(ext)
+			fp.appendFilter(ext, "*." + ext);
+        fp.appendFilters(Ci.nsIFilePicker.filterAll);
+		
+		// try to set initial file
+		if (session.filePath) try{
+			file = ios.newURI(session.filePath, null, null)
+			file = file.QueryInterface(Ci.nsIFileURL).file
+			fp.displayDirectory = file.parent
+			fp.defaultString = file.leafName
+		} catch(e){}
+		return fp
+	},
+	
+	loadFile: function(editor) {
+        var result, file, name, result, 
+			session = editor.session, ext = session.extension,
+			ios = Cc['@mozilla.org/network/io-service;1'].getService(Ci.nsIIOService);
+        var fp = this.initFilePicker(session, 'open');
+		
+        result = fp.show();
+		
+        if( result == Ci.nsIFilePicker.returnOK) {			
+            session.setValue(readEntireFile(fp.file))
+			session.setFileInfo(ios.newFileURI(fp.file).spec);
+        }
+    },
+
+    saveFile: function(editor) {
+        var file, name, result, session = editor.session,
+			ios = Cc['@mozilla.org/network/io-service;1'].getService(Ci.nsIIOService),
+            fp = this.initFilePicker(session, 'save');
+
+        result = fp.show();
+        if(result == Ci.nsIFilePicker.returnOK) {
+            file = fp.file;
+            name = file.leafName;
+			
+            if(name.indexOf('.')<0) {
+                file = file.parent;
+                file.append(name + '.' + ext);
+            }
+
+            writeFile(file, session.getValue());
+			if(!session.filePath)
+				session.setFileInfo(ios.newFileURI(file).spec);
+        }
+        else if(result == Ci.nsIFilePicker.returnReplace){
+            writeFile(fp.file, session.getValue());
+			if(!session.filePath)
+				session.setFileInfo(ios.newFileURI(file).spec);
+        }
+    },
+
 };
 
 Firebug.largeCommandLineEditor = {
@@ -246,52 +323,8 @@ Firebug.largeCommandLineEditor = {
     __noSuchMethod__: function() {
     },
 
-    loadFile:function()
-    {
-        var result;
-        var fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-
-        fp.init(window, $ACESTR("acebug.selectafile"), Ci.nsIFilePicker.modeOpen);
-        fp.appendFilter($ACESTR("acebug.javascriptfiles"), "*.js");
-        fp.appendFilters(Ci.nsIFilePicker.filterAll);
-
-        result = fp.show();
-        if( result == Ci.nsIFilePicker.returnOK) {
-            this.setValue(readEntireFile(fp.file));
-        }
-    },
-
-    saveFile: function()
-    {
-        var file, name, result,
-            fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
-
-        fp.init(window, $ACESTR("acebug.saveas"), Ci.nsIFilePicker.modeSave);
-        fp.appendFilter($ACESTR("acebug.javascriptfiles"), "*.js");
-        fp.appendFilters(Ci.nsIFilePicker.filterAll);
-
-        result = fp.show();
-        if(result == Ci.nsIFilePicker.returnOK)
-        {
-            file = fp.file;
-            name = file.leafName;
-
-            if(name.indexOf('.js')<0)
-            {
-                file = file.parent;
-                file.append(name + '.js');
-            }
-
-            writeFile(file, this.value);
-        }
-        else if(result == Ci.nsIFilePicker.returnReplace)
-        {
-            writeFile(fp.file, this.value);
-        }
-    },
-
     addContextMenuItems: function(items, editor, editorText)
-    {       
+    {
 		items.unshift(
             {
                 label: $ACESTR("acebug.executeselection"),
@@ -516,7 +549,7 @@ HTMLPanelEditor.prototype = {
 		// Make sure that we create at least one node here, even if it's just
 		// an empty space, because this code depends on having something to replace
 		var value = this.getValue()||" "
-		dump(value)
+
 		// Remove all of the nodes in the last range we created, except for
 		// the first one, because setOuterHTML will replace it
 		var first = this.editingElements[0], last = this.editingElements[1];
@@ -599,7 +632,7 @@ var StyleSheetEditor = function() {
 	this.session.on('change', this.onInput)
 	this.session.owner = 'stylesheetEditor';
 	//
-	this.cmdID = 'cmd_togglecssEditMode'
+	this.cmdID = Firebug.version<'1.8'? 'cmd_toggleCSSEditing': 'cmd_togglecssEditMode'; 
 }
 
 StyleSheetEditor.prototype = extend(HTMLPanelEditor.prototype, {
@@ -623,6 +656,12 @@ StyleSheetEditor.prototype = extend(HTMLPanelEditor.prototype, {
                     editor.execCommand('toggleStreamComment');
                 }
             },
+			{
+				label: "Load Original Source",
+                command: function() {
+					Firebug.currentContext.getPanel('stylesheet').loadOriginalSource()
+				}
+			},			
             "-"
         );
     },
