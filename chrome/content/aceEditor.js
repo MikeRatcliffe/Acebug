@@ -115,13 +115,13 @@ Firebug.Ace =
                 },
                 disabled: !clipBoardText
             },
-            "-",
+            "-",/*
 			{
-                label: $ACESTR("acebug.options"),
+                label: $ACESTR("acebug options"),
                 command: function() {
                     openDialog('chrome://acebug/content/options.xul','','resizable,centerscreen')
                 }
-            },
+            },*/
             {
                 label: $ACESTR("acebug.reportissue"),
                 command: function() {
@@ -500,8 +500,8 @@ HTMLPanelEditor.prototype = {
 		return this.editor.session.getValue()
 	},
 	
-	setValue: function(value) {
-		this.ignoreChange = true
+	setValue: function(value) {		
+		this.ignoreChange = true		
 		this.session.doc.setValue(value);
 		this.session.selection.moveCursorFileStart();
 		if(this.editor.session != this.session)
@@ -640,11 +640,19 @@ StyleSheetEditor.prototype = extend(HTMLPanelEditor.prototype, {
 		Firebug.CSSModule.freeEdit(this.styleSheet, this.getValue())
 	},
 	
-	prepare: function(target){	
+	prepare: function(target){
+		Firebug.chrome.$('fbCmdSaveButton1').collapsed = false
+		// hack to set file path on session
+		try{
+			var href = this.styleSheet.href ||
+							this.styleSheet.ownerNode.baseURI + '.css';
+			this.session.setFileInfo(href)
+		}catch(e){}
 	},	
 	
 	cleanup: function(target){
 		delete this.styleSheet;
+		Firebug.chrome.$('fbCmdSaveButton1').collapsed = true
 	},
 	
 	addContextMenuItems: function(items, editor, editorText) {       

@@ -37,11 +37,11 @@ exports.launch = function(env, options) {
 	}
 	EditSession.prototype.setFileInfo = function(path){
 		this.extension = getExtension(path)
+		this.href = path;
 		if(path.slice(0,5) == 'file:')
 			this.filePath = path
 		else
 			this.filePath = ''
-		this.href = path
 	}
     env.setKeybinding = function(name){
 		if(name !='Vim' && name != 'Emacs'){

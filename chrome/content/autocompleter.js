@@ -50,8 +50,8 @@ Firebug.Ace.autocompleter = {
         this.object = result;
         this.unfilteredArray = getProps(result);
 
-        if(this.specFunc)
-            this.getSpecialEntries();
+        if(this.funcName)
+            this.appendSpecialEntries();
 
         this.filter(this.unfilteredArray, this.text);
         this.showPanel();
@@ -80,7 +80,8 @@ Firebug.Ace.autocompleter = {
         range.start.column = 0;
         var evalString = editor.session.getTextRange(range);
 
-        var [objString, filterText] = this.parseJSFragment(evalString);
+        var [objString, filterText, funcName] = this.parseJSFragment(evalString);
+		this.funcName = funcName;
 
         range.end.column = range.end.column - filterText.length - 1;
         range.start.column = range.end.column - objString.length -1;
@@ -101,12 +102,12 @@ Firebug.Ace.autocompleter = {
 
 		this.bubble = document.getElementById("autocomplate-info-bubble");
 		//set handlers
-		this.panel.setAttribute('onpopupshown','Firebug.Ace.autocompleter.setView(0)');
-		this.panel.setAttribute('onpopuphidden','Firebug.Ace.autocompleter.finish()');
-		this.tree.setAttribute('ondblclick','Firebug.Ace.autocompleter.insertSuggestedText();Firebug.Ace.autocompleter.finish()');
-		this.tree.setAttribute('onclick','Firebug.Ace.autocompleter.editor.focus()');
-		this.tree.setAttribute('onselect','Firebug.Ace.autocompleter.onSelect()');
-		this.panel.getElementsByTagName('toolbarbutton')[0].setAttribute('oncommand','Firebug.Ace.autocompleter.compare()');
+		this.panel.setAttribute('onpopupshown', 'Firebug.Ace.autocompleter.setView(0)');
+		this.panel.setAttribute('onpopuphidden', 'Firebug.Ace.autocompleter.finish()');
+		this.tree.setAttribute('ondblclick', 'Firebug.Ace.autocompleter.insertSuggestedText();Firebug.Ace.autocompleter.finish()');
+		this.tree.setAttribute('onclick', 'Firebug.Ace.autocompleter.editor.focus()');
+		this.tree.setAttribute('onselect', 'Firebug.Ace.autocompleter.onSelect()');
+		this.panel.getElementsByTagName('toolbarbutton')[0].setAttribute('oncommand', 'Firebug.Ace.autocompleter.compare()');
 	},
 
     showPanel: function() {
@@ -217,19 +218,23 @@ Firebug.Ace.autocompleter = {
         this.onSelectTimeOut = null;
 
         try{
-            var si = this.tree.currentIndex;
-            this.number.value = si + ':' +this.sortedArray.length + "/" + this.unfilteredArray.length;
-
-            if(si <0 || si > this.tree.view.rowCount){
-                this.sayInBubble(jn.inspect(this.object));
-                return;
-            }
-            var o = this.sortedArray[si];
-            var longName = jn.inspect(o.object, "long");
-            var text = jn.lookupSetter(this.object, o.name);
-            this.sayInBubble(longName+'\n'+text);
+            var index = this.tree.currentIndex;
+            this.number.value = index + ':' +this.sortedArray.length + "/" + this.unfilteredArray.length;
+			var hint = this.getHint(index)			
+            this.sayInBubble(hint);
         } catch(e) {}
     },
+	
+	getHint: function(index){
+		var o = this.sortedArray[index], longDescriptor;
+		if(o){
+			longDescriptor = jn.inspect(o.object, "long");
+			longDescriptor += '\n'+ jn.lookupSetter(this.object, o.name);
+		} else
+			longDescriptor = jn.inspect(this.object)
+				
+		return longDescriptor
+	},
 
     sayInBubble: function(text) {
         if(this.hidden)
@@ -267,27 +272,24 @@ Firebug.Ace.autocompleter = {
         this.editor.onTextInput(text);
     },
     // *****************
-    getSpecialEntries: function() {
-        var [spo, funcName] = this.specFunc;
+    appendSpecialEntries: function() {
+        var funcName = this.funcName;
         var ans = [];
         try {
             if (funcName === "QueryInterface") {
-                var spo = EJS_evalStringOnTarget(spo);
-                supportedInterfaces(spo).forEach(function(x) {
+                supportedInterfaces(this.object).forEach(function(x) {
                     ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,special:true});
                 });
             } else if (funcName === "getInterface") {
-                spo = EJS_evalStringOnTarget(spo);
-                supportedgetInterfaces(spo).forEach(function(x){
+                supportedgetInterfaces(this.object).forEach(function(x){
                     ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,special:true});
                 });
             } else if (funcName === "getElementById") {
-                ans = getIDsInDoc();
+                ans = getIDsInDoc(this.object);
             } else if(funcName === "getElementsByClassName") {
-                ans = getIDsInDoc();
+                ans = getClassesInDoc(this.object);
             } else if(funcName === "getAttribute" || funcName === "setAttribute" || funcName === "hasAttribute") {
-                spo = EJS_evalStringOnTarget(spo);
-                var att = spo.attributes;
+                var att = this.object.attributes;
                 for(var i=0; i < att.length; i++) {
                     var x = att[i];
                     ans.push({name:'\u2555"'+x.nodeName+'")',comName: '"'+x.nodeName.toLowerCase(),description:x.value, depth:-1,special:true});
@@ -296,7 +298,7 @@ Firebug.Ace.autocompleter = {
         } catch(e) {
             Cu.reportError(e);
         }
-        this.unfilteredArray=ans.concat(this.unfilteredArray);
+        this.unfilteredArray = ans.concat(this.unfilteredArray);
     },
 
     setView: function(si) {
@@ -496,8 +498,8 @@ Firebug.Ace.autocompleter = {
 				i++
             ans.evalString = evalString.substr(i, iBuff-i)
         }
-		dump( ans.evalString, ans.nameFragment, ans.functionName)
-        return [ans.evalString, ans.nameFragment];
+		
+        return [ans.evalString, ans.nameFragment, ans.functionName];
     },
 
     compare: function() {
@@ -508,8 +510,7 @@ Firebug.Ace.autocompleter = {
 
 
 //js completion helpers
-var getIDsInDoc = function() {
-    var doc = EJS_currentTargetWin.document;
+var getIDsInDoc = function(doc) {
     var xpe = new XPathEvaluator();
     var nsResolver = xpe.createNSResolver(doc.documentElement);
     var result = xpe.evaluate('//*[@id]', doc.documentElement, nsResolver, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
