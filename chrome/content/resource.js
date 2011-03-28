@@ -39,7 +39,7 @@ function treeView(table) {
 
     this.isSeparator = function(row){return false;};
     this.isSorted = function(){return false;};
-    this.getImageSrc = function(row, col) {}; // return "chrome://global/skin/checkbox/cbox-check.gif"; };
+    this.getImageSrc = function(row, col) {return table[row].iconURL}; // return "chrome://global/skin/checkbox/cbox-check.gif"; };
     this.getRowProperties = function(row, props) {
         //var aserv=Components.classes["@mozilla.org/atom-service;1"].getService(Components.interfaces.nsIAtomService);
         //props.AppendElement(aserv.getAtom(table[row].depth));
@@ -79,39 +79,52 @@ var enumerateRequests = function(fn)
 			fn(file);
 	}
 }
+
+function fileIconURL(isDir,name,ext,spec){
+	if(isDir)      return "chrome://global/skin/dirListing/folder.png"
+	if(!ext)       return "moz-icon://"+'.broken'+"?size=16"
+	if(ext=='exe') return "moz-icon://"+spec+"?size=16"
+	if(ext=='ico') return spec+"?size=16"
+	return "moz-icon://"+'.'+ext+"?size=16"
+}
+
 var  getAllLocations = function()
 { 
 	var document = Firebug.currentContext.window.document;
-	var locationList=[document.documentURI]
+	var baseURI = document.baseURI
+	var locationList=[{href:document.documentURI, type:'text'}]
 	//scripts
 	var list = document.documentElement.getElementsByTagName('script')
 	for(var i = list.length; i--;){
 		src = list[i].getAttribute('src')
-		if(src)locationList.push(src)
+		if(src)locationList.push({href:src, type:'text'})
 	}
 	//images
 	list = document.documentElement.getElementsByTagName('img')
 	for(var i = list.length; i--;){
 		src = list[i].getAttribute('src')
-		if(src)locationList.push(src)
+		if(src)locationList.push({href:src, type:'image'})
 	}
 	//stylesheets
 	list = document.styleSheets
 	for(var i = list.length; i--;){
 		src = list[i].href
-		if(src)locationList.push(src)
+		if(src)locationList.push({href:src, type:'text'})
 	}
 	
 	//
-	list = locationList
-	locationList=[]
-	for(var i = list.length; i--;){
-		src = list[i]
-		locationList.unshift({name:src})
+	for(var i = locationList.length; i--;){
+		var item = locationList[i]
+		if(item.href.indexOf('://')==-1)
+			item.href = baseURI + '/../' + item.href
+		var match = item.href.match(/\/([^\?\/#]+)(?:\?|#|$)/)
+		item.name = match?match[1]:'e  *'+item.href
+		item.iconURL = "moz-icon://" + item.name + "?size=16"
+		//	if(ext=='ico') return spec+"?size=16"
 	}
 	return locationList
 }
-gl=getAllLocations
+
 /*a=[]
 enumerateRequests(function(x)a.push(x))
 a.map(function(a)a.href)
@@ -154,11 +167,12 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 
 		
 		if (this.editor) {
-			this.session = this.aceWindow.createSession('ppp', '.html');
-			this.editor.setSession(this.session)		
+			this.editor.renderer.onResize(true);
+			this.onSelect()
 		} else {
 			this.aceWindow.startAce(bind(function(){
 				this.editor = this.aceWindow.editor;
+				this.editor.renderer.onResize(true);
 				this.setSession()
 			}, this))
 		}
@@ -166,21 +180,39 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 	
 	setSession: function()
 	{
-		this.session = this.aceWindow.createSession('ppp', '.html');
-		this.editor.setSession(this.session)
+		this.onSelect()
 	},
 	
 	onSelect: function()
 	{
 		var index = this.tree.view.selection.currentIndex
 		var data = this.data[index], content, href;
-		if (data) {
+			
+		
+		if (!data){
+			this.session = this.aceWindow.createSession('', '');
+		} else if(data.type=='image'){
+			this.showImage(data)
+			return
+		} else if (data.session) {
+			this.session = data.session
+		} else if (data) {
 			href = data.href
+			dump(href)
 			content = Firebug.currentContext.sourceCache.loadText(href)
+			this.session = data.session = this.aceWindow.createSession(content || '', href || '');
 		}
 		
-		this.session = this.aceWindow.createSession(content || '', href || '');
 		this.editor.setSession(this.session)
+	},
+	
+	showImage: function(data)
+	{
+		if(!this.aceWindow.imageViewer){
+			this.aceWindow.require(['fbace/imageViewer'], function(){imageViewer.showImage(data)})
+		}else{
+			this.aceWindow.imageViewer.showImage(data)
+		}
 	},
 	
 	hide: function()
