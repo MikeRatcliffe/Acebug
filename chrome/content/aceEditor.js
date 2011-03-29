@@ -21,8 +21,8 @@ Firebug.Ace =
         this.win1Wrapped = browser.contentWindow;
         this.win1 = this.win1Wrapped.wrappedJSObject;
 		
-		this.win1.gAutocompleter =
-		this.win2.gAutocompleter = this.autocompleter;
+		this.win1.startAcebugAutocompleter =
+		this.win2.startAcebugAutocompleter = this.startAutocompleter;
 		
 		//set Firebug.largeCommandLineEditor on wrapped window so that Firebug.getElementPanel can access it
         this.win1Wrapped.document.getElementById('editor').ownerPanel = this;
@@ -237,7 +237,7 @@ Firebug.largeCommandLineEditor = {
 
         var editor = Firebug.Ace.win2.editor;
 		editor.session.owner = 'console';
-		editor.session.autocompleter = Firebug.Ace.autocompleter
+		editor.session.autocompletionType = 'js'
 
         // clean up preload handlers
         this.getValue = this._getValue;
@@ -491,10 +491,11 @@ var HTMLPanelEditor = function() {
 }
 
 HTMLPanelEditor.prototype = {
-	// needed for Firebug.Editor
+	// needed to get rid from Firebug.Editor's "help"
 	multiLine: true,
     tabNavigation: false,
     arrowCompletion: false,
+	
 	//
 	getValue: function() {
 		return this.editor.session.getValue()
@@ -522,6 +523,10 @@ HTMLPanelEditor.prototype = {
 		command.setAttribute("checked", true);
 		Firebug.Ace.switchPanels(true)
 		this.editing = true
+		// this too is for 'help'
+		setTimeout(function(){
+			Firebug.Editor.detachListeners()
+		},10)
 	},
 	
 	hide: function() {
@@ -631,6 +636,7 @@ var StyleSheetEditor = function() {
 	this.onInput = bind(this.onInput, this)
 	this.session.on('change', this.onInput)
 	this.session.owner = 'stylesheetEditor';
+	this.session.autocompletionType = 'css'
 	//
 	this.cmdID = Firebug.version<'1.8'? 'cmd_toggleCSSEditing': 'cmd_togglecssEditMode'; 
 }

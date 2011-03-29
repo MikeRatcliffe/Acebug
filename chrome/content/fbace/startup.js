@@ -89,7 +89,8 @@ exports.launch = function(env, options) {
 	// not needed in acebug
 	editor.renderer.moveTextAreaToCursor =
 	editor.textInput.onContextMenu = function(){};
-
+	// don't let firebug's commandLinePopup to interfere
+	editor.textInput.getElement().classList.add("textEditorInner")
 
     function onResize() {
         editor.resize();
@@ -181,8 +182,7 @@ exports.launch = function(env, options) {
 		},
 		startAutocompleter: function(env, args, request) {
             var editor = env.editor
-			if(editor.session.autocompleter)
-				editor.session.autocompleter.start(editor);
+			startAcebugAutocompleter(editor);
         },
 		toggleStreamComment: function() {
 			// TODO: handle space in ' */' while toggling

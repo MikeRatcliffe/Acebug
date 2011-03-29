@@ -44,55 +44,19 @@ function treeView(table) {
 };
 
 /**************************************/
+Firebug.Ace.startAutocompleter = bind(function(editor){
+	var type = editor.session.autocompletionType;
+	if(type == 'js')
+		this.autocompleter = this.JSAutocompleter
+	else if(type == 'css')
+		this.autocompleter = this.CSSAutocompleter
+	else
+		return
+	
+	this.autocompleter.start(editor)
+}, Firebug.Ace)
 
-Firebug.Ace.autocompleter = {
-    onEvalSuccess: function(result, context) {
-        this.object = result;
-        this.unfilteredArray = getProps(result);
-
-        if(this.funcName)
-            this.appendSpecialEntries();
-
-        this.filter(this.unfilteredArray, this.text);
-        this.showPanel();
-    },
-
-    onEvalFail: function(result, context) {
-        alert(result);
-    },
-
-    eval: function(string, context) {
-        context=context || Firebug.currentContext;
-        if(!string)
-            this.onEvalSuccess(context.global, context);
-        else
-            Firebug.CommandLine.evaluate(string, context, context.thisValue, null,
-                bind(this.onEvalSuccess, this),
-                bind(this.onEvalFail, this)
-            );
-    },
-
-    start: function(editor) {
-        this.editor = editor || this.editor;
-        var range = editor.selection.getRange();
-        this.filterRange = range.clone();
-        range.end.column = range.start.column;
-        range.start.column = 0;
-        var evalString = editor.session.getTextRange(range);
-
-        var [objString, filterText, funcName] = this.parseJSFragment(evalString);
-		this.funcName = funcName;
-
-        range.end.column = range.end.column - filterText.length - 1;
-        range.start.column = range.end.column - objString.length -1;
-        this.baseRange = range;
-
-        this.filterRange.start.column = this.filterRange.end.column - filterText.length;
-
-        this.text = filterText;
-        this.eval(objString);
-    },
-
+Firebug.Ace.BaseAutocompleter = {	
     initPanel: function(panelH, panelW){
 		this.panel=$("aceAutocompletePanel");
 		this.panel.height = panelH;
@@ -205,8 +169,8 @@ Firebug.Ace.autocompleter = {
 
         this.editor.autocompleteCommandsAdded = true;
     },
-    // *****************
-    onSelect: function(immediate){
+ 
+	onSelect: function(immediate){
         if(!immediate){
             if(this.onSelectTimeOut)
                 clearTimeout(this.onSelectTimeOut);
@@ -225,80 +189,11 @@ Firebug.Ace.autocompleter = {
         } catch(e) {}
     },
 	
-	getHint: function(index){
-		var o = this.sortedArray[index], longDescriptor;
-		if(o){
-			longDescriptor = jn.inspect(o.object, "long");
-			longDescriptor += '\n'+ jn.lookupSetter(this.object, o.name);
-		} else
-			longDescriptor = jn.inspect(this.object)
-				
-		return longDescriptor
-	},
-
-    sayInBubble: function(text) {
+	sayInBubble: function(text) {
         if(this.hidden)
             return;
         var item = this.bubble.firstChild;
         item.value = text;
-    },
-
-    insertSuggestedText: function(additionalText){
-        var c = this.tree.view.selection.currentIndex;
-        if(c<0)
-            return;
-        c = this.sortedArray[c];
-        var isSpecial = c.special;
-        var text = c.name;
-
-        var s = this.baseRange.end.column + 1;
-        if(isSpecial){
-            text=text.substr(1);
-        } else if (/^\d*$/.test(text)) {
-            text = "[" + text + "]";
-            s--;
-        } else if (!/^[a-z$_][a-z$_0-9]*$/i.test(text)) {
-            text = '["' + text + '"]';
-            s--;
-        }
-
-        if (additionalText) {
-            text = text+additionalText;
-            //l -= additionalText.length + 1;
-        }
-        var range = this.editor.selection.getRange();
-        range.start.column = s;
-        this.editor.selection.setSelectionRange(range);
-        this.editor.onTextInput(text);
-    },
-    // *****************
-    appendSpecialEntries: function() {
-        var funcName = this.funcName;
-        var ans = [];
-        try {
-            if (funcName === "QueryInterface") {
-                supportedInterfaces(this.object).forEach(function(x) {
-                    ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,special:true});
-                });
-            } else if (funcName === "getInterface") {
-                supportedgetInterfaces(this.object).forEach(function(x){
-                    ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,special:true});
-                });
-            } else if (funcName === "getElementById") {
-                ans = getIDsInDoc(this.object);
-            } else if(funcName === "getElementsByClassName") {
-                ans = getClassesInDoc(this.object);
-            } else if(funcName === "getAttribute" || funcName === "setAttribute" || funcName === "hasAttribute") {
-                var att = this.object.attributes;
-                for(var i=0; i < att.length; i++) {
-                    var x = att[i];
-                    ans.push({name:'\u2555"'+x.nodeName+'")',comName: '"'+x.nodeName.toLowerCase(),description:x.value, depth:-1,special:true});
-                }
-            }
-        } catch(e) {
-            Cu.reportError(e);
-        }
-        this.unfilteredArray = ans.concat(this.unfilteredArray);
     },
 
     setView: function(si) {
@@ -422,6 +317,130 @@ Firebug.Ace.autocompleter = {
         this.bubble.hidePopup();
     },
 
+}
+
+Firebug.Ace.JSAutocompleter = extend(Firebug.Ace.BaseAutocompleter, {
+    onEvalSuccess: function(result, context) {
+        this.object = result;
+        this.unfilteredArray = getProps(result);
+
+        if(this.funcName)
+            this.appendSpecialEntries();
+
+        this.filter(this.unfilteredArray, this.text);
+        this.showPanel();
+    },
+
+    onEvalFail: function(result, context) {
+        alert(result);
+    },
+
+    eval: function(string, context) {
+        context=context || Firebug.currentContext;
+        if(!string)
+            this.onEvalSuccess(context.global, context);
+        else
+            Firebug.CommandLine.evaluate(string, context, context.thisValue, null,
+                bind(this.onEvalSuccess, this),
+                bind(this.onEvalFail, this)
+            );
+    },
+
+    start: function(editor) {
+        this.editor = editor || this.editor;
+        var range = editor.selection.getRange();
+        this.filterRange = range.clone();
+        range.end.column = range.start.column;
+        range.start.column = 0;
+        var evalString = editor.session.getTextRange(range);
+
+        var [objString, filterText, funcName] = this.parseJSFragment(evalString);
+		this.funcName = funcName;
+
+        range.end.column = range.end.column - filterText.length - 1;
+        range.start.column = range.end.column - objString.length -1;
+        this.baseRange = range;
+
+        this.filterRange.start.column = this.filterRange.end.column - filterText.length;
+
+        this.text = filterText;
+        this.eval(objString);
+    },
+ 
+    // *****************  
+	getHint: function(index){
+		var o = this.sortedArray[index], longDescriptor;
+		if(o){
+			longDescriptor = jn.inspect(o.object, "long");
+			longDescriptor += '\n'+ jn.lookupSetter(this.object, o.name);
+		} else
+			longDescriptor = jn.inspect(this.object)
+				
+		return longDescriptor
+	},
+
+    insertSuggestedText: function(additionalText){
+        var c = this.tree.view.selection.currentIndex;
+        if(c<0)
+            return;
+        c = this.sortedArray[c];
+        var isSpecial = c.special;
+        var text = c.name;
+
+        var s = this.baseRange.end.column + 1;
+        if(isSpecial){
+            text=text.substr(1);
+        } else if (/^\d*$/.test(text)) {
+            text = "[" + text + "]";
+            s--;
+        } else if (!/^[a-z$_][a-z$_0-9]*$/i.test(text)) {
+            text = '["' + text + '"]';
+            s--;
+        }
+
+        if (additionalText) {
+            text = text+additionalText;
+            //l -= additionalText.length + 1;
+        }
+        var range = this.editor.selection.getRange();
+        range.start.column = s;
+        this.editor.selection.setSelectionRange(range);
+        this.editor.onTextInput(text);
+    },
+    // *****************
+    appendSpecialEntries: function() {
+        var funcName = this.funcName;
+        var ans = [];
+        try {
+            if (funcName === "QueryInterface") {
+                supportedInterfaces(this.object).forEach(function(x) {
+                    ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,special:true});
+                });
+            } else if (funcName === "getInterface") {
+                supportedgetInterfaces(this.object).forEach(function(x){
+                    ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,special:true});
+                });
+            } else if (funcName === "getElementById") {
+                ans = getIDsInDoc(this.object);
+            } else if(funcName === "getElementsByClassName") {
+                ans = getClassesInDoc(this.object);
+            } else if(funcName === "getAttribute" || funcName === "setAttribute" || funcName === "hasAttribute") {
+                var att = this.object.attributes;
+                for(var i=0; i < att.length; i++) {
+                    var x = att[i];
+                    ans.push({name:'\u2555"'+x.nodeName+'")',comName: '"'+x.nodeName.toLowerCase(),description:x.value, depth:-1,special:true});
+                }
+            } else if(funcName === "addEventListener" || funcName === "removeEventListener") {
+                eventNames.forEach(function(x) {
+                    ans.push({name:'\u2555"'+x+'"',comName: '"'+x.toString().toLowerCase(),description:"event name", depth:-1,special:true});
+                });
+            }
+        } catch(e) {
+            Cu.reportError(e);
+        }
+        this.unfilteredArray = ans.concat(this.unfilteredArray);
+    },
+
     parseJSFragment: function(evalString){
         var i0, next, iBuff;
         var i = evalString.length - 1;
@@ -505,9 +524,161 @@ Firebug.Ace.autocompleter = {
     compare: function() {
         this.sayInBubble(compareWithPrototype.compare(this.object).join("\n"));
     }
-};
+});
 
+Firebug.Ace.CSSAutocompleter =  extend(Firebug.Ace.BaseAutocompleter, {
 
+    start: function(editor) {
+        this.editor = editor || this.editor;
+        var range = editor.selection.getRange();
+        this.filterRange = range.clone();
+        range.end.column = range.start.column;
+        range.start.column = 0;
+        var evalString = editor.session.getTextRange(range);
+
+        var [objString, filterText, funcName] = this.parseJSFragment(evalString);
+		this.funcName = funcName;
+
+        range.end.column = range.end.column - filterText.length - 1;
+        range.start.column = range.end.column - objString.length -1;
+        this.baseRange = range;
+
+        this.filterRange.start.column = this.filterRange.end.column - filterText.length;
+
+        this.text = filterText;
+        
+		this.unfilteredArray = getProps(document.documentElement.style);
+
+        this.filter(this.unfilteredArray, this.text);
+        this.showPanel();
+    },
+ 
+    // *****************  
+	getHint: function(index){
+		var o = this.sortedArray[index], longDescriptor;
+		if(o){
+			longDescriptor = jn.inspect(o.object, "long");
+			longDescriptor += '\n'+ jn.lookupSetter(this.object, o.name);
+		} else
+			longDescriptor = jn.inspect(this.object)
+				
+		return longDescriptor
+	},
+
+    insertSuggestedText: function(additionalText){
+        var c = this.tree.view.selection.currentIndex;
+        if(c<0)
+            return;
+        c = this.sortedArray[c];
+        var isSpecial = c.special;
+        var text = c.name;
+
+        var s = this.baseRange.end.column + 1;
+        if(isSpecial){
+            text=text.substr(1);
+        } else if (/^\d*$/.test(text)) {
+            text = "[" + text + "]";
+            s--;
+        } else if (!/^[a-z$_][a-z$_0-9]*$/i.test(text)) {
+            text = '["' + text + '"]';
+            s--;
+        }
+
+        if (additionalText) {
+            text = text+additionalText;
+            //l -= additionalText.length + 1;
+        }
+        var range = this.editor.selection.getRange();
+        range.start.column = s;
+        this.editor.selection.setSelectionRange(range);
+        this.editor.onTextInput(text);
+    },
+    // *****************
+    appendSpecialEntries: function() {
+       
+    },
+
+    parseJSFragment: function(evalString){
+        var i0, next, iBuff;
+        var i = evalString.length - 1;
+        var rx = /[a-z$_0-9]/i;
+        var skipWord = function() {
+            i0 = i;
+            while(rx.test(next = evalString.charAt(i))) {
+                i--;
+            }
+        };
+        var skipString = function(comma) {
+            next = evalString.charAt(--i);
+            while(next && (next != comma || evalString.charAt(i-1) === "\\")) {
+                next = evalString.charAt(--i);
+            }
+        };
+        var skipStacks = function() {
+            var stack = [];
+            while(next = evalString.charAt(--i)) {
+                skipWord(); //print(next)
+                switch(next) {
+                    case ".":
+                        skipWord();//print(next)
+                    break;
+                    case "'":
+                    case '"':
+                        skipString(next);
+                    break;
+                    case '}':
+                        stack.push("{");
+                    break;
+                    case ']':
+                        stack.push("[");
+                    break;
+                    case ')':
+                        stack.push("(");
+                    break;
+                        stack.push(next);
+                    break;
+                    case '{':
+                    case '[':
+                    case '(':
+                        //print(next + "bb");
+                        if(stack.pop() !== next)
+                            return;
+                        //print(next + "bb2");
+                    break;
+                    default:
+                        //print(next+22);
+                        if(stack.length === 0)
+                            return;
+                }
+            }
+        ++i;
+        };
+
+        var ans = {evalString:'', nameFragment:'', functionName:''};
+    	
+		skipWord();		
+        iBuff = i;
+		ans.nameFragment = evalString.substr(iBuff + 1)
+		
+        if(next === "(") {
+            iBuff = i;
+			i--
+            skipWord();
+            ans.functionName = evalString.substring(i+1, iBuff);
+        }
+		
+        if(next === ".") {
+			iBuff = i;
+			skipStacks();
+			if(next||i<0)
+				i++
+            ans.evalString = evalString.substr(i, iBuff-i)
+        }
+		
+        return [ans.evalString, ans.nameFragment, ans.functionName];
+    },
+
+});
 
 //js completion helpers
 var getIDsInDoc = function(doc) {
@@ -607,13 +778,10 @@ function(){dump(this.name); delete this.description; this.description=jn.inspect
 
         var d, o;
         var x = targetObj.wrappedJSObject;
-        var data = [];
-        var protoList = [];
-        var depth = 0;
-        var allProps = [];
-        if (x)
-            1;//data.push({name:'wrappedJSObject', comName: 'wrappedjsobject',description:'', depth:-1})
-        else x = targetObj;
+        var data = [], protoList = [], depth = 0, allProps = [];
+        if (!x)
+			x = targetObj;
+           //data.push({name:'wrappedJSObject', comName: 'wrappedjsobject',description:'', depth:-1})
 
         if(typeof x !== "object" && typeof x !== "function") {
             x = x.constructor;
@@ -623,9 +791,9 @@ function(){dump(this.name); delete this.description; this.description=jn.inspect
 
         while(x) {
             var props = Object.getOwnPropertyNames(x);
-            outerloop:for each(var i in props) {
+            innerloop: for each(var i in props) {
                 if(allProps.indexOf(i) > -1)
-                    continue outerloop;
+                    continue innerloop;
                 /*if(!x.hasOwnProperty(i)){
                     data.push({name:i+'---', comName: i+'---',description:i, depth:depth})
                     continue outerloop
@@ -634,14 +802,9 @@ function(){dump(this.name); delete this.description; this.description=jn.inspect
                     if(protoList[p].hasOwnProperty(i))
                         continue outerloop
                 }*/
-                /* data.push({name:i, comName: i.toLowerCase(),get description function(){
-                    dump(this.name);
-                    delete this.description;
-                    this.description=jn.inspect(autocompleter.object[this.name]);
-                    return this.description}
-                    , depth:depth}) */
+
                 try {
-                    o = targetObj[i];
+                    o = x[i];
                     d = jn.inspect(o);
                 } catch(e) {
                     d = e.message;
@@ -653,37 +816,37 @@ function(){dump(this.name); delete this.description; this.description=jn.inspect
             x = x.__proto__;
             depth++;
             allProps = allProps.concat(props);
-
-            try {
-                if (targetObj instanceof Ci.nsIDOMWindow && "Components" in targetObj) {
-                    i = "Components";
-                try{
-                    d = jn.inspect(targetObj[i]);
-                } catch(e){
-                    d = e.message;
-                }
-                data.push({name: i, comName: i.toLowerCase(), description: d, depth: 0});
-            }} catch(e) {}
-
-            try {
-                if("QueryInterface" in targetObj) {
-                    i = "QueryInterface";
-                try{
-                    d = jn.inspect(targetObj[i]);
-                } catch(e) {
-                    d = e.message;
-                }
-                data.push({name: i, comName: i.toLowerCase(), description: d, depth: 0});
-            }} catch(e) {}
-
-            return data;
         }
+		
+        return data;
+
     };
 }
 
-/**======================-==-======================*/
 
-// todo: cleanup
+var eventNames = [
+//xul?
+// "broadcast", "close", "command", "commandupdate",  "popuphidden", "popuphiding", "popupshowing", "popupshown", "syncfrompreference", "synctopreference",  "activate", "deactivate",
+//
+"MozAfterPaint", "MozMousePixelScroll", "DOMWindowClose", "DOMFrameContentLoaded", "DOMLinkAdded", "DOMLinkRemoved", "DOMWillOpenModalDialog", "DOMModalDialogClosed", "fullscreen", "PopupWindow", "DOMTitleChanged", "PluginNotFound", "ValueChange", "DOMMenuItemActive", "DOMMenuItemInactive", "windowZLevel", "readystatechange",
+"DOMContentLoaded", "pageshow",
+//User interface event types
+"DOMActivate", "DOMFocusIn", "DOMFocusOut", "blur", "focus", "overflow", "underflow",
+//Text event types
+"textInput", "change", "input",
+//Mouse event types
+"click", "mousedown", "mousemove", "mouseover", "mouseout", "mouseup", "DOMMouseScroll", 
+"dblclick", "contextmenu", "drag", "dragdrop", "dragend", "dragenter", "dragexit", "draggesture", "dragover",
+//Keyboard event types
+"keydown", "keyup", "keypress",
+//Mutation and mutation name event types
+"DOMSubtreeModified", "DOMNodeInserted", "DOMNodeRemoved", "DOMNodeRemovedFromDocument", "DOMNodeInsertedIntoDocument", "DOMAttrModified", "DOMCharacterDataModified", "DOMElementNameChanged", "DOMAttributeNameChanged", 
+//Basic event types
+"abort", "beforeunload", "change", "error", "load", "reset", "resize", "scroll", "select", "submit", "unload"
+]
+
+
+/**======================-==-======================*/
 var jn = {};
 
 jn.inspect = function(x, isLong) {
@@ -953,6 +1116,26 @@ var compareWithPrototype = {
     }
 };
 
+function supportedInterfaces(element){
+	var ans=[]
+	for each(var i in Ci){
+		try{
+			if(element instanceof i)
+				ans.push(i)
+		}catch(e){Components.utils.reportError(e)}
+	}
+	return ans;
+}
+function supportedgetInterfaces(element){
+	var ans=[]
+	var req=element.QueryInterface(Ci.nsIInterfaceRequestor)
+	for each(var i in Ci){
+		try{if(req.getInterface(i))
+			ans.push(i)
+		}catch(e){}
+	}
+	return ans;
+}
 
 // ************************************************************************************************
 /*

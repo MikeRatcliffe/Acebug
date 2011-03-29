@@ -109,7 +109,24 @@ var  getAllLocations = function()
 	list = document.styleSheets
 	for(var i = list.length; i--;){
 		src = list[i].href
-		if(src)locationList.push({href:src, type:'text'})
+		if(src)
+			locationList.push({href:src, type:'text'})
+		// todo: look into stylesheet rules
+		/*else
+			src = baseURI
+		var cssRules = list[i].cssRules
+		for(var j = cssRules.length; j--;){
+			var match = cssRules[j].cssText.match(/url\("[^"]*"\)/)
+			var k = 0, href
+			if(!match) 
+				continue;
+			while(href = match[k++]){
+				href = href.slice(5,-2)
+				if(href.indexOf('://')==-1)
+					href = src + '/..' + href
+				locationList.push({href: href, type:'image'})
+			}
+		}*/		
 	}
 	
 	//
@@ -202,6 +219,9 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 			content = Firebug.currentContext.sourceCache.loadText(href)
 			this.session = data.session = this.aceWindow.createSession(content || '', href || '');
 		}
+		var im = this.aceWindow.imageViewer
+		if(im && im.isOpen)
+			im.hide()
 		
 		this.editor.setSession(this.session)
 	},
@@ -209,7 +229,8 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 	showImage: function(data)
 	{
 		if(!this.aceWindow.imageViewer){
-			this.aceWindow.require(['fbace/imageViewer'], function(){imageViewer.showImage(data)})
+			var self = this
+			this.aceWindow.require(['fbace/imageViewer'], function(){self.aceWindow.imageViewer.showImage(data)})
 		}else{
 			this.aceWindow.imageViewer.showImage(data)
 		}
@@ -220,6 +241,9 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 		var treePane = this.browser.firstChild
 		treePane.hidden = true
 		treePane.nextSibling.hidden = true
+		
+		if(this.aceWindow.imageViewer)
+			this.aceWindow.imageViewer.hide()
 	},
 	
 	showHref: function(href){

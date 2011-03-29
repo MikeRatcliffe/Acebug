@@ -29,9 +29,9 @@
                                     oncommand=""/>
                                 <toolbarbutton id="fbCmdLineCopyButton" removeelement='true'/>
                                 <toolbarbutton id="fbCmdLineCopyButton" insertbefore='fbCommandEditorHistoryButton'
-                                    label="//" oncommand="Firebug.Ace.env.execCommand('togglecomment')"/>
+                                    label="//" oncommand="Firebug.Ace.win2.editor.execCommand('togglecomment')"/>
                                 <toolbarbutton id="fbCmdLineCopyButton" insertbefore='fbCommandEditorHistoryButton'
-                                    label="/*" oncommand="Firebug.Ace.env.execCommand('toggleStreamComment')"/>
+                                    label="/*" oncommand="Firebug.Ace.win2.editor.execCommand('toggleStreamComment')"/>
                                 <toolbarbutton id="fbCmdLoadButton" label="&acebug.fbCmdLoadButton.label;"
                                     tooltip="&acebug.fbCmdLoadButton.tooltip;"
                                     oncommand="Firebug.Ace.loadFile(Firebug.Ace.win2.editor)" insertbefore="fbCommandToggleLarge"/>
