@@ -122,8 +122,8 @@ var  getAllLocations = function()
 				continue;
 			while(href = match[k++]){
 				href = href.slice(5,-2)
-				if(href.indexOf('://')==-1)
-					href = src + '/..' + href
+				if(href.indexOf('://')==-1 && href.slice(0, 5) != 'data:')
+					href = FBL.absoluteURL(href, baseURI)
 				locationList.push({href: href, type:'image'})
 			}
 		}*/		
@@ -132,8 +132,8 @@ var  getAllLocations = function()
 	//
 	for(var i = locationList.length; i--;){
 		var item = locationList[i]
-		if(item.href.indexOf('://')==-1)
-			item.href = baseURI + '/../' + item.href
+		if(item.href.indexOf('://')==-1 && item.href.slice(0, 5) != 'data:')
+			item.href = FBL.absoluteURL(item.href, baseURI)
 		var match = item.href.match(/\/([^\?\/#]+)(?:\?|#|$)/)
 		item.name = match?match[1]:'e  *'+item.href
 		item.iconURL = "moz-icon://" + item.name + "?size=16"

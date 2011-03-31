@@ -1,3 +1,6 @@
+//'-moz-appearance'.replace(/-./g,function(match) match[1].toUpperCase());
+//'MozAppearance'.replace(/[A-Z]/g, function(match) '-'+match.toLowerCase());
+
 
 pseudoElements=[	
 	'::after'
@@ -129,17 +132,106 @@ mozPseudoClasses=[
 
 ]
 
+var colorNames = {
+  aliceblue: "f0f8ff", antiquewhite: "faebd7", aqua: "00ffff",
+  aquamarine: "7fffd4", azure: "f0ffff", beige: "f5f5dc",
+  bisque: "ffe4c4", black: "000000", blanchedalmond: "ffebcd",
+  blue: "0000ff", blueviolet: "8a2be2", brown: "a52a2a",
+  burlywood: "deb887", cadetblue: "5f9ea0", chartreuse: "7fff00",
+  chocolate: "d2691e", coral: "ff7f50", cornflowerblue: "6495ed",
+  cornsilk: "fff8dc", crimson: "dc143c", cyan: "00ffff",
+  darkblue: "00008b", darkcyan: "008b8b", darkgoldenrod: "b8860b",
+  darkgray: "a9a9a9", darkgreen: "006400", darkkhaki: "bdb76b",
+  darkmagenta: "8b008b", darkolivegreen: "556b2f", darkorange: "ff8c00",
+  darkorchid: "9932cc", darkred: "8b0000", darksalmon: "e9967a",
+  darkseagreen: "8fbc8f", darkslateblue: "483d8b", darkslategray: "2f4f4f",
+  darkturquoise: "00ced1", darkviolet: "9400d3", deeppink: "ff1493",
+  deepskyblue: "00bfff", dimgray: "696969", dodgerblue: "1e90ff",
+  feldspar: "d19275", firebrick: "b22222", floralwhite: "fffaf0",
+  forestgreen: "228b22", fuchsia: "ff00ff", gainsboro: "dcdcdc",
+  ghostwhite: "f8f8ff", gold: "ffd700", goldenrod: "daa520",
+  gray: "808080", green: "008000", greenyellow: "adff2f",
+  honeydew: "f0fff0", hotpink: "ff69b4", indianred : "cd5c5c",
+  indigo : "4b0082", ivory: "fffff0", khaki: "f0e68c",
+  lavender: "e6e6fa", lavenderblush: "fff0f5", lawngreen: "7cfc00",
+  lemonchiffon: "fffacd", lightblue: "add8e6", lightcoral: "f08080",
+  lightcyan: "e0ffff", lightgoldenrodyellow: "fafad2", lightgrey: "d3d3d3",
+  lightgreen: "90ee90", lightpink: "ffb6c1", lightsalmon: "ffa07a",
+  lightseagreen: "20b2aa", lightskyblue: "87cefa", lightslateblue: "8470ff",
+  lightslategray: "778899", lightsteelblue: "b0c4de", lightyellow: "ffffe0",
+  lime: "00ff00", limegreen: "32cd32", linen: "faf0e6",
+  magenta: "ff00ff", maroon: "800000", mediumaquamarine: "66cdaa",
+  mediumblue: "0000cd", mediumorchid: "ba55d3", mediumpurple: "9370d8",
+  mediumseagreen: "3cb371", mediumslateblue: "7b68ee", mediumspringgreen: "00fa9a",
+  mediumturquoise: "48d1cc", mediumvioletred: "c71585", midnightblue: "191970",
+  mintcream: "f5fffa", mistyrose: "ffe4e1", moccasin: "ffe4b5",
+  navajowhite: "ffdead", navy: "000080", oldlace: "fdf5e6",
+  olive: "808000", olivedrab: "6b8e23", orange: "ffa500",
+  orangered: "ff4500", orchid: "da70d6", palegoldenrod: "eee8aa",
+  palegreen: "98fb98", paleturquoise: "afeeee", palevioletred: "d87093",
+  papayawhip: "ffefd5", peachpuff: "ffdab9", peru: "cd853f",
+  pink: "ffc0cb", plum: "dda0dd", powderblue: "b0e0e6",
+  purple: "800080", red: "ff0000", rosybrown: "bc8f8f",
+  royalblue: "4169e1", saddlebrown: "8b4513", salmon: "fa8072",
+  sandybrown: "f4a460", seagreen: "2e8b57", seashell: "fff5ee",
+  sienna: "a0522d", silver: "c0c0c0", skyblue: "87ceeb",
+  slateblue: "6a5acd", slategray: "708090", snow: "fffafa",
+  springgreen: "00ff7f", steelblue: "4682b4", tan: "d2b48c",
+  teal: "008080", thistle: "d8bfd8", tomato: "ff6347",
+  turquoise: "40e0d0", violet: "ee82ee", violetred: "d02090",
+  wheat: "f5deb3", white: "ffffff", whitesmoke: "f5f5f5",
+  yellow: "ffff00", yellowgreen: "9acd32"
+};
+var propValues = {
+color:[
+	"ActiveBorder",
+	"ActiveCaption",
+	"AppWorkspace",
+	"ButtonFace",
+	"ButtonHighlight",
+	"ButtonShadow",
+	"ButtonText",
+	"CaptionText",
+	"GrayText",
+	"Highlight",
+	"HighlightText",
+	"InactiveBorder",
+	"InactiveCaption",
+	"InactiveCaptionText",
+	"InfoBackground",
+	"InfoText",
+	"Menu",
+	"MenuText",
+	"Scrollbar",
+	"ThreeDDarkShadow",
+	"ThreeDFace",
+	"ThreeDHighlight",
+	"ThreeDLightShadow",
+	"ThreeDShadow",
+	"Window",
+	"WindowFrame",
+	"WindowText",
+	"-moz-dialogtext",	
+	"-moz-field",
+	"-moz-fieldtext",
+	"-moz-workspace",
+	"-moz-visitedhyperlinktext",
+	"-moz-use-text-color"
+],
+angle:['deg','grad','rad','degree'],
+length:['px','em','ex','ch','mm','in','pt','pc'],
 
+}
 
 // True longhand properties.
-const CSS_TYPE_LONGHAND = 0;
+var CSS_TYPE_LONGHAND = 0;
 
 // True shorthand properties.
-const CSS_TYPE_TRUE_SHORTHAND = 1;
+var CSS_TYPE_TRUE_SHORTHAND = 1;
 
 // Properties that we handle as shorthands but were longhands either in
 // the current spec or earlier versions of the spec.
-const CSS_TYPE_SHORTHAND_AND_LONGHAND = 2;
+var CSS_TYPE_SHORTHAND_AND_LONGHAND = 2;
 
 // Each property has the following fields:
 //	 domProp: The name of the relevant member of nsIDOM[NS]CSS2Properties
@@ -203,7 +295,6 @@ var gCSSProperties = {
 		domProp: "MozBorderEndColor",
 		inherited: false,
 		type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
-		get_computed: logical_box_prop_get_computed,
 		initial_values: [ "currentColor" ],
 		other_values: [ "green", "rgba(255,128,0,0.5)", "transparent" ],
 		invalid_values: [ "#0", "#00", "#0000", "#00000", "#0000000", "#00000000", "#000000000" ]
@@ -212,7 +303,6 @@ var gCSSProperties = {
 		domProp: "MozBorderEndStyle",
 		inherited: false,
 		type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
-		get_computed: logical_box_prop_get_computed,
 		/* XXX hidden is sometimes the same as initial */
 		initial_values: [ "none" ],
 		other_values: [ "solid", "dashed", "dotted", "double", "outset", "inset", "groove", "ridge" ],
@@ -222,7 +312,6 @@ var gCSSProperties = {
 		domProp: "MozBorderEndWidth",
 		inherited: false,
 		type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
-		get_computed: logical_box_prop_get_computed,
 		prerequisites: { "-moz-border-end-style": "solid" },
 		initial_values: [ "medium", "3px" ],
 		other_values: [ "thin", "thick", "1px", "2em" ],
@@ -253,7 +342,7 @@ var gCSSProperties = {
 		other_values: [ "red green", "red #fc3", "#ff00cc", "currentColor", "blue currentColor orange currentColor" ],
 		invalid_values: [ "red none", "red inherit", "red, green", "none red", "inherit red" ]
 	},
-	"-moz-border-radius": {
+	"border-radius": {
 		domProp: "MozBorderRadius",
 		inherited: false,
 		type: CSS_TYPE_TRUE_SHORTHAND,
@@ -264,7 +353,7 @@ var gCSSProperties = {
 					  ],
 		invalid_values: [ "2px -2px", "inherit 2px", "inherit / 2px", "2px inherit", "2px / inherit", "2px 2px 2px 2px 2px", "1px / 2px 2px 2px 2px 2px" ]
 	},
-	"-moz-border-radius-bottomleft": {
+	"border-radius-bottomleft": {
 		domProp: "MozBorderRadiusBottomleft",
 		inherited: false,
 		type: CSS_TYPE_LONGHAND,
@@ -325,7 +414,6 @@ var gCSSProperties = {
 		domProp: "MozBorderStartColor",
 		inherited: false,
 		type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
-		get_computed: logical_box_prop_get_computed,
 		initial_values: [ "currentColor" ],
 		other_values: [ "green", "rgba(255,128,0,0.5)", "transparent" ],
 		invalid_values: [ "#0", "#00", "#0000", "#00000", "#0000000", "#00000000", "#000000000" ]
@@ -334,7 +422,6 @@ var gCSSProperties = {
 		domProp: "MozBorderStartStyle",
 		inherited: false,
 		type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
-		get_computed: logical_box_prop_get_computed,
 		/* XXX hidden is sometimes the same as initial */
 		initial_values: [ "none" ],
 		other_values: [ "solid", "dashed", "dotted", "double", "outset", "inset", "groove", "ridge" ],
@@ -344,7 +431,6 @@ var gCSSProperties = {
 		domProp: "MozBorderStartWidth",
 		inherited: false,
 		type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
-		get_computed: logical_box_prop_get_computed,
 		prerequisites: { "-moz-border-start-style": "solid" },
 		initial_values: [ "medium", "3px" ],
 		other_values: [ "thin", "thick", "1px", "2em" ],
@@ -511,16 +597,6 @@ var gCSSProperties = {
 			"-moz-calc(1in - 3em + 2px)",
 			"-moz-calc(1in - (3em + 2px))",
 			"-moz-calc((1in - 3em) + 2px)",
-			"-moz-min(1in, 30em)",
-			"-moz-calc(min(1in, 30em))",
-			"-moz-max(30em, 2px + 1in)",
-			"-moz-calc(max(30em, 2px + 1in))",
-			"-moz-min(2in, 30em,200px, min(500px ,40em))",
-			"-moz-calc(min(2in, 30em,200px, min(500px ,40em)))",
-			"-moz-min(2in)",
-			"-moz-max(20px)",
-			"-moz-calc(min(2em))",
-			"-moz-calc(max(1in))",
 			"-moz-calc(50px/2)",
 			"-moz-calc(50px/(2 - 1))",
 			"-moz-calc(-3px)",
@@ -536,7 +612,6 @@ var gCSSProperties = {
 			"-moz-calc(2em * ((5*2) + 3))",
 			"-moz-calc(2em * (5*(2 + 3)))",
 
-			"-moz-calc(min(5,7) * 3em)",
 			"-moz-calc((5 + 7) * 3em)",
 			"-moz-calc((5em + 3em) - 2em)",
 			"-moz-calc((5em - 3em) + 2em)",
@@ -582,6 +657,14 @@ var gCSSProperties = {
 			"-moz-calc(min())",
 			"-moz-max()",
 			"-moz-calc(max())",
+			"-moz-min(5px)",
+			"-moz-calc(min(5px))",
+			"-moz-max(5px)",
+			"-moz-calc(max(5px))",
+			"-moz-min(5px,2em)",
+			"-moz-calc(min(5px,2em))",
+			"-moz-max(5px,2em)",
+			"-moz-calc(max(5px,2em))",
 			"-moz-calc(50px/(2 - 2))",
 			"-moz-calc(5 + 5)",
 			"-moz-calc(5 * 5)",
@@ -663,7 +746,6 @@ var gCSSProperties = {
 		domProp: "MozMarginEnd",
 		inherited: false,
 		type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
-		get_computed: logical_box_prop_get_computed,
 		/* no subproperties */
 		/* auto may or may not be initial */
 		initial_values: [ "0", "0px", "0%", "0em", "0ex" ],
@@ -674,7 +756,6 @@ var gCSSProperties = {
 		domProp: "MozMarginStart",
 		inherited: false,
 		type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
-		get_computed: logical_box_prop_get_computed,
 		/* no subproperties */
 		/* auto may or may not be initial */
 		initial_values: [ "0", "0px", "0%", "0em", "0ex" ],
@@ -736,7 +817,6 @@ var gCSSProperties = {
 		domProp: "MozPaddingEnd",
 		inherited: false,
 		type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
-		get_computed: logical_box_prop_get_computed,
 		/* no subproperties */
 		initial_values: [ "0", "0px", "0%", "0em", "0ex" ],
 		other_values: [ "1px", "3em" ],
@@ -746,7 +826,6 @@ var gCSSProperties = {
 		domProp: "MozPaddingStart",
 		inherited: false,
 		type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
-		get_computed: logical_box_prop_get_computed,
 		/* no subproperties */
 		initial_values: [ "0", "0px", "0%", "0em", "0ex" ],
 		other_values: [ "1px", "3em" ],
@@ -881,6 +960,7 @@ var gCSSProperties = {
 			"-moz-linear-gradient(10px 10px -45deg, red, blue) repeat",
 			"-moz-repeating-radial-gradient(10% bottom, #ffffff, black) scroll no-repeat",
 			"-moz-repeating-linear-gradient(10px 10px -45deg, red, blue) repeat",
+			"-moz-element(#test) lime",
 				/* multiple backgrounds */
 				"url(404.png), url(404.png)",
 				"url(404.png), url(404.png) transparent",
@@ -888,7 +968,7 @@ var gCSSProperties = {
 				"repeat-x, fixed, none",
 				"0% top url(404.png), url(404.png) 0% top",
 				"fixed repeat-y top left url(404.png), repeat-x green",
-				"url(404.png), -moz-linear-gradient(20px 20px -45deg, blue, green) black",
+				"url(404.png), -moz-linear-gradient(20px 20px -45deg, blue, green), -moz-element(#a) black",
 				/* test cases with clip+origin in the shorthand */
 				"url(404.png) green padding-box",
 				"url(404.png) border-box transparent",
@@ -955,6 +1035,10 @@ var gCSSProperties = {
 		"url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==), none",
 		"none, url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==), none",
 		"url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==), url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==)",
+		"-moz-element(#a)",
+		"-moz-element(  #a  )",
+		"-moz-element(#a-1)",
+		"-moz-element(#a\\:1)",
 		/* gradient torture test */
 		"-moz-linear-gradient(red, blue)",
 		"-moz-linear-gradient(red, yellow, blue)",
@@ -1110,58 +1194,24 @@ var gCSSProperties = {
 		"-moz-repeating-radial-gradient(top left 99deg, cover, red, blue)",
 		"-moz-repeating-radial-gradient(15% 20% -1.2345rad, circle, red, blue)",
 		"-moz-repeating-radial-gradient(45px 399grad, ellipse closest-corner, red, blue)",
-		"-moz-repeating-radial-gradient(45px 399grad, farthest-side circle, red, blue)"
-		],
-		invalid_values: [
-			/* Old syntax */
-			"-moz-linear-gradient(10px 10px, 20px, 30px 30px, 40px, from(blue), to(red))",
-			"-moz-radial-gradient(20px 20px, 10px 10px, from(green), to(#ff00ff))",
-			"-moz-radial-gradient(10px 10px, 20%, 40px 40px, 10px, from(green), to(#ff00ff))",
-			"-moz-linear-gradient(10px, 20px, 30px, 40px, color-stop(0.5, #00ccff))",
-			"-moz-linear-gradient(20px 20px, from(blue), to(red))",
-			"-moz-linear-gradient(40px 40px, 10px 10px, from(blue) to(red) color-stop(10%, fuchsia))",
-			"-moz-linear-gradient(20px 20px 30px, 10px 10px, from(red), to(#ff0000))",
-			"-moz-radial-gradient(left top, center, 20px 20px, 10px, from(blue), to(red))",
-			"-moz-linear-gradient(left left, top top, from(blue))",
-			"-moz-linear-gradient(inherit, 10px 10px, from(blue))",
-			/* New syntax */
-			"-moz-linear-gradient(10px 10px, 20px, 30px 30px, 40px, blue 0, red 100%)",
-			"-moz-radial-gradient(20px 20px, 10px 10px, from(green), to(#ff00ff))",
-			"-moz-radial-gradient(10px 10px, 20%, 40px 40px, 10px, from(green), to(#ff00ff))",
-			"-moz-linear-gradient(10px, 20px, 30px, 40px, #00ccff 50%)",
-			"-moz-linear-gradient(40px 40px, 10px 10px, blue 0 fuchsia 10% red 100%)",
-			"-moz-linear-gradient(20px 20px 30px, 10px 10px, red 0, #ff0000 100%)",
-			"-moz-radial-gradient(left top, center, 20px 20px, 10px, from(blue), to(red))",
-			"-moz-linear-gradient(left left, top top, blue 0)",
-			"-moz-linear-gradient(inherit, 10px 10px, blue 0)",
-			"-moz-linear-gradient(left left blue red)",
-			"-moz-linear-gradient(left left blue, red)",
-			"-moz-linear-gradient()",
-			"-moz-linear-gradient(cover, red, blue)",
-			"-moz-linear-gradient(auto, red, blue)",
-			"-moz-linear-gradient(22 top, red, blue)",
-			"-moz-linear-gradient(10% red blue)",
-			"-moz-linear-gradient(10%, red blue)",
-			"-moz-linear-gradient(10%,, red, blue)",
-			"-moz-linear-gradient(45px, center, red, blue)",
-			"-moz-linear-gradient(45px, center red, blue)",
-			"-moz-radial-gradient(contain, ellipse, red, blue)",
-			"-moz-radial-gradient(10deg contain, red, blue)",
-			"-moz-radial-gradient(10deg, contain,, red, blue)",
-			"-moz-radial-gradient(contain contain, red, blue)",
-			"-moz-radial-gradient(ellipse circle, red, blue)",
+		"-moz-repeating-radial-gradient(45px 399grad, farthest-side circle, red, blue)",
+		"-moz-image-rect(url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==), 2, 10, 10, 2)",
+		"-moz-image-rect(url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==), 10%, 50%, 30%, 0%)",
+		"-moz-image-rect(url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==), 10, 50%, 30%, 0)",
 
-			"-moz-repeating-linear-gradient(10px 10px, 20px, 30px 30px, 40px, blue 0, red 100%)",
-			"-moz-repeating-radial-gradient(20px 20px, 10px 10px, from(green), to(#ff00ff))",
-			"-moz-repeating-radial-gradient(10px 10px, 20%, 40px 40px, 10px, from(green), to(#ff00ff))",
-			"-moz-repeating-linear-gradient(10px, 20px, 30px, 40px, #00ccff 50%)",
-			"-moz-repeating-linear-gradient(40px 40px, 10px 10px, blue 0 fuchsia 10% red 100%)",
-			"-moz-repeating-linear-gradient(20px 20px 30px, 10px 10px, red 0, #ff0000 100%)",
-			"-moz-repeating-radial-gradient(left top, center, 20px 20px, 10px, from(blue), to(red))",
-			"-moz-repeating-linear-gradient(left left, top top, blue 0)",
-			"-moz-repeating-linear-gradient(inherit, 10px 10px, blue 0)",
-			"-moz-repeating-linear-gradient(left left blue red)",
-			"-moz-repeating-linear-gradient()" ]
+		"-moz-radial-gradient(-moz-calc(25%) top, red, blue)",
+		"-moz-radial-gradient(left -moz-calc(25%), red, blue)",
+		"-moz-radial-gradient(-moz-calc(25px) top, red, blue)",
+		"-moz-radial-gradient(left -moz-calc(25px), red, blue)",
+		"-moz-radial-gradient(-moz-calc(-25%) top, red, blue)",
+		"-moz-radial-gradient(left -moz-calc(-25%), red, blue)",
+		"-moz-radial-gradient(-moz-calc(-25px) top, red, blue)",
+		"-moz-radial-gradient(left -moz-calc(-25px), red, blue)",
+		"-moz-radial-gradient(-moz-calc(100px + -25%) top, red, blue)",
+		"-moz-radial-gradient(left -moz-calc(100px + -25%), red, blue)",
+		"-moz-radial-gradient(-moz-calc(100px + -25px) top, red, blue)",
+		"-moz-radial-gradient(left -moz-calc(100px + -25px), red, blue)",
+		]
 	},
 	"background-origin": {
 		domProp: "backgroundOrigin",
@@ -1178,7 +1228,7 @@ var gCSSProperties = {
 		/* is "0px 0px" an initial value or not? */
 		initial_values: [ "top left", "left top", "0% 0%", "0% top", "left 0%" ],
 		other_values: [ "top", "left", "right", "bottom", "center", "center bottom", "bottom center", "center right", "right center", "center top", "top center", "center left", "left center", "right bottom", "bottom right", "50%", "top left, top left", "top left, top right", "top right, top left", "left top, 0% 0%", "10% 20%, 30%, 40%", "top left, bottom right", "right bottom, left top", "0%", "0px", "30px", "0%, 10%, 20%, 30%", "top, top, top, top, top" ],
-		invalid_values: [ "50% left", "top 50%" ]
+
 	},
 	"background-repeat": {
 		domProp: "backgroundRepeat",
@@ -1404,10 +1454,33 @@ var gCSSProperties = {
 		inherited: false,
 		type: CSS_TYPE_LONGHAND,
 		/* XXX requires position to be set */
+		prerequisites: { "position": "relative" },
 		/* XXX 0 may or may not be equal to auto */
 		initial_values: [ "auto" ],
 		other_values: [ "32px", "-3em", "12%" ],
 		invalid_values: []
+	},
+	"box-shadow": {
+		domProp: "boxShadow",
+		inherited: false,
+		type: CSS_TYPE_LONGHAND,
+		initial_values: [ "none" ],
+		prerequisites: { "color": "blue" },
+		other_values: [ "2px 2px", "2px 2px 1px", "2px 2px 2px 2px", "blue 3px 2px", "2px 2px 1px 5px green", "2px 2px red", "green 2px 2px 1px", "green 2px 2px, blue 1px 3px 4px", "currentColor 3px 3px", "blue 2px 2px, currentColor 1px 2px, 1px 2px 3px 2px orange", "3px 0 0 0", "inset 2px 2px 3px 4px black", "2px -2px green inset, 4px 4px 3px blue, inset 2px 2px",
+			/* calc() values */
+			"2px 2px -moz-calc(-5px)", /* clamped */
+			"-moz-calc(3em - 2px) 2px green",
+			"green -moz-calc(3em - 2px) 2px",
+			"2px -moz-calc(2px + 0.2em)",
+			"blue 2px -moz-calc(2px + 0.2em)",
+			"2px -moz-calc(2px + 0.2em) blue",
+			"-moz-calc(-2px) -moz-calc(-2px)",
+			"-2px -2px",
+			"-moz-calc(2px) -moz-calc(2px)",
+			"-moz-calc(2px) -moz-calc(2px) -moz-calc(2px)",
+			"-moz-calc(2px) -moz-calc(2px) -moz-calc(2px) -moz-calc(2px)"
+		],
+		invalid_values: [ "3% 3%", "1px 1px 1px 1px 1px", "2px 2px, none", "red 2px 2px blue", "inherit, 2px 2px", "2px 2px, inherit", "2px 2px -5px", "inset 4px 4px black inset", "inset inherit", "inset none" ]
 	},
 	"caption-side": {
 		domProp: "captionSide",
@@ -1448,8 +1521,8 @@ var gCSSProperties = {
 		type: CSS_TYPE_LONGHAND,
 		/* XXX needs to be on pseudo-elements */
 		initial_values: [ "normal", "none" ],
-		other_values: [ '""', "''", '"hello"', "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==)", "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==')", 'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==")', 'counter(foo)', 'counter(bar, upper-roman)', 'counters(foo, ".")', "counters(bar, '-', lower-greek)", "'-' counter(foo) '.'", "attr(title)", "open-quote", "close-quote", "no-open-quote", "no-close-quote", "close-quote attr(title) counters(foo, '.', upper-alpha)", "counter(foo, none)", "counters(bar, '.', none)", "attr(\\32)", "attr(\\2)", "attr(-\\2)", "attr(-\\32)", "counter(\\2)", "counters(\\32, '.')", "counter(-\\32, upper-roman)", "counters(-\\2, '-', lower-greek)", "counter(\\()", "counters(a\\+b, '.')", "counter(\\}, upper-alpha)" ],
-		invalid_values: [ 'counters(foo)', 'counter(foo, ".")', 'attr("title")', "attr('title')", "attr(2)", "attr(-2)", "counter(2)", "counters(-2, '.')" ]
+		other_values: [ '""', "''", '"hello"', "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==)", "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==')", 'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==")', 'counter(foo)', 'counter(bar, upper-roman)', 'counters(foo, ".")', "counters(bar, '-', lower-greek)", "'-' counter(foo) '.'", "attr(title)", "open-quote", "close-quote", "no-open-quote", "no-close-quote", "close-quote attr(title) counters(foo, '.', upper-alpha)", "counter(foo, none)", "counters(bar, '.', none)", "attr(\\32)", "attr(\\2)", "attr(-\\2)", "attr(-\\32)", "counter(\\2)", "counters(\\32, '.')", "counter(-\\32, upper-roman)", "counters(-\\2, '-', lower-greek)", "counter(\\()", "counters(a\\+b, '.')", "counter(\\}, upper-alpha)", "-moz-alt-content" ],
+		invalid_values: [ 'counters(foo)', 'counter(foo, ".")', 'attr("title")', "attr('title')", "attr(2)", "attr(-2)", "counter(2)", "counters(-2, '.')", "-moz-alt-content 'foo'", "'foo' -moz-alt-content" ]
 	},
 	"counter-increment": {
 		domProp: "counterIncrement",
@@ -1564,6 +1637,22 @@ var gCSSProperties = {
 		other_values: [ "sans-serif", "Times New Roman, serif", "'Times New Roman', serif", "cursive", "fantasy", "\"Times New Roman", "Times, \"Times New Roman" ],
 		invalid_values: [ "\"Times New\" Roman" ]
 	},
+	"-moz-font-feature-settings": {
+		domProp: "MozFontFeatureSettings",
+		inherited: true,
+		type: CSS_TYPE_LONGHAND,
+		initial_values: [ "normal" ],
+		other_values: [ "'liga=1'", "\"liga=1\"", "'foo,bar=\"hello\"'" ],
+		invalid_values: [ "liga=1", "foo,bar=\"hello\"" ]
+	},
+	"-moz-font-language-override": {
+		domProp: "MozFontLanguageOverride",
+		inherited: true,
+		type: CSS_TYPE_LONGHAND,
+		initial_values: [ "normal" ],
+		other_values: [ "'TRK'", "\"TRK\"", "'N\\'Ko'" ],
+		invalid_values: [ "TRK" ]
+	},
 	"font-size": {
 		domProp: "fontSize",
 		inherited: true,
@@ -1599,7 +1688,7 @@ var gCSSProperties = {
 		inherited: true,
 		type: CSS_TYPE_LONGHAND,
 		initial_values: [ "normal" ],
-		other_values: [ "wider", "narrower", "ultra-condensed", "extra-condensed", "condensed", "semi-condensed", "semi-expanded", "expanded", "extra-expanded", "ultra-expanded" ],
+		other_values: [ "ultra-condensed", "extra-condensed", "condensed", "semi-condensed", "semi-expanded", "expanded", "extra-expanded", "ultra-expanded" ],
 		invalid_values: []
 	},
 	"font-style": {
@@ -1647,7 +1736,8 @@ var gCSSProperties = {
 		domProp: "left",
 		inherited: false,
 		type: CSS_TYPE_LONGHAND,
-		/* XXX requires position to be set */
+		/* FIXME: run tests with multiple prerequisites */
+		prerequisites: { "position": "relative" },
 		/* XXX 0 may or may not be equal to auto */
 		initial_values: [ "auto" ],
 		other_values: [ "32px", "-3em", "12%" ],
@@ -1804,6 +1894,7 @@ var gCSSProperties = {
 		domProp: "maxHeight",
 		inherited: false,
 		type: CSS_TYPE_LONGHAND,
+		prerequisites: { "display": "block" },
 		initial_values: [ "none" ],
 		other_values: [ "30px", "50%", "0" ],
 		invalid_values: [ "auto", "-moz-max-content", "-moz-min-content", "-moz-fit-content", "-moz-available" ]
@@ -1812,6 +1903,7 @@ var gCSSProperties = {
 		domProp: "maxWidth",
 		inherited: false,
 		type: CSS_TYPE_LONGHAND,
+		prerequisites: { "display": "block" },
 		initial_values: [ "none" ],
 		other_values: [ "30px", "50%", "0", "-moz-max-content", "-moz-min-content", "-moz-fit-content", "-moz-available" ],
 		invalid_values: [ "auto" ]
@@ -1932,7 +2024,7 @@ var gCSSProperties = {
 		inherited: false,
 		type: CSS_TYPE_TRUE_SHORTHAND,
 		subproperties: [ "padding-top", "padding-right", "padding-bottom", "padding-left" ],
-		initial_values: [ "0", "0px 0 0em", "0% 0px 0em 0pt" ],
+		initial_values: [ "0", "0px 0 0em", "0% 0px 0em 0pt", "-moz-calc(0px) -moz-calc(0em) -moz-calc(-2px) -moz-calc(-1%)" ],
 		other_values: [ "3px 0", "2em 4px 2pt", "1em 2em 3px 4px" ],
 		invalid_values: []
 	},
@@ -2089,7 +2181,8 @@ var gCSSProperties = {
 		domProp: "right",
 		inherited: false,
 		type: CSS_TYPE_LONGHAND,
-		/* XXX requires position to be set */
+		/* FIXME: run tests with multiple prerequisites */
+		prerequisites: { "position": "relative" },
 		/* XXX 0 may or may not be equal to auto */
 		initial_values: [ "auto" ],
 		other_values: [ "32px", "-3em", "12%" ],
@@ -2201,16 +2294,18 @@ var gCSSProperties = {
 		domProp: "textShadow",
 		inherited: true,
 		type: CSS_TYPE_LONGHAND,
-		initial_values: [ "none" ],
 		prerequisites: { "color": "blue" },
+		initial_values: [ "none" ],
 		other_values: [ "2px 2px", "2px 2px 1px", "2px 2px green", "2px 2px 1px green", "green 2px 2px", "green 2px 2px 1px", "green 2px 2px, blue 1px 3px 4px", "currentColor 3px 3px", "blue 2px 2px, currentColor 1px 2px",
 			/* calc() values */
 			"2px 2px -moz-calc(-5px)", /* clamped */
 			"-moz-calc(3em - 2px) 2px green",
 			"green -moz-calc(3em - 2px) 2px",
-			"2px -moz-min(2px,0.2em)",
-			"blue 2px -moz-min(2px,0.2em)",
-			"2px -moz-min(2px,0.2em) blue",
+			"2px -moz-calc(2px + 0.2em)",
+			"blue 2px -moz-calc(2px + 0.2em)",
+			"2px -moz-calc(2px + 0.2em) blue",
+			"-moz-calc(-2px) -moz-calc(-2px)",
+			"-2px -2px",
 			"-moz-calc(2px) -moz-calc(2px)",
 			"-moz-calc(2px) -moz-calc(2px) -moz-calc(2px)",
 		],
@@ -2230,7 +2325,8 @@ var gCSSProperties = {
 		domProp: "top",
 		inherited: false,
 		type: CSS_TYPE_LONGHAND,
-		/* XXX requires position to be set */
+		/* FIXME: run tests with multiple prerequisites */
+		prerequisites: { "position": "relative" },
 		/* XXX 0 may or may not be equal to auto */
 		initial_values: [ "auto" ],
 		other_values: [ "32px", "-3em", "12%" ],
@@ -2275,7 +2371,7 @@ var gCSSProperties = {
 		type: CSS_TYPE_LONGHAND,
 		initial_values: [ "ease", "cubic-bezier(0.25, 0.1, 0.25, 1.0)" ],
 		other_values: [ "linear", "ease-in", "ease-out", "ease-in-out", "linear, ease-in, cubic-bezier(0.1, 0.2, 0.8, 0.9)" ],
-		invalid_values: [ "none", "auto" ]
+		invalid_values: [ "none", "auto", "cubic-bezier(0.25, 0.1, 0.25)", "cubic-bezier(0.25, 0.1, 0.25, 0.25, 1.0)", "cubic-bezier(-0.5, 0.5, 0.5, 0.5)", "cubic-bezier(1.5, 0.5, 0.5, 0.5)", "cubic-bezier(0.5, 0.5, -0.5, 0.5)", "cubic-bezier(0.5, 0.5, 1.5, 0.5)" ]
 	},
 	"unicode-bidi": {
 		domProp: "unicodeBidi",
@@ -2341,6 +2437,8 @@ var gCSSProperties = {
 		domProp: "width",
 		inherited: false,
 		type: CSS_TYPE_LONGHAND,
+		/* computed value tests for width test more with display:block */
+		prerequisites: { "display": "block" },
 		initial_values: [ " auto" ],
 		/* XXX these have prerequisites */
 		other_values: [ "15px", "3em", "15%", "-moz-max-content", "-moz-min-content", "-moz-fit-content", "-moz-available" ],
@@ -2540,7 +2638,6 @@ var gCSSProperties = {
 		prerequisites: { "color": "blue" },
 		initial_values: [ "black", "#000", "#000000", "rgb(0,0,0)", "rgba(0,0,0,1)" ],
 		other_values: [ "green", "#fc3", "currentColor" ],
-		invalid_values: [ "url('#myserver')", "url(foo.svg#myserver)", 'url("#myserver") green' ]
 	},
 	"stop-opacity": {
 		domProp: "stopOpacity",
@@ -2563,8 +2660,7 @@ var gCSSProperties = {
 		inherited: true,
 		type: CSS_TYPE_LONGHAND,
 		initial_values: [ "none" ],
-		other_values: [ "5px,3px,2px", "5px 3px 2px", "  5px ,3px	, 2px ", "1px", "5%", "3em" ],
-		invalid_values: []
+		other_values: [ "5px,3px,2px", "5px 3px 2px", "  5px ,3px	, 2px ", "1px", "5%", "3em" ]
 	},
 	"stroke-dashoffset": {
 		domProp: "strokeDashoffset",
@@ -2630,18 +2726,6 @@ var gCSSProperties = {
 		other_values: [ "optimizeSpeed", "optimizeLegibility", "geometricPrecision" ],
 		invalid_values: []
 	}
-}
-
-function logical_box_prop_get_computed(cs, property)
-{
-	if (! /^-moz-/.test(property))
-		throw "Unexpected property";
-	property = property.substring(5);
-	if (cs.getPropertyValue("direction") == "ltr")
-		property = property.replace("-start", "-left").replace("-end", "-right");
-	else
-		property = property.replace("-start", "-right").replace("-end", "-left");
-	return cs.getPropertyValue(property);
 }
 
 // Get the computed value for a property.  For shorthands, return the

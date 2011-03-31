@@ -260,7 +260,7 @@ Firebug.Ace.BaseAutocompleter = {
         var filterText = text.toLowerCase();
         var filterTextCase = this.text;
 
-        //**funcs*****/
+        //*******/
         function springyIndex(val) {
             var lowVal = val.comName;
             var priority = 0;
@@ -284,16 +284,13 @@ Firebug.Ace.BaseAutocompleter = {
             }
         }
 
-        function sorter(a,b) {
-
-        }
         var sortVals = ["priority", "depth", "comName"];
 
         data.forEach(springyIndex);
         table.sort(function (a, b) {
-            if(!a.special && b.special)
+            if(!a.isSpecial && b.isSpecial)
                 return 1;
-            if(a.special && !b.special)
+            if(a.isSpecial && !b.isSpecial)
                 return -1;
             for each(var i in sortVals) {
               if (a[i] < b[i])
@@ -371,8 +368,12 @@ Firebug.Ace.JSAutocompleter = extend(Firebug.Ace.BaseAutocompleter, {
 	getHint: function(index){
 		var o = this.sortedArray[index], longDescriptor;
 		if(o){
-			longDescriptor = jn.inspect(o.object, "long");
-			longDescriptor += '\n'+ jn.lookupSetter(this.object, o.name);
+			if(o.isSpecial) {
+				longDescriptor = o.name + '\n' +o.description
+			} else {
+				longDescriptor = jn.inspect(o.object, "long");
+				longDescriptor += '\n'+ jn.lookupSetter(this.object, o.name);
+			}
 		} else
 			longDescriptor = jn.inspect(this.object)
 				
@@ -384,7 +385,7 @@ Firebug.Ace.JSAutocompleter = extend(Firebug.Ace.BaseAutocompleter, {
         if(c<0)
             return;
         c = this.sortedArray[c];
-        var isSpecial = c.special;
+        var isSpecial = c.isSpecial;
         var text = c.name;
 
         var s = this.baseRange.end.column + 1;
@@ -414,11 +415,11 @@ Firebug.Ace.JSAutocompleter = extend(Firebug.Ace.BaseAutocompleter, {
         try {
             if (funcName === "QueryInterface") {
                 supportedInterfaces(this.object).forEach(function(x) {
-                    ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,special:true});
+                    ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,isSpecial:true});
                 });
             } else if (funcName === "getInterface") {
                 supportedgetInterfaces(this.object).forEach(function(x){
-                    ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,special:true});
+                    ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,isSpecial:true});
                 });
             } else if (funcName === "getElementById") {
                 ans = getIDsInDoc(this.object);
@@ -428,11 +429,15 @@ Firebug.Ace.JSAutocompleter = extend(Firebug.Ace.BaseAutocompleter, {
                 var att = this.object.attributes;
                 for(var i=0; i < att.length; i++) {
                     var x = att[i];
-                    ans.push({name:'\u2555"'+x.nodeName+'")',comName: '"'+x.nodeName.toLowerCase(),description:x.value, depth:-1,special:true});
+                    ans.push({name:'\u2555"'+x.nodeName+'")',comName: '"'+x.nodeName.toLowerCase(),description:x.value, depth:-1,isSpecial:true});
                 }
             } else if(funcName === "addEventListener" || funcName === "removeEventListener") {
                 eventNames.forEach(function(x) {
-                    ans.push({name:'\u2555"'+x+'"',comName: '"'+x.toString().toLowerCase(),description:"event name", depth:-1,special:true});
+                    ans.push({name:'\u2555"'+x+'"',comName: '"'+x.toString().toLowerCase(),description:"event name", depth:-1,isSpecial:true});
+                });
+            } else if('createElementNS,createAttributeNS,hasAttributeNS'.indexOf(funcName)!=-1) {
+                namespaces.forEach(function(x) {
+                    ans.push({name:'\u2555"'+x+'"',comName: '"'+x.toString().toLowerCase(),description:"ns", depth:-1,isSpecial:true});
                 });
             }
         } catch(e) {
@@ -557,8 +562,6 @@ Firebug.Ace.CSSAutocompleter =  extend(Firebug.Ace.BaseAutocompleter, {
 	getHint: function(index){
 		var o = this.sortedArray[index], longDescriptor;
 		if(o){
-			longDescriptor = jn.inspect(o.object, "long");
-			longDescriptor += '\n'+ jn.lookupSetter(this.object, o.name);
 		} else
 			longDescriptor = jn.inspect(this.object)
 				
@@ -570,7 +573,7 @@ Firebug.Ace.CSSAutocompleter =  extend(Firebug.Ace.BaseAutocompleter, {
         if(c<0)
             return;
         c = this.sortedArray[c];
-        var isSpecial = c.special;
+        var isSpecial = c.isSpecial;
         var text = c.name;
 
         var s = this.baseRange.end.column + 1;
@@ -592,10 +595,6 @@ Firebug.Ace.CSSAutocompleter =  extend(Firebug.Ace.BaseAutocompleter, {
         range.start.column = s;
         this.editor.selection.setSelectionRange(range);
         this.editor.onTextInput(text);
-    },
-    // *****************
-    appendSpecialEntries: function() {
-       
     },
 
     parseJSFragment: function(evalString){
@@ -689,7 +688,7 @@ var getIDsInDoc = function(doc) {
 
     for(let i = 0, snapLen = result.snapshotLength; i < snapLen; i++) {
         let x = result.snapshotItem(i).id;
-        ans[i] = {name:' "' + x + '")', comName: "ci." + x.toString().toLowerCase(), description: "id", depth: -1, special: true};
+        ans[i] = {name:' "' + x + '")', comName: "ci." + x.toString().toLowerCase(), description: "id", depth: -1, isSpecial: true};
     }
 
     return ans;
@@ -823,13 +822,14 @@ function(){dump(this.name); delete this.description; this.description=jn.inspect
     };
 }
 
+var namespaces = ["http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul", "http://www.w3.org/1999/xhtml", "http://www.w3.org/2000/svg", 'http://www.w3.org/1999/xlink', 'http://www.w3.org/1998/Math/MathML']
 
 var eventNames = [
 //xul?
-// "broadcast", "close", "command", "commandupdate",  "popuphidden", "popuphiding", "popupshowing", "popupshown", "syncfrompreference", "synctopreference",  "activate", "deactivate",
+// "broadcast", "command", "commandupdate",  "popuphidden", "popuphiding", "popupshowing", "popupshown", "syncfrompreference", "synctopreference",  "activate", "deactivate",
 //
-"MozAfterPaint", "MozMousePixelScroll", "DOMWindowClose", "DOMFrameContentLoaded", "DOMLinkAdded", "DOMLinkRemoved", "DOMWillOpenModalDialog", "DOMModalDialogClosed", "fullscreen", "PopupWindow", "DOMTitleChanged", "PluginNotFound", "ValueChange", "DOMMenuItemActive", "DOMMenuItemInactive", "windowZLevel", "readystatechange",
-"DOMContentLoaded", "pageshow",
+"MozAfterPaint", "MozMousePixelScroll", "DOMWindowClose", "DOMFrameContentLoaded", "DOMLinkAdded", "DOMLinkRemoved", "DOMWillOpenModalDialog", "DOMModalDialogClosed", "fullscreen", "PopupWindow", "DOMTitleChanged", "PluginNotFound", "ValueChange", "DOMMenuItemActive", "DOMMenuItemInactive", "windowZLevel",
+ "readystatechange", "DOMContentLoaded", "pageshow",
 //User interface event types
 "DOMActivate", "DOMFocusIn", "DOMFocusOut", "blur", "focus", "overflow", "underflow",
 //Text event types
@@ -842,7 +842,7 @@ var eventNames = [
 //Mutation and mutation name event types
 "DOMSubtreeModified", "DOMNodeInserted", "DOMNodeRemoved", "DOMNodeRemovedFromDocument", "DOMNodeInsertedIntoDocument", "DOMAttrModified", "DOMCharacterDataModified", "DOMElementNameChanged", "DOMAttributeNameChanged", 
 //Basic event types
-"abort", "beforeunload", "change", "error", "load", "reset", "resize", "scroll", "select", "submit", "unload"
+"abort", "beforeunload", "change", "error", "load", "reset", "resize", "scroll", "select", "submit", "unload", "close"
 ]
 
 
