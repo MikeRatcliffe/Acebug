@@ -664,20 +664,19 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
 
 		function next() ch=curLine[--col]||((curLine = lines[--row])&&(col=curLine.length,'\n'))
 		function peek() curLine[col-1]||( lines[row-1]&&'\n')
-		var rx=/[\w$\-\[\]\(\)]/,i0,i
+		var rx = /[\w$\-\[\]\(\)]/
 		function skipWord() {
 			while(next()&&rx.test(ch));
 		}
 		function getText() {
-			if(col<0)col=0
-			if(row<0)row=0
-			var t=
-			 editor.session.getTextRange({
-				start:{column:col,row:row},
+			var c = cursor.row!=row || col<0 ? 0: col
+			var t = editor.session.getTextRange({
+				start:{column:c,row:cursor.row},
 				end: cursor
 			})
+			
 			dump(t.toSource())
-			return t.substr(1)
+			return t.substr(1).trim()
 		}
 
 		//*************
@@ -685,6 +684,10 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
 		curWord = getText()
 		//****************
 		var colonSeen, mode, termChar = ch
+		if(!ch){//start of file
+				mode='selector';
+				return [mode,'',curWord]
+		}
 		if(ch==':' && peek()==':'){
 			termChar='::'
 			mode='selector'
@@ -898,7 +901,7 @@ var getClassesInDoc = function(doc) {
     return ans;
 };
 
-getNodeNamesInDoc = function(doc){
+var getNodeNamesInDoc = function(doc){
 	var xpe = new XPathEvaluator();
 	var nsResolver = xpe.createNSResolver(doc.documentElement);
 	var frequent='td,div,tr,span,a,box,hbox,vbox'.split(',')
