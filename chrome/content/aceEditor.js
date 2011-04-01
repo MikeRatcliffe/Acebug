@@ -237,6 +237,7 @@ Firebug.largeCommandLineEditor = {
 
         var editor = Firebug.Ace.win2.editor;
 		editor.session.owner = 'console';
+		editor.session.href = ''
 		editor.session.autocompletionType = 'js'
 
         // clean up preload handlers

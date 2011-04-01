@@ -1080,8 +1080,12 @@ jn.inspect = function(x, isLong) {
 
             return t + string.substring(string.indexOf(" "), i - 1) + "~" + x.length;
         }
-        if (isNative) {
-            return string.replace("()", "(~" + x.length + ")");
+        if (isNative) { 
+			// fixme: reference stuff must be handled elswhwere
+			var funcName = string.match(/ ([^\(]*)/)[1]
+			
+			
+            return string.replace("()", "(~" + x.length + ")")+ '\n' +getMDCInfoFor(funcName);
         }
         return	string;
     }
@@ -1344,16 +1348,28 @@ function supportedgetInterfaces(element){
 }
 
 // ************************************************************************************************
-/*
-var req = new XMLHttpRequest;
-    req.open("GET", 'chrome://acebug/content/reference.xml', false);
+function makeReq(href) {
+    var req = new XMLHttpRequest;
+    req.overrideMimeType("text/plain");
+    req.open("GET", href, false);
     try {
         req.send(null);
     } catch (e) {
     }
-   doc= req.responseXML;
-l=doc.getElementsByTagName('param')
-
+    return req.responseText;
+}
+var refDoc
+var getMDCInfoFor = function(funcname){
+	if(!refDoc){
+		refDoc = document.implementation.createDocument("http://www.w3.org/1999/xhtml", "html", null)
+		refDoc.documentElement.innerHTML = makeReq('chrome://acebug/content/reference.xml')
+	}
+	var a = refDoc.querySelectorAll('[name="' + funcname + '"]'), ans='';
+	for(var i = a.length; i--;)
+		ans += a[i].textContent
+	return ans;
+}
+/*
 
 for(var i=l.length;i--;){
 l[i].firstChild.replaceWholeText(l[i].firstChild.wholeText.trim())
