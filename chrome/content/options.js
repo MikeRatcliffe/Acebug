@@ -11,3 +11,10 @@ function softTabsClicked(onload) {
         abTabSizeLbl.disabled = softTabsEl.checked;
     }
 }
+
+function reportAcebugIssue() {
+	var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
+		.getService(Components.interfaces.nsIWindowMediator);
+	var mainWindow = wm.getMostRecentWindow("navigator:browser");
+	mainWindow.gBrowser.selectedTab = mainWindow.gBrowser.addTab("https://github.com/MikeRatcliffe/Acebug/issues");
+}

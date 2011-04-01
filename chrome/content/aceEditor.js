@@ -163,7 +163,7 @@ Firebug.Ace =
         return null;
     },
 	
-	// save load
+	// save and load
 	
 	initFilePicker: function(session, mode){
 		var ext = session.extension,

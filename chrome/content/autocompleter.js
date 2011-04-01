@@ -1,6 +1,6 @@
 /* See license.txt for terms of usage */
 
-FBL.ns(function() { with (FBL) {
+FBL.ns(function() {
 
 // ************************************************************************************************
 // Constants
@@ -44,7 +44,7 @@ function treeView(table) {
 };
 
 /**************************************/
-Firebug.Ace.startAutocompleter = bind(function(editor){
+Firebug.Ace.startAutocompleter = FBL.bind(function(editor){
 	var type = editor.session.autocompletionType;
 	if(type == 'js')
 		this.autocompleter = this.JSAutocompleter
@@ -58,7 +58,7 @@ Firebug.Ace.startAutocompleter = bind(function(editor){
 
 Firebug.Ace.BaseAutocompleter = {	
     initPanel: function(panelH, panelW){
-		this.panel=$("aceAutocompletePanel");
+		this.panel = FBL.$("aceAutocompletePanel");
 		this.panel.height = panelH;
 		this.panel.width = panelW;
 		this.tree = this.panel.getElementsByTagName('tree')[0];
@@ -107,7 +107,7 @@ Firebug.Ace.BaseAutocompleter = {
         if(!this.editor.autocompleteCommandsAdded)
             this.addComandsToEditor();
         if(!this.selectionListener)
-            this.selectionListener = bind(this.$selectionListener, this);
+            this.selectionListener = FBL.bind(this.$selectionListener, this);
 
         this.editor.selection.on('changeCursor', this.selectionListener);
 
@@ -115,7 +115,6 @@ Firebug.Ace.BaseAutocompleter = {
         this.bubblePos = {w: panelW * 1.7, h: panelH * 1.5, l: bubbleX, t: posY};
         this.bubble.height = this.bubblePos.h;
         this.bubble.width = this.bubblePos.w;
-        this.bubble.showPopup(null, this.bubblePos.l, this.bubblePos.t, "popup");
     },
 
     $selectionListener: function(e) {
@@ -125,8 +124,8 @@ Firebug.Ace.BaseAutocompleter = {
 
         this.filterRange.end = e.data;
         this.text = this.editor.session.getTextRange(this.filterRange);
-        dump(this.text);
-        if( /[\+\-;,= \(\)\[\]\{\}\!><]/.test(this.text))
+
+        if( this.invalidCharRe.test(this.text))
             return this.finish();
         this.filter(this.unfilteredArray,this.text);
         this.setView(0);
@@ -190,10 +189,17 @@ Firebug.Ace.BaseAutocompleter = {
     },
 	
 	sayInBubble: function(text) {
-        if(this.hidden)
-            return;
+        if(!text){
+			this.bubble.hidePopup()
+			return
+		}
+		if(this.hidden)
+            return;		
         var item = this.bubble.firstChild;
         item.value = text;
+		if(this.bubble.state!='open')
+            this.bubble.showPopup(null, this.bubblePos.l, this.bubblePos.t, "popup");
+
     },
 
     setView: function(si) {
@@ -316,7 +322,8 @@ Firebug.Ace.BaseAutocompleter = {
 
 }
 
-Firebug.Ace.JSAutocompleter = extend(Firebug.Ace.BaseAutocompleter, {
+Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
+	invalidCharRe: /[\+\-;,= \(\)\[\]\{\}\!><]/,
     onEvalSuccess: function(result, context) {
         this.object = result;
         this.unfilteredArray = getProps(result);
@@ -338,8 +345,8 @@ Firebug.Ace.JSAutocompleter = extend(Firebug.Ace.BaseAutocompleter, {
             this.onEvalSuccess(context.global, context);
         else
             Firebug.CommandLine.evaluate(string, context, context.thisValue, null,
-                bind(this.onEvalSuccess, this),
-                bind(this.onEvalFail, this)
+                FBL.bind(this.onEvalSuccess, this),
+                FBL.bind(this.onEvalFail, this)
             );
     },
 
@@ -531,29 +538,26 @@ Firebug.Ace.JSAutocompleter = extend(Firebug.Ace.BaseAutocompleter, {
     }
 });
 
-Firebug.Ace.CSSAutocompleter =  extend(Firebug.Ace.BaseAutocompleter, {
-
+Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
+	invalidCharRe: /[\+;:,= \(\)\[\]\{\}\><]/,
     start: function(editor) {
         this.editor = editor || this.editor;
         var range = editor.selection.getRange();
         this.filterRange = range.clone();
-        range.end.column = range.start.column;
-        range.start.column = 0;
-        var evalString = editor.session.getTextRange(range);
-
-        var [objString, filterText, funcName] = this.parseJSFragment(evalString);
-		this.funcName = funcName;
+        		
+		var p=this.parse(this.editor)        
+		var filterText = p[2]
 
         range.end.column = range.end.column - filterText.length - 1;
-        range.start.column = range.end.column - objString.length -1;
+        range.start.column = range.end.column;
         this.baseRange = range;
 
         this.filterRange.start.column = this.filterRange.end.column - filterText.length;
 
         this.text = filterText;
         
-		this.unfilteredArray = getProps(document.documentElement.style);
-
+		this.unfilteredArray = this[p[0]](p);
+//dump(this.unfilteredArray,this.text)
         this.filter(this.unfilteredArray, this.text);
         this.showPanel();
     },
@@ -561,11 +565,9 @@ Firebug.Ace.CSSAutocompleter =  extend(Firebug.Ace.BaseAutocompleter, {
     // *****************  
 	getHint: function(index){
 		var o = this.sortedArray[index], longDescriptor;
-		if(o){
-		} else
-			longDescriptor = jn.inspect(this.object)
+		
 				
-		return longDescriptor
+		return 
 	},
 
     insertSuggestedText: function(additionalText){
@@ -573,111 +575,298 @@ Firebug.Ace.CSSAutocompleter =  extend(Firebug.Ace.BaseAutocompleter, {
         if(c<0)
             return;
         c = this.sortedArray[c];
-        var isSpecial = c.isSpecial;
+        var isSpecial = c.special;
         var text = c.name;
 
-        var s = this.baseRange.end.column + 1;
-        if(isSpecial){
-            text=text.substr(1);
-        } else if (/^\d*$/.test(text)) {
-            text = "[" + text + "]";
-            s--;
-        } else if (!/^[a-z$_][a-z$_0-9]*$/i.test(text)) {
-            text = '["' + text + '"]';
-            s--;
-        }
+		var range = this.editor.selection.getRange();
+        		
+		var cursor = this.editor.selection.getCursor()
+		var row = cursor.row,
+			col = cursor.column;		
+		var curLine = this.editor.session.getLine(row);		
+		
+		var rx=/[\w$\-\[\]\(\)%]/,ch;
+		while((ch=curLine[col++]) && rx.test(ch));//select word forward		
+		range.end.column = col-1;
+		
+		var s = this.baseRange.end.column + 1;
+		col = s;
+		//pseudoclass
+        if(text[0]==':') {
+			while (curLine[--col]==':')
+				s--;
+		}
+		range.start.column = s;			
 
-        if (additionalText) {
-            text = text+additionalText;
-            //l -= additionalText.length + 1;
-        }
-        var range = this.editor.selection.getRange();
-        range.start.column = s;
         this.editor.selection.setSelectionRange(range);
         this.editor.onTextInput(text);
+		if(text[text.length-1]==')'){
+			range.start.column = s + text.indexOf('(') + 1
+			range.end.column = s + text.length -1
+			this.editor.selection.setSelectionRange(range);
+		}
     },
-
-    parseJSFragment: function(evalString){
-        var i0, next, iBuff;
-        var i = evalString.length - 1;
-        var rx = /[a-z$_0-9]/i;
-        var skipWord = function() {
-            i0 = i;
-            while(rx.test(next = evalString.charAt(i))) {
-                i--;
-            }
-        };
-        var skipString = function(comma) {
-            next = evalString.charAt(--i);
-            while(next && (next != comma || evalString.charAt(i-1) === "\\")) {
-                next = evalString.charAt(--i);
-            }
-        };
-        var skipStacks = function() {
-            var stack = [];
-            while(next = evalString.charAt(--i)) {
-                skipWord(); //print(next)
-                switch(next) {
-                    case ".":
-                        skipWord();//print(next)
-                    break;
-                    case "'":
-                    case '"':
-                        skipString(next);
-                    break;
-                    case '}':
-                        stack.push("{");
-                    break;
-                    case ']':
-                        stack.push("[");
-                    break;
-                    case ')':
-                        stack.push("(");
-                    break;
-                        stack.push(next);
-                    break;
-                    case '{':
-                    case '[':
-                    case '(':
-                        //print(next + "bb");
-                        if(stack.pop() !== next)
-                            return;
-                        //print(next + "bb2");
-                    break;
-                    default:
-                        //print(next+22);
-                        if(stack.length === 0)
-                            return;
-                }
-            }
-        ++i;
-        };
-
-        var ans = {evalString:'', nameFragment:'', functionName:''};
-    	
-		skipWord();		
-        iBuff = i;
-		ans.nameFragment = evalString.substr(iBuff + 1)
+    // *****************
+	propName: function(fragment){
+		if(!gCSSProperties){
+			var table=[]
+			for each(var i in getAllCSSPropertyNames()){
+				table.push({name:i,comName:i.toLowerCase()})
+			}
+			gCSSProperties=table
+		}
+		return gCSSProperties
+	},
+	propValue: function(fragment){
+		var table=[];
+		for each(var i in FBL.getCSSKeywordsByProperty('html', fragment[3])){
+			table.push({name:i,comName:i.toLowerCase()})
+		}
 		
-        if(next === "(") {
-            iBuff = i;
-			i--
-            skipWord();
-            ans.functionName = evalString.substring(i+1, iBuff);
-        }
+		return table;
+	},
+	selector: function(fragment){
+		var table=[]
+		if(fragment[1][0]==':'){
+			for each(var i in mozPseudoClasses){
+				table.push({name:i,comName:i.toLowerCase()})
+			}
+			for each(var i in pseudoClasses){
+				table.push({name:i,comName:i.toLowerCase()})
+			}
+			for each(var i in pseudoElements){
+				table.push({name:i,comName:i.toLowerCase()})
+			}
+		}else if(fragment[1]=='.'){
+			for each(var i in getClassesInDoc(Firebug.currentContext.window.document)){
+				table.push({name:i,comName:i.toLowerCase()})
+			}
+		}else if(fragment[1]=='#'){
+			for each(var i in getIDsInDoc(Firebug.currentContext.window.document)){
+				table.push({name:i,comName:i.toLowerCase()})
+			}
+		}else{
+			for each(var i in getNodeNamesInDoc(Firebug.currentContext.window.document)){
+				table.push({name:i,comName:i.toLowerCase()})
+			}
+		}
 		
-        if(next === ".") {
-			iBuff = i;
-			skipStacks();
-			if(next||i<0)
-				i++
-            ans.evalString = evalString.substr(i, iBuff-i)
-        }
-		
-        return [ans.evalString, ans.nameFragment, ans.functionName];
-    },
+		return table
+	},
 
+    parse: function(editor){
+		var cursor = editor.selection.getCursor()
+		var row = cursor.row,
+			col = cursor.column,
+			ch;
+		var lines = editor.session.doc.$lines;
+		var curLine = lines[row];
+
+		function next() ch=curLine[--col]||((curLine = lines[--row])&&(col=curLine.length,'\n'))
+		function peek() curLine[col-1]||( lines[row-1]&&'\n')
+		var rx=/[\w$\-\[\]\(\)]/,i0,i
+		function skipWord() {
+			while(next()&&rx.test(ch));
+		}
+		function getText() {
+			if(col<0)col=0
+			if(row<0)row=0
+			var t=
+			 editor.session.getTextRange({
+				start:{column:col,row:row},
+				end: cursor
+			})
+			dump(t.toSource())
+			return t.substr(1)
+		}
+
+		//*************
+		skipWord()
+		curWord = getText()
+		//****************
+		var colonSeen, mode, termChar = ch
+		if(ch==':' && peek()==':'){
+			termChar='::'
+			mode='selector'
+			return [mode,termChar,curWord]
+		}
+		if(ch==' '){
+			var j=i
+			while(next()==' ');
+			if(ch && !rx.test(ch))
+				termChar=ch
+		}
+		if(ch==':')
+			colonSeen=true
+			
+		
+		do{
+			//dump(prev,i)
+			if(ch=='}'){
+				mode='selector';
+				return [mode,termChar,curWord]
+			}else if(ch==':'){
+				colonSeen=true
+				cursor={row:row,column:col}
+			}else if(ch==';'||ch=='{'){
+				mode=colonSeen? 'propValue' : 'propName'
+				if(colonSeen){
+					return [mode, termChar, curWord, getText().trim()]
+				}
+				return [mode,termChar,curWord]
+
+			}
+		} while(next())
+		return  ['selector',termChar,curWord]
+
+	}
 });
+//css completion helpers
+var getAllCSSPropertyNames=function(){
+	var style = document.createElement('c').style
+	// not needed in ff4, since there cssText isn't enumerated
+	style.__defineGetter__('cssText', function()1)
+	style.__defineGetter__('cssFloat', function()1)
+	var ans = ['float']
+
+	for(var i in style){
+		if(typeof style[i]!='string')
+			continue
+		ans.push(i.replace(/[A-Z]/g, function(x)'-'+x.toLowerCase()))
+	}
+	return ans
+}
+var gCSSProperties
+
+
+var pseudoElements=[	
+	'::after'
+    ,'::before'
+    ,'::first-letter'
+    ,'::first-line'
+    ,'::-moz-selection'
+	]
+var pseudoClasses=[
+    ':link'
+    ,':visited'
+    ,':active'
+    ,':hover'
+    ,':focus'
+	,':not()'
+
+	,':lang'
+	//Page pseudo-classes
+
+    ,':first'
+    ,':left'
+    ,':right'
+
+	//Structural pseudo-classes
+    ,':root'
+    ,':nth-child'
+    ,':nth-last-child'
+    ,':nth-of-type'
+    ,':nth-last-of-type'
+    ,':first-child'
+    ,':last-child'
+    ,':first-of-type'
+    ,':last-of-type'
+    ,':only-of-type'
+    ,':empty'
+	,':target'
+	//UI States pseudo-classes
+
+    ,':checked'
+    ,':enabled'
+    ,':default' //Requires Gecko 1.9
+    ,':disabled'
+    ,':indeterminate'// Requires Gecko 1.9.2
+    ,':invalid'// Requires Gecko 2.0
+    ,':optional'// Requires Gecko 2.0
+    ,':required'// Requires Gecko 2.0
+    ,':valid'// Requires Gecko 2.0
+]
+
+var mozPseudoClasses=[
+   '::-moz-anonymous-block'
+   ,'::-moz-anonymous-positioned-block'
+   ,':-moz-any()'// Requires Gecko 2
+   ,':-moz-any-link'// (matches :link and :visited)
+   ,':-moz-bound-element'
+   ,':-moz-broken'// Requires Gecko 1.9
+   ,'::-moz-canvas'
+   ,'::-moz-cell-content'
+   ,':-moz-drag-over'
+   ,':-moz-first-node'
+   ,'::-moz-focus-inner'
+   ,'::-moz-focus-outer'
+   ,':-moz-focusring'// Requires Gecko 2.0
+   ,':-moz-handler-blocked'// Requires Gecko 1.9.1
+   ,':-moz-handler-crashed'// Requires Gecko 2.0
+   ,':-moz-handler-disabled'// Requires Gecko 1.9.1
+   ,'::-moz-inline-table'
+   ,':-moz-last-node'
+   ,':-moz-list-bullet'
+   ,':-moz-list-number'
+   ,':-moz-loading'// Requires Gecko 1.9
+   ,':-moz-locale-dir(ltr)'// Requires Gecko 1.9.2
+   ,':-moz-locale-dir(rtl)'// Requires Gecko 1.9.2
+   ,':-moz-lwtheme'// Requires Gecko 1.9.2
+   ,':-moz-lwtheme-brighttext'// Requires Gecko 1.9.2
+   ,':-moz-lwtheme-darktext'// Requires Gecko 1.9.2
+   ,':-moz-math-stretchy'//
+   ,':-moz-math-anonymous'//
+   ,':-moz-only-whitespace'//
+   ,'::-moz-page'//
+   ,'::-moz-page-sequence'//
+   ,'::-moz-pagebreak'//
+   ,'::-moz-pagecontent'//
+   ,':-moz-placeholder'// Requires Gecko 1.9
+   ,'::-moz-selection'//
+   ,'::-moz-scrolled-canvas'//
+   ,'::-moz-scrolled-content'//
+   ,'::-moz-scrolled-page-sequence'//
+   ,':-moz-suppressed'// Requires Gecko 1.9
+   ,':-moz-submit-invalid'// Requires Gecko 2.0
+   ,'::-moz-svg-foreign-content'
+   ,':-moz-system-metric(images-in-menus)'// Requires Gecko 1.9
+   ,':-moz-system-metric(mac-graphite-theme)'// Requires Gecko 1.9.1
+   ,':-moz-system-metric(scrollbar-end-backward)'// Requires Gecko 1.9
+   ,':-moz-system-metric(scrollbar-end-forward)'// Requires Gecko 1.9
+   ,':-moz-system-metric(scrollbar-start-backward)'// Requires Gecko 1.9
+   ,':-moz-system-metric(scrollbar-start-forward)'// New in Firefox 3
+   ,':-moz-system-metric(scrollbar-thumb-proportional)'// Requires Gecko 1.9
+   ,':-moz-system-metric(touch-enabled)'// Requires Gecko 1.9.2
+   ,':-moz-system-metric(windows-default-theme)'// New in Firefox 3
+   ,'::-moz-table'
+   ,'::-moz-table-cell'
+   ,'::-moz-table-column'
+   ,'::-moz-table-column-group'
+   ,'::-moz-table-outer'
+   ,'::-moz-table-row'
+   ,'::-moz-table-row-group'
+   ,':-moz-tree-checkbox'
+   ,':-moz-tree-cell'
+   ,':-moz-tree-cell-text'
+   ,':-moz-tree-cell-text(hover)'// Requires Gecko 1.9
+   ,':-moz-tree-column'
+   ,':-moz-tree-drop-feedback'
+   ,':-moz-tree-image'
+   ,':-moz-tree-indentation'
+   ,':-moz-tree-line'
+   ,':-moz-tree-progressmeter'
+   ,':-moz-tree-row'
+   ,':-moz-tree-row(hover)'// Requires Gecko 1.9
+   ,':-moz-tree-separator'
+   ,':-moz-tree-twisty'
+   ,':-moz-ui-invalid'// Requires Gecko 2.0
+   ,':-moz-ui-valid'// Requires Gecko 2.0
+   ,':-moz-user-disabled'// Requires Gecko 1.9
+   ,'::-moz-viewport'
+   ,'::-moz-viewport-scroll'
+   ,':-moz-window-inactive'// Requires Gecko 2.0
+   ,'::-moz-xul-anonymous-block'
+]
 
 //js completion helpers
 var getIDsInDoc = function(doc) {
@@ -708,6 +897,22 @@ var getClassesInDoc = function(doc) {
 
     return ans;
 };
+
+getNodeNamesInDoc = function(doc){
+	var xpe = new XPathEvaluator();
+	var nsResolver = xpe.createNSResolver(doc.documentElement);
+	var frequent='td,div,tr,span,a,box,hbox,vbox'.split(',')
+	var result = xpe.evaluate('//*'+'[not(name()='+frequent.join(')][not(name()=')+')]'
+			, doc.documentElement, nsResolver,XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+			
+	var ans=[]
+	for(var i = 0; i < result.snapshotLength; i++){
+		var x=result.snapshotItem(i).tagName.toLowerCase()
+		if(ans.indexOf(x)==-1)ans.push(x)
+	}
+	
+	return ans.concat(frequent)
+}
 
 var modernfox = !!Object.getOwnPropertyNames;
 /**============-=========-================**/
@@ -742,9 +947,7 @@ if (!modernfox) { //for old versions
                     Cu.reportError(depth+protoList+i);
                 }
             }
-            /* data.push({name:i, comName: i.toLowerCase(),get description
-function(){dump(this.name); delete this.description; this.description=jn.inspect(autocompleter.object[this.name]); return this.description}
-            , depth:depth}) */
+
             try{
                 o = targetObj[i];
                 d = jn.inspect(o);
@@ -1160,4 +1363,4 @@ s.serializeToString(doc)
 
 doc.querySelector('[name="scrollMaxX"]')
 */
-}});
+});
