@@ -7,8 +7,6 @@
      title="&acebug.options.title;"
      xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-    <script type="application/x-javascript" src="chrome://acebug/content/options.js"/>
-
 	<prefpane>
 		<preferences>
 			<preference id="acebug-highlightactiveline" name="extensions.acebug.highlightactiveline" type="bool" />
@@ -66,5 +64,8 @@
             </box>
 		</groupbox>
 	</prefpane>
+	
+    <script type="application/x-javascript" src="chrome://acebug/content/options.js"/>
+
 </prefwindow>
 

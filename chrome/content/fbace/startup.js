@@ -1,3 +1,83 @@
+define('ace/keyboard/hash_handler', function(require, exports, module) {
+
+var keyUtil  = require("pilot/keys");
+
+function HashHandler(config) {
+    this.setConfig(config);
+}
+
+(function() {
+    function splitSafe(s, separator, limit, bLowerCase) {
+        return (bLowerCase && s.toLowerCase() || s)
+            .replace(/(?:^\s+|\n|\s+$)/g, "")
+            .split(new RegExp("[\\s ]*" + separator + "[\\s ]*", "g"), limit || 999);
+    }
+
+    function parseKeys(keys, val, ret) {
+        var key,
+            hashId = 0,
+            parts  = splitSafe(keys, "\\-", null, true),
+            i      = 0,
+            l      = parts.length;
+
+        for (; i < l; ++i) {
+            if (keyUtil.KEY_MODS[parts[i]])
+                hashId = hashId | keyUtil.KEY_MODS[parts[i]];
+            else
+                key = parts[i] || "-"; //when empty, the splitSafe removed a '-'
+        }
+
+        (ret[hashId] || (ret[hashId] = {}))[key] = val;
+        return ret;
+    }
+
+    function objectReverse(obj, keySplit) {
+        var i, j, l, key,
+            ret = {};
+        for (i in obj) {
+            key = obj[i];
+            if (keySplit && typeof key == "string") {
+                key = key.split(keySplit);
+                for (j = 0, l = key.length; j < l; ++j)
+                    parseKeys.call(this, key[j], i, ret);
+            }
+            else {
+                parseKeys.call(this, key, i, ret);
+            }
+        }
+        return ret;
+    }
+
+    this.setConfig = function(config) {
+        this.$config = config;
+        if (typeof this.$config.reverse == "undefined")
+            this.$config.reverse = objectReverse.call(this, this.$config, "|");
+    };
+
+    /**
+     * This function is called by keyBinding.
+     */
+    this.handleKeyboard = function(data, hashId, textOrKey, keyCode) {
+        // Figure out if a commandKey was pressed or just some text was insert.
+        if (hashId != 0 || keyCode != 0) {
+            return {
+                command: (this.$config.reverse[hashId] || {})[textOrKey]
+            }
+        } else {
+            return {
+                command: "inserttext",
+                args: {
+                    text: textOrKey
+                }
+            }
+        }
+    }
+}).call(HashHandler.prototype)
+
+exports.HashHandler = HashHandler;
+});
+
+
 define('fbace/startup', function(require, exports, module) {
 
 exports.launch = function(env, options) {
@@ -110,22 +190,11 @@ exports.launch = function(env, options) {
     editor.addCommand = function(cmd) {
         canon.addCommand({
             name: cmd.name,
+			bindKey: {win: cmd.key, mac: cmd.key, sender: "editor"},
             exec: function(env, args, request) {
                 cmd.exec(env, args);
             }
         });
-
-        var HashHandler = require("ace/keyboard/hash_handler").HashHandler;
-        var ue = require("pilot/useragent");
-
-        if (ue.isMac)
-            var bindings = require("ace/keyboard/keybinding/default_mac").bindings;
-        else
-            bindings = require("ace/keyboard/keybinding/default_win").bindings;
-
-        delete bindings.reverse;
-        bindings[cmd.name] = cmd.key;
-        env.editor.setKeyboardHandler(new HashHandler(bindings));
     };
     /**********  handle keyboard *****/	
     env.canon = canon = require("pilot/canon");
@@ -135,8 +204,11 @@ exports.launch = function(env, options) {
 	editor.addCommands = function(commandSet) {
 		for (var i in commandSet) {
 			var exec = commandSet[i];
+			var command = {name: i, exec: exec};
+			if(bindings[i])
+				command.bindKey = {win: bindings[i], mac: bindings[i], sender: "editor"}
 			if(typeof exec === "function")
-				canon.addCommand({name: i, exec: exec});
+				canon.addCommand(command);
 		}
 	};
 
@@ -145,15 +217,11 @@ exports.launch = function(env, options) {
 	};
 
 	// add key bindings
-	editor.keyBinding.$defaulKeyboardHandler.$config;
-	var bindings = editor.keyBinding.$defaulKeyboardHandler.$config;
-
-	bindings.startAutocompleter = "Ctrl-Space|Ctrl-.|Alt-.";
-	bindings.execute = "Ctrl-Return";
-	bindings.duplicate = "Ctrl-D|Alt-D";
-	delete bindings.reverse;
-	new HashHandler(bindings);
-
+	var bindings = {
+		startAutocompleter: "Ctrl-Space|Ctrl-.|Alt-.",
+		execute: "Ctrl-Return",
+		duplicate: "Ctrl-D|Alt-D"
+	}
 
 	editor.autocompletionKeySet = new HashHandler({
 		startAutocompleter: 'Ctrl-Space',
