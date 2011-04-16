@@ -9,57 +9,56 @@
 </head>
 <body>
     <div id="editor">
-		<div id="toggleGutter" onclick="toggleGutter();"></div>
-	</div>
+        <div id="toggleGutter" onclick="toggleGutter();"></div>
+    </div>
 
     <script type="text/javascript">
 //add stub console since ace calls console.error
-if(!window.console){
-	console={};
-	console.log = console.error = function(){};
+if (!window.console) {
+    console={};
+    console.log = console.error = function() {};
 }
 
-function transformPath(path){
-	var aceRoot = '../ace/build/src/'
-	var sub = 'ace/theme/'
-	if(path.indexOf(sub)==0){
-		return aceRoot + 'theme-' + path.substr(sub.length) + '.js'
-	}
-	var sub = 'ace/keyboard/keybinding/'
-	if(path.indexOf(sub)==0){
-		return aceRoot + 'keybinding-' + path.substr(sub.length) + '.js'
-	}
-	var sub = 'ace/mode/'
-	if(path.indexOf(sub)==0){
-		return aceRoot + 'mode-' + path.substr(sub.length) + '.js'
-	}
-	var sub = 'fbace/'
-	if(path.indexOf(sub)==0){
-		return path.substr(sub.length) + '.js'
-	}
-	return aceRoot + path + '.js'	
+function transformPath(path) {
+    var aceRoot = '../ace/build/src/';
+    var sub = 'ace/theme/';
+    if (path.indexOf(sub) === 0) {
+        return aceRoot + 'theme-' + path.substr(sub.length) + '.js';
+    }
+    sub = 'ace/keyboard/keybinding/';
+    if (path.indexOf(sub) === 0) {
+        return aceRoot + 'keybinding-' + path.substr(sub.length) + '.js';
+    }
+    sub = 'ace/mode/';
+    if (path.indexOf(sub) === 0) {
+        return aceRoot + 'mode-' + path.substr(sub.length) + '.js';
+    }
+    sub = 'fbace/';
+    if (path.indexOf(sub) === 0) {
+        return path.substr(sub.length) + '.js';
+    }
+    return aceRoot + path + '.js'
 }
 
-require = loadScripts = function(deps, callback, lastUrl){
-	//console.log(deps)
-	if(typeof deps == 'string')//this happens when module's path is wrong
-		return;
-		
-	var url = deps.shift()
-	if(!url)
-		return callback&&callback(require(lastUrl))
-	
-	
-	var script = document.createElement("script")
-	script.type = "text/javascript";	  
-	script.onload = function(){
-		this.onload = null
-		loadScripts(deps, callback, url)
-	}
-   
-	script.src = transformPath(url);
-	document.documentElement.appendChild(script);	
-}
+require = loadScripts = function(deps, callback, lastUrl) {
+    //console.log(deps)
+    if (typeof deps === 'string') // module's path is wrong
+        return;
+
+    var url = deps.shift();
+    if (!url)
+        return callback && callback(require(lastUrl));
+
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.onload = function() {
+        this.onload = null;
+        loadScripts(deps, callback, url);
+    };
+
+    script.src = transformPath(url);
+    document.documentElement.appendChild(script);
+};
 
 //*******************************************************************************************
 //mini require from ace doesn't work :(
@@ -67,19 +66,19 @@ var _define = function(module, deps, payload) {
     if (arguments.length == 2)
         payload = deps;
 
-	if (typeof module !== 'string') {
+    if (typeof module !== 'string') {
         if (_define.original)
             _define.original.apply(window, arguments);
-        else 
-            console.error('dropping module because define wasn\'t a string.');       
-        
-		return;
+        else
+            console.error('dropping module because define wasn\'t a string.');
+
+        return;
     }
-        
+
     define.modules[module] = payload;
 };
 
-_define.modules = {};    
+_define.modules = {};
 if (window.define)
     _define.original = window.define;
 window.define = _define;
@@ -101,11 +100,11 @@ var _require = function(module, callback) {
         var payload = lookup(module);
         if (!payload && _require.original)
             return _require.original.apply(window, arguments);
-        
+
         if (callback) {
             callback();
         }
-    
+
         return payload;
     }
     else {
@@ -116,7 +115,7 @@ var _require = function(module, callback) {
 
 if (window.require)
     _require.original = window.require;
-    
+
 window.require = _require;
 require.packaged = true;
 
@@ -139,33 +138,33 @@ var lookup = function(moduleName) {
 };
 //*********************************************************************************************
 
-var onLaunch
+var onLaunch;
 var startAce = function(callback, options) {
-	if(onLaunch){
-		onLaunch = callback || onLaunch
-		return
-	}
-	onLaunch = callback || function(){};
-	// "ace/mode/javascript", "ace/mode/css", are loaded with html  // "ace-uncompressed" for debugging
-	var rootDeps = ["ace", "ace/mode/xml", "ace/mode/html", "fbace/startup"];
-	if(!options)
-		options = {};
-	//"ace/theme/textmate" is built into ace.js so there's no need to load that
-	if(!options.theme)
-		options.theme = "ace/theme/textmate";
-	else if(options.theme != "ace/theme/textmate")
-		rootDeps.push(options.theme);
+    if (onLaunch) {
+        onLaunch = callback || onLaunch;
+        return;
+    }
+    onLaunch = callback || function() {};
+    // "ace/mode/javascript", "ace/mode/css", are loaded with html  // "ace-uncompressed" for debugging
+    var rootDeps = ["ace", "ace/mode/xml", "ace/mode/html", "fbace/startup"];
+    if (!options)
+        options = {};
+    //"ace/theme/textmate" is built into ace.js so there's no need to load that
+    if (!options.theme)
+        options.theme = "ace/theme/textmate";
+    else if (options.theme != "ace/theme/textmate")
+        rootDeps.push(options.theme);
 
-	require(rootDeps, function() {
-		var catalog = require("pilot/plugin_manager").catalog;
-		catalog.registerPlugins([ "pilot/index" ]).then(function() {
-			var env = require("pilot/environment").create();
-			catalog.startupPlugins({ env: env }).then(function() {
-				require("fbace/startup").launch(env, options);
-			}).then(onLaunch);
-		});
-	});
+    require(rootDeps, function() {
+        var catalog = require("pilot/plugin_manager").catalog;
+        catalog.registerPlugins([ "pilot/index" ]).then(function() {
+            var env = require("pilot/environment").create();
+            catalog.startupPlugins({ env: env }).then(function() {
+                require("fbace/startup").launch(env, options);
+            }).then(onLaunch);
+        });
+    });
 };
-	</script>
+    </script>
 </body>
 </html>

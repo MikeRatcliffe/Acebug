@@ -7,18 +7,18 @@
      title="&acebug.options.title;"
      xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
-	<prefpane>
-		<preferences>
-			<preference id="acebug-highlightactiveline" name="extensions.acebug.highlightactiveline" type="bool" />
+    <prefpane>
+        <preferences>
+            <preference id="acebug-highlightactiveline" name="extensions.acebug.highlightactiveline" type="bool" />
             <preference id="acebug-showinvisiblecharacters" name="extensions.acebug.showinvisiblecharacters" type="bool" />
             <preference id="acebug-softtabs" name="extensions.acebug.softtabs" type="bool" />
             <preference id="acebug-tabsize" name="extensions.acebug.tabsize" type="int" />
             <preference id="acebug-wordwrap" name="extensions.acebug.wordwrap" type="bool" />
             <preference id="acebug-theme" name="extensions.acebug.theme" type="string" />
             <preference id="acebug-keybinding" name="extensions.acebug.keybinding" type="string" />
-		</preferences>
+        </preferences>
 
-		<groupbox>
+        <groupbox>
             <caption label="&acebug.options.settings;" />
             <box>
                 <vbox>
@@ -62,9 +62,9 @@
                     </menulist>
                 </vbox>
             </box>
-		</groupbox>
-	</prefpane>
-	
+        </groupbox>
+    </prefpane>
+
     <script type="application/x-javascript" src="chrome://acebug/content/options.js"/>
 
 </prefwindow>

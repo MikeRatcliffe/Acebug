@@ -3,7 +3,7 @@ function softTabsClicked(onload) {
     var tabSizeEl = document.getElementById("abTabSize");
     var abTabSizeLbl = document.getElementById("abTabSizeLbl");
 
-    if(onload) {
+    if (onload) {
         tabSizeEl.disabled = !softTabsEl.checked;
         abTabSizeLbl.disabled = !softTabsEl.checked;
     } else {
@@ -13,10 +13,10 @@ function softTabsClicked(onload) {
 }
 
 function reportAcebugIssue() {
-	var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
-		.getService(Components.interfaces.nsIWindowMediator);
-	var mainWindow = wm.getMostRecentWindow("navigator:browser");
-	mainWindow.gBrowser.selectedTab = mainWindow.gBrowser.addTab("https://github.com/MikeRatcliffe/Acebug/issues");
+    var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
+        .getService(Components.interfaces.nsIWindowMediator);
+    var mainWindow = wm.getMostRecentWindow("navigator:browser");
+    mainWindow.gBrowser.selectedTab = mainWindow.gBrowser.addTab("https://github.com/MikeRatcliffe/Acebug/issues");
 }
 
 function makeReq(href) {
@@ -31,36 +31,40 @@ function makeReq(href) {
 }
 
 function getThemeNames() {
-	var str=makeReq('chrome://acebug/content/ace/build/src')
-	var themeNames = str.match(/theme-.*\.js/g).map(function(x)x.slice(6,-3))
-	themeNames.push('textmate')
-	return themeNames.sort()
+    var str = makeReq('chrome://acebug/content/ace/build/src');
+    var themeNames = str.match(/theme-.*\.js/g).map(function(x) {
+        return x.slice(6, -3);
+    });
+    themeNames.push('textmate');
+    return themeNames.sort();
 }
 
 function addAllThemes() {
-	var themePref = document.getElementById('abTheme')
-	var popup = themePref.firstChild, item;
-	var allThemes = getThemeNames();
-	var items = popup.children;
-	for(var i = items.length;i--;){
-		item = items[i]
-		var name = item.getAttribute("value").substr("ace/theme/".length)
-		var j = allThemes.indexOf(name)
-		if(j >= 0)
-			allThemes.splice(j, 1)
-	}
-	allThemes.forEach(function(x){
-		var prettyName = x.replace(/^./, function(m) m.toUpperCase())
-				.replace(/_./g, function(m) ' ' + m[1].toUpperCase());
+    var item;
+    var themePref = document.getElementById('abTheme');
+    var popup = themePref.firstChild;
+    var allThemes = getThemeNames();
+    var items = popup.children;
+    for(var i = items.length; i--;) {
+        item = items[i];
+        var name = item.getAttribute("value").substr("ace/theme/".length);
+        var j = allThemes.indexOf(name);
+        if (j >= 0)
+            allThemes.splice(j, 1);
+    }
+    allThemes.forEach(function(x) {
+        var prettyName = x.replace(/^./, function(m) {
+            return m.toUpperCase();
+        }).replace(/_./g, function(m) {
+            return ' ' + m[1].toUpperCase();
+        });
 
-		item = document.createElement('menuitem');
-		item.setAttribute("value", "ace/theme/"+x);
-		item.setAttribute("label", prettyName)
-		popup.appendChild(item);
-	})
-	
-	document.documentElement.firstElementChild.preferenceForElement(
-		themePref
-	).setElementValue(themePref)
+        item = document.createElement('menuitem');
+        item.setAttribute("value", "ace/theme/"+x);
+        item.setAttribute("label", prettyName);
+        popup.appendChild(item);
+    });
+
+    document.documentElement.firstElementChild.preferenceForElement(themePref).setElementValue(themePref);
 }
-addAllThemes()
+addAllThemes();

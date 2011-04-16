@@ -16,11 +16,11 @@ body {
 }
 
 #editor {
-    top: 0px;
-    left: 0px;
+    top: 0;
+    left: 0;
     background: white;
-	width:100%;
-	height:100%;
+    width:100%;
+    height:100%;
 }
 
 .ace_gutter-cell.ace_error {
@@ -65,7 +65,7 @@ body {
 }
 
 .ace_gutter-cell.ace_breakpoint{
-	background: url("chrome://firebug/skin/breakpoint.png") no-repeat;
+    background: url("chrome://firebug/skin/breakpoint.png") no-repeat;
 }
 
 
