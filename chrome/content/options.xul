@@ -9,7 +9,10 @@
 
     <prefpane>
         <preferences>
+            <preference id="acebug-showautocompletionhints" name="extensions.acebug.showautocompletionhints" type="bool" />
             <preference id="acebug-highlightactiveline" name="extensions.acebug.highlightactiveline" type="bool" />
+            <preference id="acebug-highlightselectedword" name="extensions.acebug.highlightselectedword" type="bool" />
+            <preference id="acebug-validateasyoutype" name="extensions.acebug.validateasyoutype" type="bool" />
             <preference id="acebug-showinvisiblecharacters" name="extensions.acebug.showinvisiblecharacters" type="bool" />
             <preference id="acebug-softtabs" name="extensions.acebug.softtabs" type="bool" />
             <preference id="acebug-tabsize" name="extensions.acebug.tabsize" type="int" />
@@ -22,8 +25,14 @@
             <caption label="&acebug.options.settings;" />
             <box>
                 <vbox>
+                    <checkbox id="abShowautocompletionhints" preference="acebug-showautocompletionhints"
+                        label="&acebug.options.showautocompletionhints;" />
                     <checkbox id="abHighlightactiveline" preference="acebug-highlightactiveline"
                         label="&acebug.options.highlightactiveline;" />
+                    <checkbox id="abHighlightselectedword" preference="acebug-highlightselectedword"
+                        label="&acebug.options.highlightselectedword;" />
+                    <checkbox id="abValidateasyoutype" preference="acebug-validateasyoutype"
+                        label="&acebug.options.validateasyoutype;" />
                     <checkbox id="abShowinvisiblecharacters" preference="acebug-showinvisiblecharacters"
                         label="&acebug.options.showinvisibles;" />
                     <checkbox id="abWordwrap" preference="acebug-wordwrap"
@@ -38,18 +47,6 @@
                     <label id="abThemeLbl" value="&acebug.options.theme;" control="abTheme" />
                     <menulist id="abTheme" label="&acebug.options.theme;" preference="acebug-theme">
                         <menupopup>
-                            <menuitem value="ace/theme/clouds" label="&acebug.options.theme.clouds;" />
-                            <menuitem value="ace/theme/clouds_midnight" label="&acebug.options.theme.cloudsmidnight;" />
-                            <menuitem value="ace/theme/cobalt" label="&acebug.options.theme.cobalt;" />
-                            <menuitem value="ace/theme/dawn" label="&acebug.options.theme.dawn;" />
-                            <menuitem value="ace/theme/eclipse" label="&acebug.options.theme.eclipse;" />
-                            <menuitem value="ace/theme/idle_fingers" label="&acebug.options.theme.idlefingers;" />
-                            <menuitem value="ace/theme/kr_theme" label="&acebug.options.theme.krtheme;" />
-                            <menuitem value="ace/theme/mono_industrial" label="&acebug.options.theme.monoindustrial;" />
-                            <menuitem value="ace/theme/monokai" label="&acebug.options.theme.monokai;" />
-                            <menuitem value="ace/theme/pastel_on_dark" label="&acebug.options.theme.pastelondark;" />
-                            <menuitem value="ace/theme/textmate" label="&acebug.options.theme.textmate;" />
-                            <menuitem value="ace/theme/twilight" label="&acebug.options.theme.twilight;" />
                         </menupopup>
                     </menulist>
                     <label id="abThemeLbl" value="&acebug.options.keybinding;" control="abKeyBinding" />

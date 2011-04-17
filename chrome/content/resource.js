@@ -78,7 +78,7 @@ var enumerateRequests = function(fn)
     }
 };
 
-function fileIconURL(isDir,name,ext,spec) {
+function fileIconURL(isDir, name, ext, spec) {
     if (isDir)      return "chrome://global/skin/dirListing/folder.png";
     if (!ext)       return "moz-icon://" + ".broken" + "?size=16";
     if (ext=='exe') return "moz-icon://" + spec + "?size=16";
@@ -152,7 +152,7 @@ a.map(function(a)a.href)
 // stylesheet panel
 Firebug.ResourcePanel = function ResourcePanel() {};
 
-Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
+Firebug.ResourcePanel.prototype = extend(Firebug.ActivablePanel,
 {
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -186,16 +186,17 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         this.data = getAllLocations();
         this.tree.view = new treeView(this.data);
 
-
         if (this.editor) {
             this.editor.renderer.onResize(true);
+            this.editor.setReadOnly(true);
             this.onSelect();
         } else {
             this.aceWindow.startAce(bind(function() {
                 this.editor = this.aceWindow.editor;
                 this.editor.renderer.onResize(true);
+                this.editor.setReadOnly(true);
                 this.setSession();
-            }, this))
+            }, this));
         }
     },
 

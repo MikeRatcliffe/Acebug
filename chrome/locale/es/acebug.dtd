@@ -10,18 +10,6 @@
 <!ENTITY acebug.options.spacesinsteadoftabs "Usar espacio en vez de tabulador">
 <!ENTITY acebug.options.tabsize "Tamaño de tabulador">
 <!ENTITY acebug.options.theme "Tema">
-<!ENTITY acebug.options.theme.clouds "Nubes">
-<!ENTITY acebug.options.theme.cloudsmidnight "Nubes a medianoche">
-<!ENTITY acebug.options.theme.cobalt "Cobalto">
-<!ENTITY acebug.options.theme.dawn "Amanecer">
-<!ENTITY acebug.options.theme.eclipse "Eclipse">
-<!ENTITY acebug.options.theme.idlefingers "idleFingers">
-<!ENTITY acebug.options.theme.krtheme "krTheme">
-<!ENTITY acebug.options.theme.monoindustrial "Mono Industrial">
-<!ENTITY acebug.options.theme.monokai "Monokai">
-<!ENTITY acebug.options.theme.pastelondark "Pastel en oscuro">
-<!ENTITY acebug.options.theme.textmate "TextMate">
-<!ENTITY acebug.options.theme.twilight "Crepúsculo">
 <!ENTITY acebug.options.keybinding "Atajos de teclado">
 <!ENTITY acebug.options.keybinding.ace "Ace">
 <!ENTITY acebug.options.keybinding.vim "Vim">

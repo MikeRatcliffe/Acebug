@@ -112,7 +112,12 @@ Firebug.Ace.BaseAutocompleter = {
         this.editor.selection.on('changeCursor', this.selectionListener);
 
         var bubbleX = posX - minX > maxX - posX -panelW ? minX + 10 : maxX - panelW * 1.5 - 10;
-        this.bubblePos = {w: panelW * 1.7, h: panelH * 1.5, l: bubbleX, t: posY};
+        this.bubblePos = {
+            w: panelW * 1.7,
+            h: panelH * 1.5,
+            l: bubbleX,
+            t: posY
+        };
         this.bubble.height = this.bubblePos.h;
         this.bubble.width = this.bubblePos.w;
     },
@@ -180,18 +185,20 @@ Firebug.Ace.BaseAutocompleter = {
         /**     doOnselect  **/
         this.onSelectTimeOut = null;
 
-        try{
-            var index = this.tree.currentIndex;
-            this.number.value = index + ':' +this.sortedArray.length + "/" + this.unfilteredArray.length;
-            var hint = this.getHint(index);
-            this.sayInBubble(hint);
-        } catch(e) {}
+        if(Firebug.Ace.getOptions().showautocompletionhints) {
+            try {
+                var index = this.tree.currentIndex;
+                this.number.value = index + ':' +this.sortedArray.length + "/" + this.unfilteredArray.length;
+                var hint = this.getHint(index);
+                this.sayInBubble(hint);
+            } catch(e) {}
+        }
     },
 
     sayInBubble: function(text) {
         if (!text) {
             this.bubble.hidePopup();
-            return
+            return;
         }
         if (this.hidden)
             return;
@@ -376,10 +383,10 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
         var o = this.sortedArray[index], longDescriptor;
         if (o) {
             if (o.isSpecial) {
-                longDescriptor = o.name + '\n' +o.description
+                longDescriptor = o.name + '\n' + o.description;
             } else {
                 longDescriptor = jn.inspect(o.object, "long");
-                longDescriptor += '\n'+ jn.lookupSetter(this.object, o.name);
+                longDescriptor += '\n' + jn.lookupSetter(this.object, o.name);
             }
         } else
             longDescriptor = jn.inspect(this.object);

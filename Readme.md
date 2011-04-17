@@ -5,7 +5,7 @@ Acebug is a Firebug Extension that brings the power of the Ace Editor to Firebug
 
 In the future we plan to add various options including:
 
-* Integration with script panel (including breakpoints, debugging etc.)
+* Integration with script panel (including breakpoints, debugging etc.) and other Firebug panels
 * More translations .. volunteers are always welcome
 
 Getting the Source

@@ -10,18 +10,6 @@
 <!ENTITY acebug.options.spacesinsteadoftabs "Använd mellanslag istället för tabulator">
 <!ENTITY acebug.options.tabsize "Tabulatorstorlek">
 <!ENTITY acebug.options.theme "Tema">
-<!ENTITY acebug.options.theme.clouds "Moln">
-<!ENTITY acebug.options.theme.cloudsmidnight "Moln vid midnatt">
-<!ENTITY acebug.options.theme.cobalt "Kobolt">
-<!ENTITY acebug.options.theme.dawn "Gryning">
-<!ENTITY acebug.options.theme.eclipse "Förmörkelse">
-<!ENTITY acebug.options.theme.idlefingers "ledigaFingrar">
-<!ENTITY acebug.options.theme.krtheme "krTema">
-<!ENTITY acebug.options.theme.monoindustrial "Mono-industriell">
-<!ENTITY acebug.options.theme.monokai "Monokai">
-<!ENTITY acebug.options.theme.pastelondark "Pastell på mörk bakgrund">
-<!ENTITY acebug.options.theme.textmate "TextKompis">
-<!ENTITY acebug.options.theme.twilight "Skymning">
 <!ENTITY acebug.options.keybinding "Nyckelbindning">
 <!ENTITY acebug.options.keybinding.ace "Ace">
 <!ENTITY acebug.options.keybinding.vim "Vim">

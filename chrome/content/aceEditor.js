@@ -115,13 +115,7 @@ Firebug.Ace =
                 },
                 disabled: !clipBoardText
             },
-            "-",/*
-            {
-                label: $ACESTR("acebug options"),
-                command: function() {
-                    openDialog('chrome://acebug/content/options.xul','','resizable,centerscreen')
-                }
-            },*/
+            "-",
             {
                 label: $ACESTR("acebug.reportissue"),
                 command: function() {
@@ -383,6 +377,14 @@ var acebugPrefObserver = {
             case "highlightactiveline":
                 env1 && env1.editor.setHighlightActiveLine(this._branch.getBoolPref(aData));
                 env2 && env2.editor.setHighlightActiveLine(this._branch.getBoolPref(aData));
+            break;
+            case "highlightselectedword":
+                env1 && env1.editor.setHighlightSelectedWord(this._branch.getBoolPref(aData));
+                env2 && env2.editor.setHighlightSelectedWord(this._branch.getBoolPref(aData));
+            break;
+            case "validateasyoutype":
+                env1 && env1.editor.session.setUseWorker(this._branch.getBoolPref(aData));
+                env2 && env2.editor.session.setUseWorker(this._branch.getBoolPref(aData));
             break;
             case "keybinding":
                 env1 && env1.setKeybinding(this._branch.getCharPref(aData));

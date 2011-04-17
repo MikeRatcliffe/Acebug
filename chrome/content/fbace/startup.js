@@ -141,11 +141,6 @@ exports.launch = function(env, options) {
     //since we are using separate window make everything global for now
     window.env = env;
 
-    // worker is more of a nuisance now
-    JavaScriptMode.prototype.createWorker = function(session) {
-        return null;
-    };
-
     var modeMap = {
         html: HTMLMode,
         htm: HTMLMode,
@@ -163,7 +158,8 @@ exports.launch = function(env, options) {
     editor.setShowInvisibles(options.showinvisiblecharacters);
     editor.setHighlightActiveLine(options.highlightactiveline);
     editor.setShowPrintMargin(false);
-    editor.setHighlightSelectedWord(true);
+    editor.setHighlightSelectedWord(options.highlightselectedword);
+    editor.session.setUseWorker(options.validateasyoutype);
     editor.renderer.setHScrollBarAlwaysVisible(false);
 
     // not needed in acebug
@@ -183,9 +179,26 @@ exports.launch = function(env, options) {
     });
 
     event.addListener(container, "drop", function(e) {
+        try {
+            if(!/javascript|text|html/.test(e.dataTransfer.files[0].type))
+                return event.preventDefault(e);
+
+            var file = e.dataTransfer.files[0];
+        } catch(e) {
+            return event.preventDefault(e);
+        }
+
+        if (window.FileReader) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                env.editor.getSelection().selectAll();
+                env.editor.onTextInput(reader.result);
+            };
+            reader.readAsText(file);
+        }
+
         return event.preventDefault(e);
     });
-
 
     editor.addCommand = function(cmd) {
         canon.addCommand({
@@ -308,7 +321,11 @@ exports.launch = function(env, options) {
                     newPos.column += 2;
                 editor.moveCursorTo(newPos.row, newPos.column);
             }
-        }
+        },
+
+        clear: function() {
+            editor.session.setValue("");
+        },
     });
 
     // breakpoint handler

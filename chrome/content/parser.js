@@ -78,9 +78,6 @@ parseJSFragment: function(evalString) {
         return [evalString.substr(i, it-i), evalString.substr(it + 1)];
     },
 
-
-
-
 // Demo code (the actual new parser character stream implementation)
 
 function StringStream(string) {
@@ -129,10 +126,7 @@ StringStream.prototype = {
   }
 };
 
-
-
-
-sillyParser={
+sillyParser = {
     parse: function() {
         var i, i0, prev;
         var rx=/[\w$\-\[\]\(\)]/;

@@ -10,18 +10,6 @@
 <!ENTITY acebug.options.spacesinsteadoftabs "Користи размаке уместо табулатора">
 <!ENTITY acebug.options.tabsize "Величина табулатора">
 <!ENTITY acebug.options.theme "Тема">
-<!ENTITY acebug.options.theme.clouds "облаци">
-<!ENTITY acebug.options.theme.cloudsmidnight "поноћни облаци">
-<!ENTITY acebug.options.theme.cobalt "кобалт">
-<!ENTITY acebug.options.theme.dawn "свитање">
-<!ENTITY acebug.options.theme.eclipse "еклипса">
-<!ENTITY acebug.options.theme.idlefingers "idleFingers">
-<!ENTITY acebug.options.theme.krtheme "krTheme">
-<!ENTITY acebug.options.theme.monoindustrial "индустријска">
-<!ENTITY acebug.options.theme.monokai "монокаи">
-<!ENTITY acebug.options.theme.pastelondark "пастел на тамном">
-<!ENTITY acebug.options.theme.textmate "TextMate">
-<!ENTITY acebug.options.theme.twilight "сутон">
 <!ENTITY acebug.options.keybinding "Повезана дугмад">
 <!ENTITY acebug.options.keybinding.ace "Ace">
 <!ENTITY acebug.options.keybinding.vim "Vim">
