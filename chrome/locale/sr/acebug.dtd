@@ -1,7 +1,3 @@
-<!ENTITY acebug.fbCmdLoadButton.label "Учитај">
-<!ENTITY acebug.fbCmdLoadButton.tooltip "Учитај датотеку">
-<!ENTITY acebug.fbCmdSaveButton.label "Сачувај">
-<!ENTITY acebug.fbCmdSaveButton.tooltip "Сачувај датотеку">
 <!ENTITY acebug.options.title "Acebug - опције">
 <!ENTITY acebug.options.settings "Поставке">
 <!ENTITY acebug.options.highlightactiveline "Истакни активну линију">
@@ -14,3 +10,7 @@
 <!ENTITY acebug.options.keybinding.ace "Ace">
 <!ENTITY acebug.options.keybinding.vim "Vim">
 <!ENTITY acebug.options.keybinding.emacs "Emacs">
+<!ENTITY acebug.fbCmdLoadButton.label "Учитај">
+<!ENTITY acebug.fbCmdLoadButton.tooltip "Учитај датотеку">
+<!ENTITY acebug.fbCmdSaveButton.label "Сачувај">
+<!ENTITY acebug.fbCmdSaveButton.tooltip "Сачувај датотеку">

@@ -1,3 +1,20 @@
+<!ENTITY acebug.options.title "Préférences de Acebug">
+<!ENTITY acebug.options.settings "Paramètres">
+<!ENTITY acebug.options.showautocompletionhints "Afficher les suggestions d'autocomplétion">
+<!ENTITY acebug.options.highlightactiveline "Surligner la ligne active">
+<!ENTITY acebug.options.highlightselectedword "Surligner le mot sélectionné">
+<!ENTITY acebug.options.validateasyoutype "Valider à la saisie (redémarrage nécessaire)">
+<!ENTITY acebug.options.showinvisibles "Afficher les caractères invisibles">
+<!ENTITY acebug.options.wraptext "Retour à la ligne du texte long">
+<!ENTITY acebug.options.spacesinsteadoftabs "Utiliser des espaces au lieu des tabulations">
+<!ENTITY acebug.options.tabsize "Taille de la tabulation">
+<!ENTITY acebug.options.theme "Thème">
+<!ENTITY acebug.options.keybinding "Raccourci clavier">
+<!ENTITY acebug.options.keybinding.ace "Ace">
+<!ENTITY acebug.options.keybinding.vim "Vim">
+<!ENTITY acebug.options.keybinding.emacs "Emacs">
+<!ENTITY acebug.fbCmdToggleCommentButton.tooltip "Activer/désactiver les commentaires">
+<!ENTITY acebug.fbCmdToggleStreamCommentButton.tooltip "Active/désactive les commentaires">
 <!ENTITY acebug.fbCmdLoadButton.label "Charger">
 <!ENTITY acebug.fbCmdLoadButton.tooltip "Chargement d'un fichier">
 <!ENTITY acebug.fbCmdSaveButton.label "Enregistrer">

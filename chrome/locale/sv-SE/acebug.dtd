@@ -1,10 +1,9 @@
-<!ENTITY acebug.fbCmdLoadButton.label "Läs in">
-<!ENTITY acebug.fbCmdLoadButton.tooltip "Läs in fil">
-<!ENTITY acebug.fbCmdSaveButton.label "Spara">
-<!ENTITY acebug.fbCmdSaveButton.tooltip "Spara fil">
 <!ENTITY acebug.options.title "Inställningar för Acebug">
 <!ENTITY acebug.options.settings "Inställningar">
+<!ENTITY acebug.options.showautocompletionhints "Visa tips för automatisk komplettering">
 <!ENTITY acebug.options.highlightactiveline "Markera aktiv rad">
+<!ENTITY acebug.options.highlightselectedword "Färgöverstrykning av markerade ord">
+<!ENTITY acebug.options.validateasyoutype "Validera medan du skriver (kräver omstart)">
 <!ENTITY acebug.options.showinvisibles "Visa osynliga tecken">
 <!ENTITY acebug.options.wraptext "Radbryt text">
 <!ENTITY acebug.options.spacesinsteadoftabs "Använd mellanslag istället för tabulator">
@@ -14,3 +13,9 @@
 <!ENTITY acebug.options.keybinding.ace "Ace">
 <!ENTITY acebug.options.keybinding.vim "Vim">
 <!ENTITY acebug.options.keybinding.emacs "Emacs">
+<!ENTITY acebug.fbCmdToggleCommentButton.tooltip "Växla kommentering">
+<!ENTITY acebug.fbCmdToggleStreamCommentButton.tooltip "Växla blockkommentering">
+<!ENTITY acebug.fbCmdLoadButton.label "Läs in">
+<!ENTITY acebug.fbCmdLoadButton.tooltip "Läs in fil">
+<!ENTITY acebug.fbCmdSaveButton.label "Spara">
+<!ENTITY acebug.fbCmdSaveButton.tooltip "Spara fil">

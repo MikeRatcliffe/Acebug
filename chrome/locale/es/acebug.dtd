@@ -1,10 +1,9 @@
-<!ENTITY acebug.fbCmdLoadButton.label "Cargar">
-<!ENTITY acebug.fbCmdLoadButton.tooltip "Cargar archivo">
-<!ENTITY acebug.fbCmdSaveButton.label "Guardar">
-<!ENTITY acebug.fbCmdSaveButton.tooltip "Guardar archivo">
 <!ENTITY acebug.options.title "Preferencias de Acebug">
 <!ENTITY acebug.options.settings "Predisposiciones">
+<!ENTITY acebug.options.showautocompletionhints "Mostrar sugerencias de autocompletado">
 <!ENTITY acebug.options.highlightactiveline "Resaltar línea activa">
+<!ENTITY acebug.options.highlightselectedword "Resaltar palabra seleccionada">
+<!ENTITY acebug.options.validateasyoutype "Validar al escribir (necesita reiniciar)">
 <!ENTITY acebug.options.showinvisibles "Mostrar caracteres invisibles">
 <!ENTITY acebug.options.wraptext "Ajustar texto">
 <!ENTITY acebug.options.spacesinsteadoftabs "Usar espacio en vez de tabulador">
@@ -14,3 +13,9 @@
 <!ENTITY acebug.options.keybinding.ace "Ace">
 <!ENTITY acebug.options.keybinding.vim "Vim">
 <!ENTITY acebug.options.keybinding.emacs "Emacs">
+<!ENTITY acebug.fbCmdToggleCommentButton.tooltip "Conmutar comentario">
+<!ENTITY acebug.fbCmdToggleStreamCommentButton.tooltip "Conmutar comentario simple">
+<!ENTITY acebug.fbCmdLoadButton.label "Cargar">
+<!ENTITY acebug.fbCmdLoadButton.tooltip "Cargar archivo">
+<!ENTITY acebug.fbCmdSaveButton.label "Guardar">
+<!ENTITY acebug.fbCmdSaveButton.tooltip "Guardar archivo">

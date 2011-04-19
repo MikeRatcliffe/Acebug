@@ -1,21 +1,21 @@
-<!ENTITY  acebug.options.title                 "Acebug Preferences">
-<!ENTITY  acebug.options.settings              "Settings">
-<!ENTITY  acebug.options.showautocompletionhints "Show auto completion hints">
-<!ENTITY  acebug.options.highlightactiveline   "Highlight active line">
-<!ENTITY  acebug.options.highlightselectedword "Highlight selected word">
-<!ENTITY  acebug.options.validateasyoutype     "Validate as you type (requires restart)">
-<!ENTITY  acebug.options.showinvisibles        "Show invisible characters">
-<!ENTITY  acebug.options.wraptext              "Wrap text">
-<!ENTITY  acebug.options.spacesinsteadoftabs   "Use spaces instead of tabs">
-<!ENTITY  acebug.options.tabsize               "Tab size">
-<!ENTITY  acebug.options.theme                 "Theme">
-<!ENTITY  acebug.options.keybinding            "Key binding">
-<!ENTITY  acebug.options.keybinding.ace        "Ace">
-<!ENTITY  acebug.options.keybinding.vim        "Vim">
-<!ENTITY  acebug.options.keybinding.emacs      "Emacs">
-<!ENTITY  acebug.fbCmdToggleCommentButton.tooltip "Toggle Comment">
-<!ENTITY  acebug.fbCmdToggleStreamCommentButton.tooltip "Toggle Stream Comment">
-<!ENTITY  acebug.fbCmdLoadButton.label         "Load">
-<!ENTITY  acebug.fbCmdLoadButton.tooltip       "Load File">
-<!ENTITY  acebug.fbCmdSaveButton.label         "Save">
-<!ENTITY  acebug.fbCmdSaveButton.tooltip       "Save File">
+<!ENTITY acebug.options.title "Acebug Preferences">
+<!ENTITY acebug.options.settings "Settings">
+<!ENTITY acebug.options.showautocompletionhints "Show auto completion hints">
+<!ENTITY acebug.options.highlightactiveline "Highlight active line">
+<!ENTITY acebug.options.highlightselectedword "Highlight selected word">
+<!ENTITY acebug.options.validateasyoutype "Validate as you type (requires restart)">
+<!ENTITY acebug.options.showinvisibles "Show invisible characters">
+<!ENTITY acebug.options.wraptext "Wrap text">
+<!ENTITY acebug.options.spacesinsteadoftabs "Use spaces instead of tabs">
+<!ENTITY acebug.options.tabsize "Tab size">
+<!ENTITY acebug.options.theme "Theme">
+<!ENTITY acebug.options.keybinding "Key binding">
+<!ENTITY acebug.options.keybinding.ace "Ace">
+<!ENTITY acebug.options.keybinding.vim "Vim">
+<!ENTITY acebug.options.keybinding.emacs "Emacs">
+<!ENTITY acebug.fbCmdToggleCommentButton.tooltip "Toggle Comment">
+<!ENTITY acebug.fbCmdToggleStreamCommentButton.tooltip "Toggle Stream Comment">
+<!ENTITY acebug.fbCmdLoadButton.label "Load">
+<!ENTITY acebug.fbCmdLoadButton.tooltip "Load File">
+<!ENTITY acebug.fbCmdSaveButton.label "Save">
+<!ENTITY acebug.fbCmdSaveButton.tooltip "Save File">
