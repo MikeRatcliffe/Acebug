@@ -754,200 +754,162 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
             </methods>
         </JSON>
         <global name="decodeURI" type="function">
-            <summary>
-                Decodes a Uniform Resource Identifier (URI) previously created by encodeURI or by a similar routine.
-            </summary>
-            <syntax>decodeURI(encodedURI);</syntax>
-            <params>
-                <param name="encodedURI">A complete, encoded Uniform Resource Identifier.</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/decodeURI</link>
+<summary>Decodes a Uniform Resource Identifier (URI) previously created by encodeURI or by a similar routine.</summary>
+<syntax>decodeURI(encodedURI);</syntax>
+<params>
+    <param name="encodedURI">A complete, encoded Uniform Resource Identifier.</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/decodeURI</link>
         </global>
         <global name="decodeURIComponent" type="function">
-            <summary>
-                Decodes a Uniform Resource Identifier (URI) component previously created by encodeURIComponent or by a similar routine.
-            </summary>
-            <syntax>decodeURIComponent(encodedURI);</syntax>
-            <params>
-                <param name="encodedURI">An encoded component of a Uniform Resource Identifier.</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/decodeURIComponent</link>
+<summary>Decodes a Uniform Resource Identifier (URI) component previously created by encodeURIComponent or by a similar routine.</summary>
+<syntax>decodeURIComponent(encodedURI);</syntax>
+<params>
+	<param name="encodedURI">An encoded component of a Uniform Resource Identifier.</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/decodeURIComponent</link>
         </global>
         <global name="encodeURI" type="function">
-            <summary>
-                Encodes a Uniform Resource Identifier (URI) by replacing each instance of certain characters by one, two, three, or four escape sequences representing the UTF-8 encoding of the character (will only be four escape sequences for characters composed of two "surrogate" characters).
-            </summary>
-            <syntax>encodeURI(URI);</syntax>
-            <params>
-                <param name="URI">A complete Uniform Resource Identifier.</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/encodeURI</link>
+<summary>Encodes a Uniform Resource Identifier (URI) by replacing each instance of certain characters by one, two, three, or four escape sequences representing the UTF-8 encoding of the character (will only be four escape sequences for characters composed of two "surrogate" characters).</summary>
+<syntax>encodeURI(URI);</syntax>
+<params>
+	<param name="URI">A complete Uniform Resource Identifier.</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/encodeURI</link>
         </global>
         <global name="encodeURIComponent" type="function">
-            <summary>
-                Encodes a Uniform Resource Identifier (URI) component by replacing each instance of certain characters by one, two, three, or four escape sequences representing the UTF-8 encoding of the character (will only be four escape sequences for characters composed of two "surrogate" characters).
-            </summary>
-            <syntax>var encoded = encodeURIComponent(str);</syntax>
-            <params>
-                <param name="str">A component of a URI.</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/encodeURIComponent</link>
+<summary>Encodes a Uniform Resource Identifier (URI) component by replacing each instance of certain characters by one, two, three, or four escape sequences representing the UTF-8 encoding of the character (will only be four escape sequences for characters composed of two "surrogate" characters).</summary>
+<syntax>var encoded = encodeURIComponent(str);</syntax>
+<params>
+	<param name="str">A component of a URI.</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/encodeURIComponent</link>
         </global>
         <global name="eval" type="function">
-            <summary>
-                Evaluates a string of JavaScript code without reference to a particular object.
-            </summary>
-            <syntax>eval(string);</syntax>
-            <params>
-                <param name="string">A string representing a JavaScript expression, statement, or sequence of statements. The expression can include variables and properties of existing objects.</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/eval</link>
+<summary>Evaluates a string of JavaScript code without reference to a particular object.</summary>
+<syntax>eval(string);</syntax>
+<params>
+	<param name="string">A string representing a JavaScript expression, statement, or sequence of statements. The expression can include variables and properties of existing objects.</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/eval</link>
         </global>
         <global name="isFinite" type="function">
-            <summary>
-                Evaluates an argument to determine whether it is a finite number.
-            </summary>
-            <syntax>isFinite(number);</syntax>
-            <params>
-                <param name="number">The number to evaluate.</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/isFinite</link>
+<summary>Evaluates an argument to determine whether it is a finite number.</summary>
+<syntax>isFinite(number);</syntax>
+<params>
+	<param name="number">The number to evaluate.</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/isFinite</link>
         </global>
         <global name="isNaN" type="function">
-            <summary>
-                Evaluates an argument to determine if it is not a number.
-            </summary>
-            <syntax>isNaN(testValue);</syntax>
-            <params>
-                <param name="testValue">The value you want to evaluate.</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/isNaN</link>
+<summary>Evaluates an argument to determine if it is not a number.</summary>
+<syntax>isNaN(testValue);</syntax>
+<params>
+	<param name="testValue">The value you want to evaluate.</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/isNaN</link>
         </global>
         <global name="parseFloat" type="function">
-            <summary>
-                Parses a string argument and returns a floating point number.
-            </summary>
-            <syntax>parseFloat(string);</syntax>
-            <params>
-                <param name="string">A string that represents the value you want to parse.</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/parseFloat</link>
+<summary>Parses a string argument and returns a floating point number.</summary>
+<syntax>parseFloat(string);</syntax>
+<params>
+	<param name="string">A string that represents the value you want to parse.</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/parseFloat</link>
         </global>
         <global name="parseInt" type="function">
-            <summary>
-                Parses a string argument and returns an integer of the specified radix or base.
-            </summary>
-            <syntax>var intValue = parseInt(string[, radix]);</syntax>
-            <params>
-                <param name="string">A string that represents the value you want to parse.</param>
-                <param name="radix">An integer that represents the radix of the above mentioned string.</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/parseInt</link>
+<summary>Parses a string argument and returns an integer of the specified radix or base.</summary>
+<syntax>var intValue = parseInt(string[, radix]);</syntax>
+<params>
+	<param name="string">A string that represents the value you want to parse.</param>
+	<param name="radix">An integer that represents the radix of the above mentioned string.</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/parseInt</link>
         </global>
         <global name="Error" type="function">
-            <summary>
-                Creates an error object.
-            </summary>
-            <syntax>new Error([message[, fileName[, lineNumber]]]);</syntax>
-            <params>
-                <param name="message">Human-readable description of the error</param>
-                <param name="fileName">The name of the file containing the code that caused the exception</param>
-                <param name="lineNumber">The line number of the code that caused the exception</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/Error</link>
+<summary>Creates an error object.</summary>
+<syntax>new Error([message[, fileName[, lineNumber]]]);</syntax>
+<params>
+	<param name="message">Human-readable description of the error</param>
+	<param name="fileName">The name of the file containing the code that caused the exception</param>
+	<param name="lineNumber">The line number of the code that caused the exception</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/Error</link>
         </global>
         <global name="EvalError" type="function">
-            <summary>
-                Represents an error regarding the eval function.
-            </summary>
-            <syntax>new EvalError([message[, fileName[, lineNumber]]]);</syntax>
-            <params>
-                <param name="message">Human-readable description of the error</param>
-                <param name="fileName">The name of the file containing the code that caused the exception</param>
-                <param name="lineNumber">The line number of the code that caused the exception</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/EvalError</link>
+<summary>Represents an error regarding the eval function.</summary>
+<syntax>new EvalError([message[, fileName[, lineNumber]]]);</syntax>
+<params>
+	<param name="message">Human-readable description of the error</param>
+	<param name="fileName">The name of the file containing the code that caused the exception</param>
+	<param name="lineNumber">The line number of the code that caused the exception</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/EvalError</link>
         </global>
         <global name="RangeError" type="function">
-            <summary>
-                Represents an error when a number is not within the correct range allowed.
-            </summary>
-            <syntax>new RangeError([message[, fileName[, lineNumber]]]);</syntax>
-            <params>
-                <param name="message">Human-readable description of the error</param>
-                <param name="fileName">The name of the file containing the code that caused the exception</param>
-                <param name="lineNumber">The line number of the code that caused the exception</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/RangeError</link>
+<summary>Represents an error when a number is not within the correct range allowed.</summary>
+<syntax>new RangeError([message[, fileName[, lineNumber]]]);</syntax>
+<params>
+	<param name="message">Human-readable description of the error</param>
+	<param name="fileName">The name of the file containing the code that caused the exception</param>
+	<param name="lineNumber">The line number of the code that caused the exception</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/RangeError</link>
         </global>
         <global name="ReferenceError" type="function">
-            <summary>
-                Represents an error when a non-existent variable is referenced.
-            </summary>
-            <syntax>new ReferenceError([message[, fileName[, lineNumber]]]);</syntax>
-            <params>
-                <param name="message">Human-readable description of the error</param>
-                <param name="fileName">The name of the file containing the code that caused the exception</param>
-                <param name="lineNumber">The line number of the code that caused the exception</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/ReferenceError</link>
+<summary>Represents an error when a non-existent variable is referenced.</summary>
+<syntax>new ReferenceError([message[, fileName[, lineNumber]]]);</syntax>
+<params>
+	<param name="message">Human-readable description of the error</param>
+	<param name="fileName">The name of the file containing the code that caused the exception</param>
+	<param name="lineNumber">The line number of the code that caused the exception</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/ReferenceError</link>
         </global>
         <global name="SyntaxError" type="function">
-            <summary>
-                Represents an error when trying to interpret syntactically invalid code.
-            </summary>
-            <syntax>new SyntaxError([message[, fileName[, lineNumber]]]);</syntax>
-            <params>
-                <param name="message">Human-readable description of the error</param>
-                <param name="fileName">The name of the file containing the code that caused the exception</param>
-                <param name="lineNumber">The line number of the code that caused the exception</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/SyntaxError</link>
+<summary>Represents an error when trying to interpret syntactically invalid code.</summary>
+<syntax>new SyntaxError([message[, fileName[, lineNumber]]]);</syntax>
+<params>
+	<param name="message">Human-readable description of the error</param>
+	<param name="fileName">The name of the file containing the code that caused the exception</param>
+	<param name="lineNumber">The line number of the code that caused the exception</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/SyntaxError</link>
         </global>
         <global name="TypeError" type="function">
-            <summary>
-                Represents an error when a value is not of the expected type.
-            </summary>
-            <syntax>new TypeError([message[, fileName[, lineNumber]]]);</syntax>
-            <params>
-                <param name="message">Human-readable description of the error</param>
-                <param name="fileName">The name of the file containing the code that caused the exception</param>
-                <param name="lineNumber">The line number of the code that caused the exception</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/TypeError</link>
+<summary>Represents an error when a value is not of the expected type.</summary>
+<syntax>new TypeError([message[, fileName[, lineNumber]]]);</syntax>
+<params>
+	<param name="message">Human-readable description of the error</param>
+	<param name="fileName">The name of the file containing the code that caused the exception</param>
+	<param name="lineNumber">The line number of the code that caused the exception</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/TypeError</link>
         </global>
         <global name="URIError" type="function">
-            <summary>
-                Represents an error when a malformed URI is encountered.
-            </summary>
-            <syntax>new URIError([message[, fileName[, lineNumber]]]);</syntax>
-            <params>
-                <param name="message">Human-readable description of the error</param>
-                <param name="fileName">The name of the file containing the code that caused the exception</param>
-                <param name="lineNumber">The line number of the code that caused the exception</param>
-            </params>
-            <link>JavaScript/Reference/Global_Objects/URIError</link>
+<summary>Represents an error when a malformed URI is encountered.</summary>
+<syntax>new URIError([message[, fileName[, lineNumber]]]);</syntax>
+<params>
+	<param name="message">Human-readable description of the error</param>
+	<param name="fileName">The name of the file containing the code that caused the exception</param>
+	<param name="lineNumber">The line number of the code that caused the exception</param>
+</params>
+<link>JavaScript/Reference/Global_Objects/URIError</link>
         </global>
         <global name="Infinity" type="number">
-            <summary>
-                A numeric value representing infinity.
-            </summary>
-            <syntax>Infinity</syntax>
-            <link>JavaScript/Reference/Global_Objects/Infinity</link>
+<summary>A numeric value representing infinity.</summary>
+<syntax>Infinity</syntax>
+<link>JavaScript/Reference/Global_Objects/Infinity</link>
         </global>
         <global name="NaN" type="number">
-            <summary>
-                A value representing Not-A-Number.
-            </summary>
-            <syntax>NaN</syntax>
-            <link>JavaScript/Reference/Global_Objects/NaN</link>
+<summary>A value representing Not-A-Number.</summary>
+<syntax>NaN</syntax>
+<link>JavaScript/Reference/Global_Objects/NaN</link>
         </global>
         <global name="undefined" type="undefined">
-            <summary>
-                The value undefined.
-            </summary>
-            <syntax>undefined</syntax>
-            <link>JavaScript/Reference/Global_Objects/undefined</link>
+<summary>The value undefined.</summary>
+<syntax>undefined</syntax>
+<link>JavaScript/Reference/Global_Objects/undefined</link>
         </global>
     </globals>
     <DOM>
