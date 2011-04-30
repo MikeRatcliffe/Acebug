@@ -1,3 +1,20 @@
+<!ENTITY acebug.options.title "Acebug 首选项">
+<!ENTITY acebug.options.settings "设置">
+<!ENTITY acebug.options.showautocompletionhints "显示自动完成提示">
+<!ENTITY acebug.options.highlightactiveline "高亮活动行">
+<!ENTITY acebug.options.highlightselectedword "高亮选定单词">
+<!ENTITY acebug.options.validateasyoutype "验证您的输入（需要重新启动）">
+<!ENTITY acebug.options.showinvisibles "显示不可见字符">
+<!ENTITY acebug.options.wraptext "文字换行">
+<!ENTITY acebug.options.spacesinsteadoftabs "使用空格替代制表符">
+<!ENTITY acebug.options.tabsize "制表符大小">
+<!ENTITY acebug.options.theme "主题">
+<!ENTITY acebug.options.keybinding "键绑定">
+<!ENTITY acebug.options.keybinding.ace "Ace">
+<!ENTITY acebug.options.keybinding.vim "Vim">
+<!ENTITY acebug.options.keybinding.emacs "Emacs">
+<!ENTITY acebug.fbCmdToggleCommentButton.tooltip "切换注释">
+<!ENTITY acebug.fbCmdToggleStreamCommentButton.tooltip "切换块注释">
 <!ENTITY acebug.fbCmdLoadButton.label "载入">
 <!ENTITY acebug.fbCmdLoadButton.tooltip "载入文件">
 <!ENTITY acebug.fbCmdSaveButton.label "保存">

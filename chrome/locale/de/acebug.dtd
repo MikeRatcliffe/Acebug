@@ -1,16 +1,21 @@
+<!ENTITY acebug.options.title "Acebug - Einstellungen">
+<!ENTITY acebug.options.settings "Einstellungen">
+<!ENTITY acebug.options.showautocompletionhints "Automatische VervollstÃ¤ndigungshinweise anzeigen">
+<!ENTITY acebug.options.highlightactiveline "Aktive Zeile hervorheben">
+<!ENTITY acebug.options.highlightselectedword "Markiertes Wort hervorheben">
+<!ENTITY acebug.options.validateasyoutype "Validierung der Eingabe (erfordert Neustart)">
+<!ENTITY acebug.options.showinvisibles "Unsichtbare Zeichen anzeigen">
+<!ENTITY acebug.options.wraptext "Zeilen umbrechen">
+<!ENTITY acebug.options.spacesinsteadoftabs "Leerzeichen statt Tabulator verwendem">
+<!ENTITY acebug.options.tabsize "TabulatorgrÃ¶sse">
+<!ENTITY acebug.options.theme "Theme">
+<!ENTITY acebug.options.keybinding "TastenkÃ¼rzelbelegung">
+<!ENTITY acebug.options.keybinding.ace "Ace">
+<!ENTITY acebug.options.keybinding.vim "Vim">
+<!ENTITY acebug.options.keybinding.emacs "Emacs">
+<!ENTITY acebug.fbCmdToggleCommentButton.tooltip "Zeilenweise ein-/auskommentieren">
+<!ENTITY acebug.fbCmdToggleStreamCommentButton.tooltip "Markierung zeilenweise ein-/auskommentieren">
 <!ENTITY acebug.fbCmdLoadButton.label "Laden">
 <!ENTITY acebug.fbCmdLoadButton.tooltip "Datei laden">
 <!ENTITY acebug.fbCmdSaveButton.label "Speichern">
 <!ENTITY acebug.fbCmdSaveButton.tooltip "Datei speichern">
-<!ENTITY acebug.options.title "Acebug - Einstellungen">
-<!ENTITY acebug.options.settings "Einstellungen">
-<!ENTITY acebug.options.highlightactiveline "Aktive Zeile hervorheben">
-<!ENTITY acebug.options.showinvisibles "Unsichtbare Zeichen anzeigen">
-<!ENTITY acebug.options.wraptext "Zeilen umbrechen">
-<!ENTITY acebug.options.spacesinsteadoftabs "Leerzeichen statt Tabulator verwendem">
-<!ENTITY acebug.options.tabsize "Tabulatorgröße">
-<!ENTITY acebug.options.theme "Theme">
-<!ENTITY acebug.options.keybinding "Tastenkürzelbelegung">
-<!ENTITY acebug.options.keybinding.ace "Ace">
-<!ENTITY acebug.options.keybinding.vim "Vim">
-<!ENTITY acebug.options.keybinding.emacs "Emacs">
