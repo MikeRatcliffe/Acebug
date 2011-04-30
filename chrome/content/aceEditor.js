@@ -210,7 +210,7 @@ Firebug.Ace =
 
             if (name.indexOf('.')<0) {
                 file = file.parent;
-                file.append(name + '.' + ext);
+                file.append(name + '.' + session.extension);
             }
 
             writeFile(file, session.getValue());
