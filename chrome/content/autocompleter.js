@@ -185,7 +185,7 @@ Firebug.Ace.BaseAutocompleter = {
         /**     doOnselect  **/
         this.onSelectTimeOut = null;
 
-        if(Firebug.Ace.getOptions().showautocompletionhints) {
+        if(Firebug.Ace.showautocompletionhints) {
             try {
                 var index = this.tree.currentIndex;
                 this.number.value = index + ':' +this.sortedArray.length + "/" + this.unfilteredArray.length;
@@ -996,35 +996,31 @@ if (!modernfox) { //for old versions
         if (!targetObj)
             return [];
 
-        var d, o;
-        var x = targetObj.wrappedJSObject;
+        var d, o, x = targetObj
         var data = [], protoList = [], depth = 0, allProps = [];
-        if (!x)
-            x = targetObj;
-           //data.push({name:'wrappedJSObject', comName: 'wrappedjsobject',description:'', depth:-1})
 
-        if (typeof x !== "object" && typeof x !== "function") {
+        if (typeof x !== "object" && typeof x !== "function")
             x = x.constructor;
-        }
+
         if (typeof x === "xml")
-            return [];
+            return [{name: toXMLString, comName: 'toxmlString', description: d, depth:depth, object: o}];
+
+        if (typeof x === "object")
+            x = XPCNativeWrapper.unwrap(targetObj)
+
+        if (targetObj != x) {
+            data.push({name:'wrappedJSObject', comName: 'wrappedjsobject',description:'', depth:-1})
+            targetObj = x
+        }
 
         while(x) {
             var props = Object.getOwnPropertyNames(x);
             innerloop: for each(var i in props) {
                 if (allProps.indexOf(i) > -1)
                     continue innerloop;
-                /*if (!x.hasOwnProperty(i)) {
-                    data.push({name:i+'---', comName: i+'---',description:i, depth:depth})
-                    continue outerloop
-                }
-                for(var p in protoList) {//dont show same prop twice
-                    if (protoList[p].hasOwnProperty(i))
-                        continue outerloop
-                }*/
 
                 try {
-                    o = x[i];
+                    o = targetObj[i];
                     d = jn.inspect(o);
                 } catch(e) {
                     d = e.message;

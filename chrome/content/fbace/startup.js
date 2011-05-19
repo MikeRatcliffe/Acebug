@@ -324,7 +324,7 @@ exports.launch = function(env, options) {
         },
 
         clear: function() {
-            editor.session.setValue("");
+            editor.session.doc.setValue("");
         },
     });
 

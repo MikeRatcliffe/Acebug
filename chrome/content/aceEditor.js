@@ -69,6 +69,8 @@ Firebug.Ace =
                 options[name] = branch.getIntPref(name);
             }
         }
+        //
+        Firebug.Ace.showautocompletionhints = options.showautocompletionhints;
         return options;
     },
 
@@ -116,6 +118,12 @@ Firebug.Ace =
                 disabled: !clipBoardText
             },
             "-",
+            {
+                label: $ACESTR("acebug options"),
+                command: function() {
+                    openDialog('chrome://acebug/content/options.xul','','resizable,centerscreen')
+                }
+            },
             {
                 label: $ACESTR("acebug.reportissue"),
                 command: function() {
@@ -276,8 +284,7 @@ Firebug.largeCommandLineEditor = {
 
     _setValue: function(text) {
         var editor = Firebug.Ace.win2.editor;
-        editor.selection.selectAll();
-        editor.onTextInput(text);
+        editor.session.doc.setValue(text);
         return text;
     },
 
@@ -300,7 +307,7 @@ Firebug.largeCommandLineEditor = {
             //log lines with breakpoints
             var bp = editor.session.$breakpoints;
             text = editor.session.doc.$lines.map(function(x, i) {
-                return bp[i] ? 'console.log(' + x + ')' : x;
+                return bp[i] ? 'console.log(' + x.replace(/\/\/.*$/,'').replace(/;\s*$/,'') + ')' : x;
             }).join('\n');
         }
         Firebug.CommandLine.enter(Firebug.currentContext, text);
@@ -409,6 +416,9 @@ var acebugPrefObserver = {
             case "wordwrap":
                 env1 && env1.editor.session.setUseWrapMode(this._branch.getBoolPref(aData));
                 env2 && env2.editor.session.setUseWrapMode(this._branch.getBoolPref(aData));
+            break;
+            case "showautocompletionhints":
+                Firebug.Ace.showautocompletionhints = this._branch.getBoolPref(aData);
             break;
         }
     }
