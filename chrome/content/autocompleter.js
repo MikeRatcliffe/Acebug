@@ -687,7 +687,6 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
                 end: cursor
             });
 
-            dump(t.toSource());
             return t.substr(1).trim();
         }
 
@@ -715,7 +714,6 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
             colonSeen = true;
 
         do {
-            //dump(prev,i)
             if (ch == '}') {
                 mode='selector';
                 return [mode, termChar, curWord];

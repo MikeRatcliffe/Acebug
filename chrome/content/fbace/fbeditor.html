@@ -50,7 +50,7 @@ require = loadScripts = function(deps, callback, lastUrl) {
         return callback && callback(require(lastUrl));
 
     var script = document.createElement("script");
-    script.type = "text/javascript";
+    script.type = "text/javascript;version=1.8";
     script.onload = function() {
         this.onload = null;
         loadScripts(deps, callback, url);
@@ -74,8 +74,8 @@ var _define = function(module, deps, payload) {
 
         return;
     }
-
-    define.modules[module] = payload;
+    if(!define.modules[module])
+        define.modules[module] = payload;
 };
 
 _define.modules = {};

@@ -1,4 +1,4 @@
-define("fbace/scrollbar",  function(require, exports, module) {
+define("ace/scrollbar",  function(require, exports, module) {
 
 var oop = require("pilot/oop");
 var dom = require("pilot/dom");

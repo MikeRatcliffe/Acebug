@@ -49,7 +49,10 @@ Firebug.Ace =
 
     showPanel: function(browser, panel) {
         this.win1.startAce(null, this.getOptions());
-        this.showPanel = function() {}
+        this.showPanel = function(browser, panel) {
+			if(panel.name=='console')
+				this.win2.editor.resize();
+		}
     },
 
     getOptions: function() {
@@ -78,6 +81,7 @@ Firebug.Ace =
         var panelID = toAce?"fbAceBrowser1-parent":'fbPanelBar1-browser';
         var panel = Firebug.chrome.$(panelID);
         panel.parentNode.selectedPanel=panel;
+		this.win1.editor.resize();
     },
 
     setFontSize: function(sizePercent) {
@@ -307,7 +311,14 @@ Firebug.largeCommandLineEditor = {
             //log lines with breakpoints
             var bp = editor.session.$breakpoints;
             text = editor.session.doc.$lines.map(function(x, i) {
-                return bp[i] ? 'console.log(' + x.replace(/\/\/.*$/,'').replace(/;\s*$/,'') + ')' : x;
+				if (bp[i]) {
+					x = x.replace(/\/\/.*$/,'').replace(/;\s*$/,'') // strip comments and ;
+					if (x.search(/\bvar\b/)) {
+						x.replace(/\bvar\s*/)
+					}
+					x = 'console.log(' + x + ')'
+				}
+                return x;
             }).join('\n');
         }
         Firebug.CommandLine.enter(Firebug.currentContext, text);

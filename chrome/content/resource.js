@@ -112,12 +112,11 @@ var  getAllLocations = function()
         src = list[i].href;
         if (src)
             locationList.push({href: src, type: 'text'});
-        // todo: look into stylesheet rules
-        /*else
+        else
             src = baseURI
         var cssRules = list[i].cssRules
         for(var j = cssRules.length; j--;) {
-            var match = cssRules[j].cssText.match(/url\("[^"]*"\)/)
+            var match = cssRules[j].cssText.match(/url\("[^"]*"\)/g)
             var k = 0, href
             if (!match)
                 continue;
@@ -127,7 +126,7 @@ var  getAllLocations = function()
                     href = FBL.absoluteURL(href, baseURI)
                 locationList.push({href: href, type:'image'})
             }
-        }*/
+        }
     }
 
     //
