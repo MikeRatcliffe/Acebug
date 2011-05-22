@@ -92,31 +92,39 @@ exports.launch = function(env, options) {
     CSSMode = require("ace/mode/css").Mode;
     HTMLMode = require("ace/mode/html").Mode;
     XMLMode = require("ace/mode/xml").Mode;
-    JavaScriptMode = require("ace/mode/javascript").Mode;
+	JSMode = require("ace/mode/javascript").Mode;
 
-    var HashHandler = require("ace/keyboard/hash_handler").HashHandler;
-    var Search = require("ace/search").Search;
-    // global functions
+	var HashHandler = require("ace/keyboard/hash_handler").HashHandler;
+	var Search = require("ace/search").Search;	
+	// global functions
     toggleGutter = function() {
         editor.renderer.setShowGutter(!env.editor.renderer.showGutter);
     };
-    getExtension = function(name) {
-        return (name.match(/.(xml|html?|css|js)($|\?|\#)/)||[,'js'])[1]
-    };
-    createSession = function(value, name) {
-        var s = new EditSession(value);
-        s.setFileInfo(name);
-        s.setMode(new modeMap[s.extension]);
-        s.setUndoManager(new UndoManager());
+	getExtension = function(name, mime) {
+		if(mime) return (mime.toLowerCase().match(/(xml|html?|css|jsm?|xul|rdf)/i)||[,'js'])[1]
+		return (name.match(/.(xml|html?|css|jsm?|xul|rdf)($|\?|\#)/i)||[,'js'])[1]
+	};
+	getMode = function(ext) {
+		if("xml|html|xul|rdf".indexOf(ext)!=-1)return HTMLMode
+		if("css".indexOf(ext)!=-1)return CSSMode
+		if("jsm".indexOf(ext)!=-1)return JSMode
+		// default
+		return JSMode
+	};
+	createSession = function(value, name, mimeType) {
+		var s = new EditSession(value);
+		s.setFileInfo(name.toLowerCase(), mimeType);
+		s.setMode(new (getMode(s.extension)));
+		s.setUndoManager(new UndoManager());
 
-        s.setUseSoftTabs(options.softtabs);
-        s.setUseWrapMode(options.wordwrap);
-        s.setTabSize(options.tabsize);
-        s.setWrapLimitRange(null, null);
+		s.setUseSoftTabs(options.softtabs);
+		s.setUseWrapMode(options.wordwrap);
+		s.setTabSize(options.tabsize);
+		s.setWrapLimitRange(null, null);
         return s;
     };
-    EditSession.prototype.setFileInfo = function(path) {
-        this.extension = getExtension(path);
+    EditSession.prototype.setFileInfo = function(path, mime) {
+        this.extension = getExtension(path, mime);
         this.href = path;
         if (path.slice(0,5) == 'file:')
             this.filePath = path;
@@ -141,13 +149,6 @@ exports.launch = function(env, options) {
     //since we are using separate window make everything global for now
     window.env = env;
 
-    var modeMap = {
-        html: HTMLMode,
-        htm: HTMLMode,
-        js: JavaScriptMode,
-        css: CSSMode,
-        xml: XMLMode
-    };
     jsDoc = createSession('', '.js');
 
     var container = document.getElementById("editor");
@@ -340,5 +341,129 @@ exports.launch = function(env, options) {
             editor.session.setBreakpoint(lineNo);
         //editor.session.panel.setBreakpoint(lineNo, state)
     });
+	
+	/**************************** folding commands *********************************************/
+	canon.addCommand({
+        name: "newCell",
+        bindKey: {
+            win: "Shift-Return",
+            mac: "Shift-Return",
+            sender: "editor"
+        },
+        exec: function(env) {
+			var editor = env.editor, session = editor.session
+            var c = editor.getCursorPosition()
+			if((c.column!=0 || c.row==0) && c.column != session.getLine(c.row).length)
+				var addNewLine = true
+				
+			if (c.column==0)
+				c1 = session.insert(c,'#>')
+			else
+				c1 = session.insert(c,'\n#>')
+
+			if (addNewLine) {
+				session.insert(c1,'\n')
+				editor.selection.setSelectionRange({start:c1,end:c1})
+			}
+        }
+    });
+	
+	canon.addCommand({
+        name: "fold",
+        bindKey: {
+            win: "Alt-L",
+            mac: "Alt-L",
+            sender: "editor"
+        },
+        exec: function(env) {
+            toggleFold(env, false)
+        }
+    });
+
+    canon.addCommand({
+        name: "unfold",
+        bindKey: {
+            win: "Alt-Shift-L",
+            mac: "Alt-Shift-L",
+            sender: "editor"
+        },
+        exec: function(env) {
+            toggleFold(env, true)
+        }
+    });
+
+    function isCommentRow(row) {
+        var session = env.editor.session;
+        var token;
+        var tokens = session.getTokens(row, row)[0].tokens;
+        var c = 0;
+        for (var i = 0; i < tokens.length; i++) {
+            token = tokens[i];
+            if (/^comment/.test(token.type)) {
+                return c;
+            } else if (!/^text/.test(token.type)) {
+                return false;
+            }
+            c += token.value.length;
+        }
+        return false;
+    };
+
+    function toggleFold(env, tryToUnfold) {
+        var session = env.editor.session;
+        var selection = env.editor.selection;
+        var range = selection.getRange();
+        var addFold;
+
+        if(range.isEmpty()) {
+            var br = session.findMatchingBracket(range.start);
+            var fold = session.getFoldAt(range.start.row, range.start.column);
+            var column;
+
+            if(fold) {
+                session.expandFold(fold);
+                selection.setSelectionRange(fold.range)
+            } else if(br) {
+                if(range.compare(br.row,br.column) == 1)
+                    range.end = br;
+                else
+                    range.start = br;
+                addFold = true;
+            } else if ((column = isCommentRow(range.start.row)) !== false) {
+                var firstCommentRow = range.start.row;
+                var lastCommentRow = range.start.row;
+                var t;
+                while ((t = isCommentRow(firstCommentRow - 1)) !== false) {
+                    firstCommentRow --;
+                    column = t;
+                }
+                while (isCommentRow(lastCommentRow + 1) !== false) {
+                    lastCommentRow ++;
+                }
+                range.start.row = firstCommentRow;
+                range.start.column = column + 2;
+                range.end.row = lastCommentRow;
+                range.end.column = session.getLine(lastCommentRow).length - 1;
+                addFold = true;
+            }
+        } else {
+            var folds = session.getFoldsInRange(range);
+            if(tryToUnfold && folds.length)
+                session.expandFolds(folds);
+            else if(folds.length == 1 && folds[0].range.compare(range) == 0)
+                session.expandFolds(folds);
+            else
+                addFold = true;
+        }
+        if(addFold) {
+            var placeHolder = session.getTextRange(range);
+            if(placeHolder.length < 3)
+                return;
+            placeHolder = placeHolder.trim().substring(0, 3).replace(' ','','g') + "...";
+            session.addFold(placeHolder, range);
+        }
+    }
+
+	
 };
 });

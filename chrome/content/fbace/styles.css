@@ -52,6 +52,7 @@ body {
     position: fixed;
     z-index: 1000;
     -moz-border-radius-topright: 20px;
+    border-top-right-radius: 20px;
 }
 
 #toggleGutter:hover{
@@ -65,7 +66,7 @@ body {
 }
 
 .ace_gutter-cell.ace_breakpoint{
-    background: url("chrome://firebug/skin/breakpoint.png") no-repeat;
+	background: url("chrome://firebug/skin/breakpoint.png") no-repeat;
 }
 
 
