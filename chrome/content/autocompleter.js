@@ -998,18 +998,19 @@ if (!modernfox) { //for old versions
         var data = [], protoList = [], depth = 0, allProps = [];
 
         if (typeof x !== "object" && typeof x !== "function")
-            x = x.constructor;
+            x = x.constructor.prototype;
 
         if (typeof x === "xml")
             return [{name: toXMLString, comName: 'toxmlString', description: d, depth:depth, object: o}];
 
-        if (typeof x === "object")
+        if (typeof targetObj === "object") {
             x = XPCNativeWrapper.unwrap(targetObj)
 
-        if (targetObj != x) {
-            data.push({name:'wrappedJSObject', comName: 'wrappedjsobject',description:'', depth:-1})
-            targetObj = x
-        }
+			if (targetObj != x) {
+				data.push({name:'wrappedJSObject', comName: 'wrappedjsobject',description:'', depth:-1})
+				targetObj = x
+			}
+		}
 
         while(x) {
             var props = Object.getOwnPropertyNames(x);
@@ -1021,8 +1022,8 @@ if (!modernfox) { //for old versions
                     o = targetObj[i];
                     d = jn.inspect(o);
                 } catch(e) {
-                    d = e.message;
                     o = "error";
+                    d = e.message;
                 }
                 data.push({name: i, comName: i.toLowerCase(), description: d, depth:depth, object: o});
             }
