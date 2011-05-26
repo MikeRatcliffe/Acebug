@@ -45,7 +45,15 @@ Firebug.Ace =
                 oldFrame.QueryInterface(Ci.nsIFrameLoaderOwner).swapFrameLoaders(newFrame);
             }
         };
+		this.loadFBugPatch()
     },
+	
+	loadFBugPatch: function(){
+		var script = document.createElementNS("http://www.w3.org/1999/xhtml", "script");
+		script.type = "text/javascript;version=1.8";
+		script.src ='chrome://acebug/content/patchUpFirebug.js'
+		document.documentElement.appendChild(script)
+	},
 
     showPanel: function(browser, panel) {
         this.win1.startAce(null, this.getOptions());
@@ -303,27 +311,6 @@ Firebug.largeCommandLineEditor = {
         return val;
     },
 
-    enter: function(runSelection) {
-        var editor = Firebug.Ace.win2.editor;
-        if (runSelection)
-            var text = editor.getCopyText();
-        if (!text) {
-            //log lines with breakpoints
-            var bp = editor.session.$breakpoints;
-            text = editor.session.doc.$lines.map(function(x, i) {
-				if (bp[i]) {
-					x = x.replace(/\/\/.*$/,'').replace(/;\s*$/,'') // strip comments and ;
-					if (x.search(/\bvar\b/)) {
-						x.replace(/\bvar\s*/)
-					}
-					x = 'console.log(' + x + ')'
-				}
-                return x;
-            }).join('\n');
-        }
-        Firebug.CommandLine.enter(Firebug.currentContext, text);
-    },
-
     addEventListener: function() {
         Firebug.Ace.win2.addEventListener.apply(null,arguments);
     },
@@ -364,6 +351,69 @@ Firebug.largeCommandLineEditor = {
     setFontSize: function(sizePercent) {
         Firebug.Ace.setFontSize(sizePercent)
     },
+
+    // * * * * * * * * * * * * * * * * * * * * * *
+	// todo: do we need to support noscript? Cc["@maone.net/noscript-service;1"]
+    enter: function(runSelection) {
+        var editor = Firebug.Ace.win2.editor;
+        if (runSelection)
+            var text = editor.getCopyText();
+        if (!text) {
+            //log lines with breakpoints
+            var bp = editor.session.$breakpoints;
+            text = editor.session.doc.$lines.map(function(x, i) {
+				if (bp[i]) {
+					x = x.replace(/\/\/.*$/,'').replace(/;\s*$/,'') // strip comments and ;
+					if (x.search(/\bvar\b/)) {
+						x.replace(/\bvar\s*/)
+					}
+					x = 'console.log(' + x + ')'
+				}
+                return x;
+            }).join('\n');
+        }
+        Firebug.largeCommandLineEditor.runCode(text);
+    },
+	
+	getErrorLocation: function(){
+		Firebug.CommandLine.evaluate('++++', Firebug.currentContext, Firebug.currentContext.thisValue, null,
+			dump, function(error) {
+				var source = error.source.split('++++')
+				Firebug.currentContext.errorLocation={
+					fileName: error.fileName,
+					lineNumber: error.lineNumber,
+					before: source[0].length,
+					after: -source[1].length,
+				}
+			});
+	},
+	
+	runCode: function(code) {
+		if(!Firebug.currentContext.errorLocation)
+			this.getErrorLocation()
+		
+		Firebug.CommandLine.evaluate(code, Firebug.currentContext, Firebug.currentContext.thisValue, null,
+                Firebug.largeCommandLineEditor.logSuccess,
+                Firebug.largeCommandLineEditor.logError
+            );
+	},
+	logSuccess: function(e){
+		Firebug.Console.log(e)
+	},
+	logError: function(error) {
+		var loc = Firebug.currentContext.errorLocation
+		if(loc.fileName == error.fileName) {
+			var lineNumber = error.lineNumber-loc.lineNumber;
+			gbrj=error
+			dump(error.source.slice(loc.before, loc.after).split('\n')
+			,error.lineNumber,loc.lineNumber,lineNumber
+			)
+			var lines = error.source.slice(loc.before, loc.after).split('\n')
+			var line = lines[lineNumber]||lines[lineNumber-1]
+			Firebug.Console.log(error.message + ' `' + line + '` @'+lineNumber)
+		} else
+			Firebug.Console.log(e)
+	}
 };
 
 /***********************************************************/
@@ -573,7 +623,7 @@ HTMLPanelEditor.prototype = {
     },
 
     cleanup: function(target) {
-        FirebugChrome.getSelectedPanel().select(this.editingElements[0]);
+        Firebug.chrome.getSelectedPanel().select(this.editingElements[0]);
         delete this.editingElements;
         delete this.target;
     },

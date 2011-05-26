@@ -1,6 +1,6 @@
 Firebug.unregisterRep(FirebugReps.Func)
 
-function addStyles(){
+;(function(){
 	rule = '.funcRepToggle{\
 		background: url(chrome://firebug/skin/tabMenuTarget.png);\
 		cursor: pointer;\
@@ -28,8 +28,7 @@ function addStyles(){
 		st.insertRule(rule1, st.cssRules.length)
 		st.insertRule(rule2, st.cssRules.length)
 	})
-}
-addStyles()
+})()
 
 with(FBL){
 FirebugReps.Func = domplate(Firebug.Rep,
