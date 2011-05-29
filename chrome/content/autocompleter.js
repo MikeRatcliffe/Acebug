@@ -1012,6 +1012,7 @@ if (!modernfox) { //for old versions
 			}
 		}
 
+		var maxProtoDepth = 20
         while(x) {
             var props = Object.getOwnPropertyNames(x);
             innerloop: for each(var i in props) {
@@ -1028,6 +1029,9 @@ if (!modernfox) { //for old versions
                 data.push({name: i, comName: i.toLowerCase(), description: d, depth:depth, object: o});
             }
             protoList.push(x);
+			// some objects (XML, Proxy) may have infinite list of __proto__
+			if(!maxProtoDepth--)
+				break;
             x = x.__proto__;
             depth++;
             allProps = allProps.concat(props);

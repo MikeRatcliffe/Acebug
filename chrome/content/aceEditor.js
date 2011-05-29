@@ -255,6 +255,10 @@ Firebug.largeCommandLineEditor = {
         editor.session.owner = 'console';
         editor.session.href = '';
         editor.session.autocompletionType = 'js';
+		
+		// set mode which allows cells and, js+coffeescript combination 
+		Firebug.Ace.win2.initConsoleMode(editor)
+		
 
         // clean up preload handlers
         this.getValue = this._getValue;
@@ -276,7 +280,8 @@ Firebug.largeCommandLineEditor = {
             return;
         this._loadingStarted = true;
 
-        Firebug.Ace.win2.startAce(bind(this.initialize,this), Firebug.Ace.getOptions());
+        Firebug.Ace.win2.startAce(bind(this.initialize,this),
+			Firebug.Ace.getOptions(), ['fbace/consoleMode', "ace/mode/coffee"]);
     },
 
     getValue: function() {
@@ -375,11 +380,11 @@ Firebug.largeCommandLineEditor = {
         Firebug.largeCommandLineEditor.runCode(text);
     },
 	
-	getErrorLocation: function(){
-		Firebug.CommandLine.evaluate('++++', Firebug.currentContext, Firebug.currentContext.thisValue, null,
+	setErrorLocation: function(context){
+		Firebug.CommandLine.evaluate('++++', context, context.thisValue, null,
 			dump, function(error) {
 				var source = error.source.split('++++')
-				Firebug.currentContext.errorLocation={
+				context.errorLocation={
 					fileName: error.fileName,
 					lineNumber: error.lineNumber,
 					before: source[0].length,
@@ -388,11 +393,15 @@ Firebug.largeCommandLineEditor = {
 			});
 	},
 	
-	runCode: function(code) {
-		if(!Firebug.currentContext.errorLocation)
-			this.getErrorLocation()
+	runCode: function(code, thisValue) {
+		var context = Firebug.currentContext
+		if(!context.errorLocation)
+			this.setErrorLocation(context)
 		
-		Firebug.CommandLine.evaluate(code, Firebug.currentContext, Firebug.currentContext.thisValue, null,
+		var shortExpr = cropString(code.replace(/\s*/g, ''), 100);
+        Firebug.Console.log("in:" + (inputNumber++) + ">>> "  + shortExpr, context, "command", FirebugReps.Text);
+		
+		Firebug.CommandLine.evaluate(code, context, thisValue||context.thisValue, null,
                 Firebug.largeCommandLineEditor.logSuccess,
                 Firebug.largeCommandLineEditor.logError
             );
@@ -415,7 +424,7 @@ Firebug.largeCommandLineEditor = {
 			Firebug.Console.log(e)
 	}
 };
-
+var inputNumber = 0;
 /***********************************************************/
 
 var acebugPrefObserver = {

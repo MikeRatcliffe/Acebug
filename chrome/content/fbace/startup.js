@@ -330,17 +330,42 @@ exports.launch = function(env, options) {
     });
 
     // breakpoint handler
-    event.addListener(editor.renderer.$gutter, 'mousedown', function(e) {
-        if (e.target.className.indexOf('gutter-cell') === -1)
-            return;
-        var lineNo = parseInt(e.target.textContent, 10) - 1;
-        var state;
-        if (state = editor.session.$breakpoints[lineNo])
-            editor.session.clearBreakpoint(lineNo);
-        else
-            editor.session.setBreakpoint(lineNo);
-        //editor.session.panel.setBreakpoint(lineNo, state)
-    });
+    env.editor.renderer.on('gutterclick',onGutterClick)	
+	function onGutterClick(e) {
+		var editor = env.editor, s = editor.session, row = e.row;
+		if (e.htmlEvent.target.className.indexOf('ace_fold-widget') < 0)
+			s[s.$breakpoints[e.row]?'clearBreakpoint':'setBreakpoint'](row);
+		else {
+			var line = s.getLine(row)
+			var match = line.match(/(\{|\[)\s*(\/\/.*)?$/)
+			if (match) {
+				var i = match.index
+				var fold = s.getFoldAt(row, i+1, 1)
+				if (fold) {
+					s.expandFold(fold)
+				} else {
+					var start = {row:row,column:i+1}
+					var end = s.$findClosingBracket(match[1], start)
+					if(end)
+						s.addFold("...", Range.fromPoints(start, end));
+				}
+			}
+		}
+	}
+	
+	function CStyleFolding(){
+		this.isLineFoldable = function(row) {
+			return !!this.getLine(row).match(/(\{|\[)\s*(\/\/.*)?$/)
+			
+			if (!this.foldWidgets)
+				this.foldWidgets = []
+			if (this.foldWidgets[row] != null)
+				return this.foldWidgets[row]
+			else
+				return this.foldWidgets[row] = !!this.getLine(row).match(/(\{|\[)\s*(\/\/.*)?$/)		
+		}		
+	};
+	CStyleFolding.call(EditSession.prototype);
 	
 	/**************************** folding commands *********************************************/
 	canon.addCommand({
@@ -357,9 +382,9 @@ exports.launch = function(env, options) {
 				var addNewLine = true
 				
 			if (c.column==0)
-				c1 = session.insert(c,'#>')
+				c1 = session.insert(c,'#>>')
 			else
-				c1 = session.insert(c,'\n#>')
+				c1 = session.insert(c,'\n#>>')
 
 			if (addNewLine) {
 				session.insert(c1,'\n')

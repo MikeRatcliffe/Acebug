@@ -139,7 +139,7 @@ var lookup = function(moduleName) {
 //*********************************************************************************************
 
 var onLaunch;
-var startAce = function(callback, options) {
+var startAce = function(callback, options, deps) {
     if (onLaunch) {
         onLaunch = callback || onLaunch;
         return;
@@ -153,9 +153,12 @@ var startAce = function(callback, options) {
     if (!options.theme)
         options.theme = "ace/theme/textmate";
     else if (options.theme != "ace/theme/textmate")
-        rootDeps.push(options.theme);
+        rootDeps.unshift(options.theme);
+		
+	if(deps)
+		rootDeps.unshift.apply(rootDeps, deps)
 
-    require(rootDeps, function() {
+		require(rootDeps, function() {
         var catalog = require("pilot/plugin_manager").catalog;
         catalog.registerPlugins([ "pilot/index" ]).then(function() {
             var env = require("pilot/environment").create();
