@@ -96,20 +96,27 @@ tk.getLineTokens = function(line, startState) {
 	} else {
 		lang = 'js'
 	}
-	console.log('lang')
+
 	if (line.substr(0, dl) == delimiter){
-		if(match = line.match(/lang\s*=\s*(\w+)\b/))
+		var tok = [{type:'cellHead', value: delimiter}]
+		var index = dl
+		if(match = line.match(/lang\s*=\s*(\w+)\b/)){
 			lang = match[1]
+			if(dl < match.index){
+				tok.push({type:'cell', value:line.substring(dl, match.index)})
+			}
+			tok.push({type:'cell.comment.doc', value:match[0]})
+			index = match.index + match[0].length
+		}
+		tok.push({type:'cell', value:line.substr(index)})
+		
+		if (!isHeader) {
+			tok.push({type:'filler', value:' '})
+		}
 		ans = {
-			tokens : [
-				{type:'cellHead', value: delimiter},
-				{type:'cell', value:line.substr(dl)}
-			],
+			tokens : tok,
 			state : {state:"start",lang:lang,isHeader:true}
 		};
-		if (!isHeader) {
-			ans.tokens.push({type:'filler', value:' '})
-		}
 	}
 	else {	
 		var ans = (modes[lang]||jsMode).$tokenizer.getLineTokens(line, startState)
@@ -153,8 +160,20 @@ exports.Mode = Mode;
 
 
 initConsoleMode = function(editor){
-	var comoMode = require('ace/mode/combined').Mode
-	editor.session.setMode(new comoMode);
+	var consoleMode = require('ace/mode/consoleMode').Mode
+	console.log(editor)
+	editor.session.setMode(new consoleMode);
+}
+
+function isLineFoldable(row) {
+	return !!this.getLine(row).match(/(\{|\[)\s*(\/\/.*)?$/)
+	
+	if (!this.foldWidgets)
+		this.foldWidgets = []
+	if (this.foldWidgets[row] != null)
+		return this.foldWidgets[row]
+	else
+		return this.foldWidgets[row] = !!this.getLine(row).match(/(\{|\[)\s*(\/\/.*)?$/)		
 }
 
 

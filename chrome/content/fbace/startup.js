@@ -86,6 +86,8 @@ exports.launch = function(env, options) {
     Editor = require("ace/editor").Editor;
     Renderer = require("ace/virtual_renderer").VirtualRenderer;
 
+    Range = require("ace/range").Range;
+
     EditSession = require("ace/edit_session").EditSession;
     UndoManager = require("ace/undomanager").UndoManager;
 
@@ -96,6 +98,75 @@ exports.launch = function(env, options) {
 
 	var HashHandler = require("ace/keyboard/hash_handler").HashHandler;
 	var Search = require("ace/search").Search;	
+	
+	
+		/**************************** breakpoint handler *********************************************/
+
+	function CStyleFolding(){
+		this.isLineFoldable = function(row) {
+			return !!this.getLine(row).match(/(\{|\[)\s*(\/\/.*)?$/)
+			
+			editor.session.getState(i).isHeader
+			if (!this.foldWidgets)
+				this.foldWidgets = []
+			if (this.foldWidgets[row] != null)
+				return this.foldWidgets[row]
+			else
+				return this.foldWidgets[row] = !!this.getLine(row).match(/(\{|\[)\s*(\/\/.*)?$/)		
+		}
+
+		this.setBreakpoints = function(rows) {
+			this.$breakpoints = [];
+			for (var i=0; i<rows.length; i++) {
+				this.$breakpoints[rows[i]] = true;
+			}
+			this.$lastBreakpoint = this.$breakpoints.lastIndexOf(true);
+			this._dispatchEvent("changeBreakpoint", {});
+		};
+
+		this.clearBreakpoints = function() {
+			this.$breakpoints = [];
+			this.$breakpoints.last = 0;
+			this._dispatchEvent("changeBreakpoint", {});
+		};
+
+		this.setBreakpoint = function(row) {
+			this.$breakpoints[row] = true;
+			this.$breakpoints.last = this.$breakpoints.lastIndexOf(true);
+			this._dispatchEvent("changeBreakpoint", {});
+		};
+
+		this.clearBreakpoint = function(row) {
+			delete this.$breakpoints[row];
+			this.$breakpoints.last = this.$breakpoints.lastIndexOf(true);
+			this._dispatchEvent("changeBreakpoint", {});
+		};
+
+		this.getBreakpoints = function() {
+			return this.$breakpoints;
+		};
+
+		this._delayedDispatchEvent = function(eventName, e, delay) {
+			if (this[eventName+'_Timeout'] !=null || !this._eventRegistry) return;
+
+			var listeners = this._eventRegistry[eventName];
+			if (!listeners || !listeners.length) return;
+
+			var self = this;
+			this[eventName+'_Timeout'] = setTimeout(function(){
+				self[eventName+'_Timeout'] = null
+				self._dispatchEvent(eventName, e)
+			}, delay || 20)
+		};
+
+		this.updateDataOnDocChange = function(e){
+			ert=e
+		}
+	};
+	CStyleFolding.call(EditSession.prototype);
+	
+	/**************************** initialize ****************************************************/
+	
 	// global functions
     toggleGutter = function() {
         editor.renderer.setShowGutter(!env.editor.renderer.showGutter);
@@ -121,6 +192,10 @@ exports.launch = function(env, options) {
 		s.setUseWrapMode(options.wordwrap);
 		s.setTabSize(options.tabsize);
 		s.setWrapLimitRange(null, null);
+		
+		//hack to support folding
+		s.doc.on('change', s.updateDataOnDocChange)
+
         return s;
     };
     EditSession.prototype.setFileInfo = function(path, mime) {
@@ -328,46 +403,8 @@ exports.launch = function(env, options) {
             editor.session.doc.setValue("");
         },
     });
-
-    // breakpoint handler
-    env.editor.renderer.on('gutterclick',onGutterClick)	
-	function onGutterClick(e) {
-		var editor = env.editor, s = editor.session, row = e.row;
-		if (e.htmlEvent.target.className.indexOf('ace_fold-widget') < 0)
-			s[s.$breakpoints[e.row]?'clearBreakpoint':'setBreakpoint'](row);
-		else {
-			var line = s.getLine(row)
-			var match = line.match(/(\{|\[)\s*(\/\/.*)?$/)
-			if (match) {
-				var i = match.index
-				var fold = s.getFoldAt(row, i+1, 1)
-				if (fold) {
-					s.expandFold(fold)
-				} else {
-					var start = {row:row,column:i+1}
-					var end = s.$findClosingBracket(match[1], start)
-					if(end)
-						s.addFold("...", Range.fromPoints(start, end));
-				}
-			}
-		}
-	}
-	
-	function CStyleFolding(){
-		this.isLineFoldable = function(row) {
-			return !!this.getLine(row).match(/(\{|\[)\s*(\/\/.*)?$/)
-			
-			if (!this.foldWidgets)
-				this.foldWidgets = []
-			if (this.foldWidgets[row] != null)
-				return this.foldWidgets[row]
-			else
-				return this.foldWidgets[row] = !!this.getLine(row).match(/(\{|\[)\s*(\/\/.*)?$/)		
-		}		
-	};
-	CStyleFolding.call(EditSession.prototype);
-	
-	/**************************** folding commands *********************************************/
+ 
+ 	/**************************** folding commands ***********************************************/
 	canon.addCommand({
         name: "newCell",
         bindKey: {
@@ -475,9 +512,16 @@ exports.launch = function(env, options) {
             var folds = session.getFoldsInRange(range);
             if(tryToUnfold && folds.length)
                 session.expandFolds(folds);
-            else if(folds.length == 1 && folds[0].range.compare(range) == 0)
-                session.expandFolds(folds);
-            else
+            else if(folds.length == 1 ) {
+                var r1 = folds[0].range
+                if (r1.start.row == range.start.row &&
+                      r1.end.row ==  range.end.row &&
+                      r1.start.column == range.start.column &&
+                      r1.end.column == range.end.column)
+                    session.expandFold(folds[0]);
+                else
+                    addFold = true;
+            } else
                 addFold = true;
         }
         if(addFold) {
@@ -489,6 +533,28 @@ exports.launch = function(env, options) {
         }
     }
 
-	
+	function onGutterClick(e) {
+		var editor = env.editor, s = editor.session, row = e.row;
+		if (e.htmlEvent.target.className.indexOf('ace_fold-widget') < 0)
+			s[s.$breakpoints[e.row]?'clearBreakpoint':'setBreakpoint'](row);
+		else {
+			var line = s.getLine(row)
+			var match = line.match(/(\{|\[)\s*(\/\/.*)?$/)
+			if (match) {
+				var i = match.index
+				var fold = s.getFoldAt(row, i+1, 1)
+				if (fold) {
+					s.expandFold(fold)
+				} else {
+					var start = {row:row,column:i+1}
+					var end = s.$findClosingBracket(match[1], start)
+					if(end)
+						s.addFold("...", Range.fromPoints(start, end));
+				}
+			}
+		}
+	}
+	env.editor.renderer.on('gutterclick',onGutterClick)
+
 };
 });

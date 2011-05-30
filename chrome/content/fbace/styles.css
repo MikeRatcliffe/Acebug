@@ -119,7 +119,9 @@ body {
     width: 100%;
 }
 
-
+.ace_cell{
+	border-top: 1px solid gray;
+}
 
 .ace_cellHead{
 	background:rgba(120,50,100,0.1);

@@ -359,7 +359,7 @@ Firebug.largeCommandLineEditor = {
 
     // * * * * * * * * * * * * * * * * * * * * * *
 	// todo: do we need to support noscript? Cc["@maone.net/noscript-service;1"]
-    enter: function(runSelection) {
+    enter: function(runSelection, dir) {
         var editor = Firebug.Ace.win2.editor;
         if (runSelection)
             var text = editor.getCopyText();
@@ -377,7 +377,7 @@ Firebug.largeCommandLineEditor = {
                 return x;
             }).join('\n');
         }
-        Firebug.largeCommandLineEditor.runCode(text);
+        Firebug.largeCommandLineEditor.runCode(text, thisValue, dir);
     },
 	
 	setErrorLocation: function(context){
@@ -413,15 +413,11 @@ Firebug.largeCommandLineEditor = {
 		var loc = Firebug.currentContext.errorLocation
 		if(loc.fileName == error.fileName) {
 			var lineNumber = error.lineNumber-loc.lineNumber;
-			gbrj=error
-			dump(error.source.slice(loc.before, loc.after).split('\n')
-			,error.lineNumber,loc.lineNumber,lineNumber
-			)
 			var lines = error.source.slice(loc.before, loc.after).split('\n')
 			var line = lines[lineNumber]||lines[lineNumber-1]
 			Firebug.Console.log(error.message + ' `' + line + '` @'+lineNumber)
 		} else
-			Firebug.Console.log(e)
+			Firebug.Console.log(error)
 	}
 };
 var inputNumber = 0;
