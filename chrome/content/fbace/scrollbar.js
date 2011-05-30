@@ -172,6 +172,8 @@ var ScrollBar = function(parent) {
     };
 
     this.setInnerHeight = function(height) {
+		if(this.pageHeight == height)
+			return
 		this.pageHeight = height
 		this.thumbHeight = this.slideHeight * this.viewHeight/this.pageHeight
 		
@@ -184,13 +186,18 @@ var ScrollBar = function(parent) {
 		
 		if(this.scrollTop>(this.pageHeight-this.viewHeight+2)){
 			this.scrollTop=(this.pageHeight-this.viewHeight)
-			this._dispatchEvent("scroll", {data: this.scrollTop+2});
+			if(this.scrollTop<0)this.scrollTop = 0
+			this._dispatchEvent("scroll", {data: this.scrollTop});
 		}
-	
+		
+		
     };
 
     this.setScrollTop = function(scrollTop) {
-		this.scrollTop=scrollTop
+	//	if(this.scrollTop == scrollTop)
+	//		return
+		this.scrollTop = scrollTop
+		if(scrollTop<0)scrollTop=0
 		this.thumbTop=scrollTop*(this.slideHeight-this.thumbHeight)/(this.pageHeight-this.viewHeight)
 		this.inner.style.top=(this.thumbTop+this.buttonSize)+"px";
     };

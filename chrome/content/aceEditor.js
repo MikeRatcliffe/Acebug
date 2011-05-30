@@ -377,6 +377,7 @@ Firebug.largeCommandLineEditor = {
                 return x;
             }).join('\n');
         }
+		var thisValue
         Firebug.largeCommandLineEditor.runCode(text, thisValue, dir);
     },
 	
