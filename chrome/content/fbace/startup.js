@@ -100,11 +100,12 @@ exports.launch = function(env, options) {
 	var Search = require("ace/search").Search;	
 	
 	
-		/**************************** breakpoint handler *********************************************/
+	/**************************** breakpoint handler *********************************************/
 
 	function CStyleFolding(){
 		this.isLineFoldable = function(row) {
-			return !!this.getLine(row).match(/(\{|\[)\s*(\/\/.*)?$/)
+			return this.getLine(row).search(/(\{|\[)\s*(\/\/.*)?$/) != -1 ||
+					this.getState(row).isHeader==1
 			
 			editor.session.getState(i).isHeader
 			if (!this.foldWidgets)
@@ -161,6 +162,7 @@ exports.launch = function(env, options) {
 
 		this.updateDataOnDocChange = function(e){
 			ert=e
+			console.log(ert.data)
 		}
 	};
 	CStyleFolding.call(EditSession.prototype);
@@ -225,6 +227,10 @@ exports.launch = function(env, options) {
     window.env = env;
 
     jsDoc = createSession('', '.js');
+	
+	// not needed in acebug
+    Renderer.prototype.moveTextAreaToCursor =
+	require("ace/layer/text").Text.prototype.$pollSizeChanges=function(){}
 
     var container = document.getElementById("editor");
     editor = env.editor = new Editor(new Renderer(container, options.theme));
@@ -239,7 +245,6 @@ exports.launch = function(env, options) {
     editor.renderer.setHScrollBarAlwaysVisible(false);
 
     // not needed in acebug
-    editor.renderer.moveTextAreaToCursor =
     editor.textInput.onContextMenu = function() {};
     // don't let firebug's commandLinePopup to interfere
     editor.textInput.getElement().classList.add("textEditorInner");
@@ -309,6 +314,7 @@ exports.launch = function(env, options) {
     var bindings = {
         startAutocompleter: "Ctrl-Space|Ctrl-.|Alt-.",
         execute: "Ctrl-Return",
+		dirExecute: "Ctrl-Shift-Return",
         duplicate: "Ctrl-D|Alt-D"
     };
 
@@ -316,7 +322,6 @@ exports.launch = function(env, options) {
         startAutocompleter: 'Ctrl-Space',
         complete: 'Return',
         dotComplete: 'Ctrl-.|Alt-.',
-        execute: 'Ctrl-Return',
         cancelCompletion: 'Esc',
         nextEntry: 'Down',
         previousEntry: 'Up'

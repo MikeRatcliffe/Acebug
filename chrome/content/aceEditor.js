@@ -271,7 +271,8 @@ Firebug.largeCommandLineEditor = {
 
         //add shortcuts
         editor.addCommands({
-            execute: Firebug.largeCommandLineEditor.enter
+            execute: function()Firebug.largeCommandLineEditor.enter(true, false),
+            dirExecute: function()Firebug.largeCommandLineEditor.enter(true, true)
         });
     },
     // called if ace still loading
@@ -360,6 +361,7 @@ Firebug.largeCommandLineEditor = {
     // * * * * * * * * * * * * * * * * * * * * * *
 	// todo: do we need to support noscript? Cc["@maone.net/noscript-service;1"]
     enter: function(runSelection, dir) {
+		this.$useConsoleDir = dir;
         var editor = Firebug.Ace.win2.editor;
         if (runSelection)
             var text = editor.getCopyText();
@@ -378,7 +380,7 @@ Firebug.largeCommandLineEditor = {
             }).join('\n');
         }
 		var thisValue
-        Firebug.largeCommandLineEditor.runCode(text, thisValue, dir);
+        Firebug.largeCommandLineEditor.runCode(text, thisValue);
     },
 	
 	setErrorLocation: function(context){
@@ -408,7 +410,9 @@ Firebug.largeCommandLineEditor = {
             );
 	},
 	logSuccess: function(e){
-		Firebug.Console.log(e)
+		Firebug.largeCommandLineEditor.$useConsoleDir?
+			Firebug.Console.log(e,  Firebug.currentContext, "dir", Firebug.DOMPanel.DirTable):
+			Firebug.Console.log(e);
 	},
 	logError: function(error) {
 		var loc = Firebug.currentContext.errorLocation

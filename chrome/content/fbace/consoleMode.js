@@ -88,34 +88,35 @@ getCurrentCell = function() {
 }
 
 tk.getLineTokens = function(line, startState) {
-	var match,lang,isHeader;
+	var match,lang,isHeader = 0;
 	if (typeof startState == 'object') {
 		lang = startState.lang;
-		isHeader = startState.isHeader
+		isHeader = startState.isHeader||0;
 		startState = startState.state||"start";
 	} else {
 		lang = 'js'
 	}
 
-	if (line.substr(0, dl) == delimiter){
-		var tok = [{type:'cellHead', value: delimiter}]
+	if (line.substr(0, dl) == delimiter) {
 		var index = dl
+		var type = !isHeader?'firstcell.':''
+		var tok = [{type:type+'cellHead', value: delimiter}]
 		if(match = line.match(/lang\s*=\s*(\w+)\b/)){
 			lang = match[1]
 			if(dl < match.index){
-				tok.push({type:'cell', value:line.substring(dl, match.index)})
+				tok.push({type:type, value:line.substring(dl, match.index)})
 			}
-			tok.push({type:'cell.comment.doc', value:match[0]})
+			tok.push({type: type+'comment.doc', value:match[0]})
 			index = match.index + match[0].length
 		}
-		tok.push({type:'cell', value:line.substr(index)})
+		tok.push({type:type, value:line.substr(index)})
 		
 		if (!isHeader) {
 			tok.push({type:'filler', value:' '})
 		}
 		ans = {
 			tokens : tok,
-			state : {state:"start",lang:lang,isHeader:true}
+			state : {state:"start", lang:lang, isHeader:isHeader + 1}
 		};
 	}
 	else {	

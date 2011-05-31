@@ -25,7 +25,7 @@
                                 <toolbarbutton id="fbCmdLineRunButton" label="firebug.Run"
                                     class="toolbar-text-button fbInternational"
                                     tooltiptext="firebug.Run_the_entered_command"
-                                    onclick="Firebug.largeCommandLineEditor.enter(event.button)"
+                                    onclick="Firebug.largeCommandLineEditor.enter(event.button, event.shiftKey|event.ctrlKey)"
                                     oncommand=""/>
                                 <toolbarbutton id="fbCmdLineClearButton" label="firebug.Clear"
                                     class="toolbar-text-button fbInternational"
