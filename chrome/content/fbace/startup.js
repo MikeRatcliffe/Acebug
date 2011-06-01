@@ -105,7 +105,7 @@ exports.launch = function(env, options) {
 	function CStyleFolding(){
 		this.isLineFoldable = function(row) {
 			return this.getLine(row).search(/(\{|\[)\s*(\/\/.*)?$/) != -1 ||
-					this.getState(row).isHeader==1
+					(this.getState(row).isHeader == 1 && row + 1 < env.editor.session.getLength())
 			
 			editor.session.getState(i).isHeader
 			if (!this.foldWidgets)
@@ -243,6 +243,7 @@ exports.launch = function(env, options) {
     editor.setHighlightSelectedWord(options.highlightselectedword);
     editor.session.setUseWorker(options.validateasyoutype);
     editor.renderer.setHScrollBarAlwaysVisible(false);
+	editor.setBehavioursEnabled(true);
 
     // not needed in acebug
     editor.textInput.onContextMenu = function() {};
@@ -553,9 +554,34 @@ exports.launch = function(env, options) {
 				} else {
 					var start = {row:row,column:i+1}
 					var end = s.$findClosingBracket(match[1], start)
-					if(end)
+					if (end)
 						s.addFold("...", Range.fromPoints(start, end));
 				}
+				return
+			}
+			var mode = s.$mode
+			if (!mode.delimiter)
+				return
+
+			if (line.substr(0, mode.dl) == mode.delimiter) {
+				var fold = s.getFoldAt(row, mode.dl, 1)
+				if (!fold){
+					var foldLine = s.getFoldLine(row);
+					if(foldLine && foldLine.start.row != foldLine.end.row) {
+						s.expandFolds(foldLine.folds)
+						return
+					}
+				}
+				
+				if (fold) {
+					s.expandFold(fold)
+				} else {
+					var cell = mode.getCellBounds(row)
+					var start = {row: row, column: mode.dl};
+					var end = {row: cell.bodyEnd, column: 0};
+					s.addFold("...", Range.fromPoints(start, end));
+				}
+				return
 			}
 		}
 	}

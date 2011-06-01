@@ -368,8 +368,9 @@ Firebug.largeCommandLineEditor = {
         if (!text) {
             //log lines with breakpoints
             var bp = editor.session.$breakpoints;
-            text = editor.session.doc.$lines.map(function(x, i) {
-				if (bp[i]) {
+			var cell = editor.session.getMode().getCurrentCell()
+            text = cell.body.map(function(x, i) {
+				if (bp[i + cell.bodyStart]) {
 					x = x.replace(/\/\/.*$/,'').replace(/;\s*$/,'') // strip comments and ;
 					if (x.search(/\bvar\b/)) {
 						x.replace(/\bvar\s*/)
@@ -425,6 +426,7 @@ Firebug.largeCommandLineEditor = {
 			Firebug.Console.log(error)
 	}
 };
+
 var inputNumber = 0;
 /***********************************************************/
 

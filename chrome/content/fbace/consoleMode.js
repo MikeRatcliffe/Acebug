@@ -51,42 +51,6 @@ var tk = {}
 var delimiter = '#>>'
 var dl = delimiter.length
 
-getCurrentCell = function() {
-	var lines = editor.session.doc.$lines;
-	var cursor = editor.getCursorPosition();
-
-	var i = cursor.row+1
-	var line = lines[i]
-	while(line != null){
-		if(line.substr(0,dl)==delimiter)
-			break
-		line = lines[++i]
-	}
-	var maxI = i-1;
-
-	i = cursor.row
-	line = lines[i]
-	while(line != null){
-		if(line.substr(0,dl)==delimiter)
-			break
-		line = lines[--i]
-	}
-	var minI = i+1
-	
-	while(line != null) {
-		if(line.substr(0,dl)!=delimiter)
-			break
-		line = lines[--i]
-	}
-	
-	var headerI = i+1
-
-	return {
-		header: editor.session.getLines(headerI, minI-1 ),
-		body: editor.session.getLines(minI, maxI)
-	}
-}
-
 tk.getLineTokens = function(line, startState) {
 	var match,lang,isHeader = 0;
 	if (typeof startState == 'object') {
@@ -134,6 +98,57 @@ var Mode = function() {
 oop.inherits(Mode, TextMode);
 
 (function() {
+	this.delimiter = delimiter;
+	this.dl = dl;
+	this.getCellBounds = function(row) {
+		var lines = editor.session.doc.$lines;
+
+		var i = row+1
+		var line = lines[i]
+		while(line != null){
+			if(line.substr(0,dl)==delimiter)
+				break
+			line = lines[++i]
+		}
+		var maxI = i-1;
+
+		i = row
+		line = lines[i]
+		while(line != null){
+			if(line.substr(0,dl)==delimiter)
+				break
+			line = lines[--i]
+		}
+		var minI = i+1
+		
+		while(line != null) {
+			if(line.substr(0,dl)!=delimiter)
+				break
+			line = lines[--i]
+		}
+		
+		var headerI = i+1
+
+		return {
+			headerStart: headerI,
+			headerEnd: minI-1,
+			bodyStart: minI,
+			bodyEnd: maxI
+		}
+	};
+	
+	this.getCurrentCell = function() {
+		var cursor = editor.getCursorPosition();
+		var session = editor.session
+		var lines = session.doc.$lines;
+		
+		var bounds = this.getCellBounds(cursor.row);
+		bounds.header = session.getLines(bounds.headerStart, bounds.headerEnd)
+		bounds.body = session.getLines(bounds.bodyStart, bounds.bodyEnd)
+
+		return bounds;			
+	};
+	
     this.toggleCommentLines = function(state, doc, startRow, endRow) {
 		(modes[state.lang]||jsMode).toggleCommentLines(state.state, doc, startRow, endRow)
     };
@@ -153,6 +168,10 @@ oop.inherits(Mode, TextMode);
     this.createWorker = function(session) {
         //return this.jsMode.createWorker(session);
     };
+	
+	this.transformAction = function(state, action, editor, session, param) {
+        return (modes[state.lang]||jsMode).transformAction(state, action, editor, session, param);
+    }
 
 }).call(Mode.prototype);
 

@@ -169,10 +169,14 @@ var ScrollBar = function(parent) {
         this.element.style.height = this.height + "px";
 		this.slideHeight = this.height - 2*this.buttonSize
 		this.viewHeight=this.height	
+
+		// force setInnerHeight updating
+		// this.pageHeight = -1
+		this.setInnerHeight(this.pageHeight, true)
     };
 
-    this.setInnerHeight = function(height) {
-		if(this.pageHeight == height)
+    this.setInnerHeight = function(height, force) {
+		if(this.pageHeight == height && !force)
 			return
 		this.pageHeight = height
 		this.thumbHeight = this.slideHeight * this.viewHeight/this.pageHeight

@@ -19,6 +19,7 @@
             <preference id="acebug-wordwrap" name="extensions.acebug.wordwrap" type="bool" />
             <preference id="acebug-theme" name="extensions.acebug.theme" type="string" />
             <preference id="acebug-keybinding" name="extensions.acebug.keybinding" type="string" />
+            <preference id="acebug-instantApply" name="browser.preferences.instantApply" type="bool" />
         </preferences>
 
         <groupbox>
@@ -60,6 +61,7 @@
                 </vbox>
             </box>
         </groupbox>
+		<checkbox preference="acebug-instantApply" label="acebug-instantApply" />
     </prefpane>
 
     <script type="application/x-javascript" src="chrome://acebug/content/options.js"/>
