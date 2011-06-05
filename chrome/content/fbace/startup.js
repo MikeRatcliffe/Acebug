@@ -551,6 +551,8 @@ exports.launch = function(env, options) {
 				var fold = s.getFoldAt(row, i+1, 1)
 				if (fold) {
 					s.expandFold(fold)
+					editor.renderer.scrollCursorIntoView()
+					//editor.renderer.scrollToRow(row)
 				} else {
 					var start = {row:row,column:i+1}
 					var end = s.$findClosingBracket(match[1], start)
@@ -564,7 +566,7 @@ exports.launch = function(env, options) {
 				return
 
 			if (line.substr(0, mode.dl) == mode.delimiter) {
-				var fold = s.getFoldAt(row, mode.dl, 1)
+				var fold = s.getFoldAt(row, 0, 1)
 				if (!fold){
 					var foldLine = s.getFoldLine(row);
 					if(foldLine && foldLine.start.row != foldLine.end.row) {
@@ -575,11 +577,13 @@ exports.launch = function(env, options) {
 				
 				if (fold) {
 					s.expandFold(fold)
+					editor.renderer.scrollCursorIntoView()
 				} else {
 					var cell = mode.getCellBounds(row)
-					var start = {row: row, column: mode.dl};
-					var end = {row: cell.bodyEnd, column: 0};
-					s.addFold("...", Range.fromPoints(start, end));
+					var start = {row: row, column: 0};
+					var end = {row: cell.bodyEnd, column: s.getLine(cell.bodyEnd).length};
+					var placeholder = s.getLine(cell.headerStart).slice(0,10) + "_______";
+					s.addFold(placeholder, Range.fromPoints(start, end));
 				}
 				return
 			}

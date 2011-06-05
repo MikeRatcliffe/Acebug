@@ -40,14 +40,14 @@ function transformPath(path) {
     return aceRoot + path + '.js'
 }
 
-require = loadScripts = function(deps, callback, lastUrl) {
+loadScripts = function(deps, callback, lastUrl) {
     //console.log(deps)
     if (typeof deps === 'string') // module's path is wrong
         return;
 
     var url = deps.shift();
     if (!url)
-        return callback && callback(require(lastUrl));
+        return callback && callback(_require(lastUrl));
 
     var script = document.createElement("script");
     script.type = "text/javascript;version=1.8";
@@ -55,6 +55,7 @@ require = loadScripts = function(deps, callback, lastUrl) {
         this.onload = null;
         loadScripts(deps, callback, url);
     };
+	script.onerror = alert
 
     script.src = transformPath(url);
     document.documentElement.appendChild(script);
@@ -67,20 +68,13 @@ var _define = function(module, deps, payload) {
         payload = deps;
 
     if (typeof module !== 'string') {
-        if (_define.original)
-            _define.original.apply(window, arguments);
-        else
-            console.error('dropping module because define wasn\'t a string.');
-
+        console.error('dropping module because define wasn\'t a string.');
         return;
     }
-    if(!define.modules[module])
-        define.modules[module] = payload;
+    if(!require.modules[module])
+        require.modules[module] = payload;
 };
 
-_define.modules = {};
-if (window.define)
-    _define.original = window.define;
 window.define = _define;
 
 var _require = function(module, callback) {
@@ -88,8 +82,8 @@ var _require = function(module, callback) {
         var params = [];
         for (var i = 0, l = module.length; i < l; ++i) {
             var dep = lookup(module[i]);
-            if (!dep && _require.original)
-                return _require.original.apply(window, arguments);
+            if (!dep)
+                return loadScripts.apply(window, arguments);
             params.push(dep);
         }
         if (callback) {
@@ -99,11 +93,10 @@ var _require = function(module, callback) {
     else if (typeof module === 'string') {
         var payload = lookup(module);
         if (!payload && _require.original)
-            return _require.original.apply(window, arguments);
+            return;
 
-        if (callback) {
+        if (callback)
             callback();
-        }
 
         return payload;
     }
@@ -113,6 +106,7 @@ var _require = function(module, callback) {
     }
 };
 
+_require.modules = {};
 if (window.require)
     _require.original = window.require;
 
@@ -120,7 +114,7 @@ window.require = _require;
 require.packaged = true;
 
 var lookup = function(moduleName) {
-    var module = define.modules[moduleName];
+    var module = require.modules[moduleName];
     if (module == null) {
         //console.error('Missing module: ' + moduleName);
         return null;
@@ -130,7 +124,7 @@ var lookup = function(moduleName) {
         var exports = {};
         module(require, exports, { id: moduleName, uri: '' });
         // cache the resulting module object for next time
-        define.modules[moduleName] = exports;
+        require.modules[moduleName] = exports;
         return exports;
     }
 
@@ -158,7 +152,7 @@ var startAce = function(callback, options, deps) {
 	if(deps)
 		rootDeps.unshift.apply(rootDeps, deps)
 
-		require(rootDeps, function() {
+	require(rootDeps, function() {
         var catalog = require("pilot/plugin_manager").catalog;
         catalog.registerPlugins([ "pilot/index" ]).then(function() {
             var env = require("pilot/environment").create();

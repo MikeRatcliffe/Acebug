@@ -1,55 +1,40 @@
+var coffeeScriptCompiler
 define('ace/mode/consoleMode', function(require, exports, module) {
 
 var oop = require("pilot/oop");
 var TextMode = require("ace/mode/text").Mode;
 var Range = require("ace/range").Range;
-var modes, jsMode
+var jsMode = require("ace/mode/javascript").Mode
+modes = {
+	js: new jsMode,
+	get coffee(){
+		var req  = window.require, def = window.define
+		require(["ace/mode/coffee", /*"worker-coffee"*/"fbace/coffee-script"], function(){
+			var cf = require("ace/mode/coffee").Mode
+			modes.coffee = new cf
+			coffeeScriptCompiler = this.CoffeeScript
+		})
+		delete this.coffee
+		this.coffee = new TextMode
+	}
+}
+jsMode = modes.js
 
-function initModes(){
-	var JavaScriptMode = require("ace/mode/javascript").Mode;	
-	var CoffeeMode = require("ace/mode/coffee").Mode;
-	/*var CssMode = require("ace/mode/css").Mode;
-	var HtmlMode = require("ace/mode/html").Mode;
-	var XmlMode = require("ace/mode/xml").Mode;
-	var PythonMode = require("ace/mode/python").Mode;
-	var PhpMode = require("ace/mode/php").Mode;
-	var JavaMode = require("ace/mode/java").Mode;
-	var CSharpMode = require("ace/mode/csharp").Mode;
-	var RubyMode = require("ace/mode/ruby").Mode;
-	var CCPPMode = require("ace/mode/c_cpp").Mode;
-	var PerlMode = require("ace/mode/perl").Mode;
-	var OcamlMode = require("ace/mode/ocaml").Mode;
-	var SvgMode = require("ace/mode/svg").Mode;
-	var TextileMode = require("ace/mode/textile").Mode;
-	var TextMode = require("ace/mode/text").Mode;*/
-	 
-	modes = {
-		/*text: new TextMode(),
-		textile: new TextileMode(),
-		svg: new SvgMode(),
-		xml: new XmlMode(),
-		html: new HtmlMode(),
-		css: new CssMode(),
-		python: new PythonMode(),
-		php: new PhpMode(),
-		java: new JavaMode(),
-		ruby: new RubyMode(),
-		c_cpp: new CCPPMode(),
-		perl: new PerlMode(),
-		ocaml: new OcamlMode(),
-		csharp: new CSharpMode()*/
-		javascript: new JavaScriptMode(),
-		coffee: new CoffeeMode(),
-	};
-	//modes.c = modes.c_cpp
-	modes.js = modes.javascript
-	modes.cf = modes.coffee
-	//modes.py = modes.python
-	jsMode = modes.js
-}	
 var tk = {}
 var delimiter = '#>>'
 var dl = delimiter.length
+function testLang(lang, fullName){
+	lang=lang.toLowerCase()
+	fullName=fullName.toLowerCase()
+	var lastI=0
+	for(var j = 0, ftLen = lang.length; j < ftLen; j++) {
+		lastI = fullName.indexOf(lang[j], lastI);
+		if (lastI === -1)
+			return false; //doesn't match
+		lastI++;
+	}
+	return true
+}
 
 tk.getLineTokens = function(line, startState) {
 	var match,lang,isHeader = 0;
@@ -66,8 +51,9 @@ tk.getLineTokens = function(line, startState) {
 		var type = !isHeader?'firstcell.':''
 		var tok = [{type:type+'cellHead', value: delimiter}]
 		if(match = line.match(/lang\s*=\s*(\w+)\b/)){
-			lang = match[1]
-			if(dl < match.index){
+			lang = testLang(match[1],'coffeeScript')?'coffee':'js'
+
+			if(dl < match.index) {
 				tok.push({type:type, value:line.substring(dl, match.index)})
 			}
 			tok.push({type: type+'comment.doc', value:match[0]})
@@ -92,8 +78,6 @@ tk.getLineTokens = function(line, startState) {
 
 var Mode = function() {
     this.$tokenizer = tk;
-	if(!modes)
-		initModes()
 };
 oop.inherits(Mode, TextMode);
 
@@ -142,11 +126,47 @@ oop.inherits(Mode, TextMode);
 		var session = editor.session
 		var lines = session.doc.$lines;
 		
-		var bounds = this.getCellBounds(cursor.row);
-		bounds.header = session.getLines(bounds.headerStart, bounds.headerEnd)
-		bounds.body = session.getLines(bounds.bodyStart, bounds.bodyEnd)
+		var cell = this.getCellBounds(cursor.row);
+		cell.header = session.getLines(cell.headerStart, cell.headerEnd)
+		cell.body = session.getLines(cell.bodyStart, cell.bodyEnd)
+		cell.lang = session.getState(cell.headerStart).lang
+		
+		if(cell.lang=='coffee')
+			compileJSCell(cell);
+		
+		cell.headerText = cell.header.join('\n')
+					.replace(/lang\s*=\s*(\w+)\b/g,'')
+					.replace(delimiter, '', 'g')
+					.trim();
 
-		return bounds;			
+		return cell;			
+	};
+	
+	function compileJSCell(cell) {
+		try {			
+			cell.coffeeText = coffeeScriptCompiler.compile(cell.body.join('\n'), {bare: true})
+		} catch(e) {
+			var m = e.message.match(/Parse error on line (\d+): (.*)/);
+			if (m) {
+				cell.coffeeError = {
+					row: parseInt(m[1]) - 1,
+					column: null,
+					text: m[2],
+					source: ""
+				};
+			}
+			if (e instanceof SyntaxError) {
+                var m = e.message.match(/ on line (\d+)/);
+                if (m) {                    
+                    cell.coffeeError = {
+                        row: parseInt(m[1]) - 1,
+                        column: null,
+                        text: e.message.replace(m[0], ""),
+                        source: ""
+                    };
+                }
+            }
+		}
 	};
 	
     this.toggleCommentLines = function(state, doc, startRow, endRow) {

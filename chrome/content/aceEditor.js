@@ -282,7 +282,7 @@ Firebug.largeCommandLineEditor = {
         this._loadingStarted = true;
 
         Firebug.Ace.win2.startAce(bind(this.initialize,this),
-			Firebug.Ace.getOptions(), ['fbace/consoleMode', "ace/mode/coffee"]);
+			Firebug.Ace.getOptions(), ['fbace/consoleMode']);
     },
 
     getValue: function() {
@@ -368,20 +368,29 @@ Firebug.largeCommandLineEditor = {
         if (!text) {
             //log lines with breakpoints
             var bp = editor.session.$breakpoints;
-			var cell = editor.session.getMode().getCurrentCell()
-            text = cell.body.map(function(x, i) {
-				if (bp[i + cell.bodyStart]) {
-					x = x.replace(/\/\/.*$/,'').replace(/;\s*$/,'') // strip comments and ;
-					if (x.search(/\bvar\b/)) {
-						x.replace(/\bvar\s*/)
+			var cell = editor.session.getMode().getCurrentCell();
+			this.cell = cell;
+
+			if (cell.coffeeError) {
+				this.logCoffeeError(cell.coffeeError);
+				return;
+			} else if (cell.coffeeText) {
+				text = cell.coffeeText
+				var sourceLang = 'coffee '
+			} else
+				text = cell.body.map(function(x, i) {
+					if (bp[i + cell.bodyStart]) {
+						x = x.replace(/\/\/.*$/,'').replace(/;\s*$/,'') // strip comments and ;
+						if (x.search(/\bvar\b/)) {
+							x.replace(/\bvar\s*/)
+						}
+						x = 'console.log(' + x + ')'
 					}
-					x = 'console.log(' + x + ')'
-				}
-                return x;
-            }).join('\n');
+					return x;
+				}).join('\n');
         }
 		var thisValue
-        Firebug.largeCommandLineEditor.runCode(text, thisValue);
+        Firebug.largeCommandLineEditor.runCode(text, thisValue, sourceLang);
     },
 	
 	setErrorLocation: function(context){
@@ -397,13 +406,13 @@ Firebug.largeCommandLineEditor = {
 			});
 	},
 	
-	runCode: function(code, thisValue) {
+	runCode: function(code, thisValue, sourceLang) {
 		var context = Firebug.currentContext
 		if(!context.errorLocation)
 			this.setErrorLocation(context)
 		
 		var shortExpr = cropString(code.replace(/\s*/g, ''), 100);
-        Firebug.Console.log("in:" + (inputNumber++) + ">>> "  + shortExpr, context, "command", FirebugReps.Text);
+        Firebug.Console.log("in:" + (inputNumber++) + ">>> " + (sourceLang||"") + shortExpr, context, "command", FirebugReps.Text);
 		
 		Firebug.CommandLine.evaluate(code, context, thisValue||context.thisValue, null,
                 Firebug.largeCommandLineEditor.logSuccess,
@@ -418,12 +427,16 @@ Firebug.largeCommandLineEditor = {
 	logError: function(error) {
 		var loc = Firebug.currentContext.errorLocation
 		if(loc.fileName == error.fileName) {
+			var cellStart = Firebug.largeCommandLineEditor.cell.headerEnd
 			var lineNumber = error.lineNumber-loc.lineNumber;
 			var lines = error.source.slice(loc.before, loc.after).split('\n')
 			var line = lines[lineNumber]||lines[lineNumber-1]
-			Firebug.Console.log(error.message + ' `' + line + '` @'+lineNumber)
+			Firebug.Console.log(error.message + ' `' + line + '` @'+(lineNumber+cellStart))
 		} else
 			Firebug.Console.log(error)
+	},
+	logCoffeeError: function(error) {
+		Firebug.Console.log(error.text + ' `' + error.source + '` @'+(error.row+this.cell.bodyStart))
 	}
 };
 
