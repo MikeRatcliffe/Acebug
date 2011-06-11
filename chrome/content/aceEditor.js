@@ -333,8 +333,7 @@ Firebug.largeCommandLineEditor = {
     __noSuchMethod__: function() {
     },
 
-    addContextMenuItems: function(items, editor, editorText)
-    {
+    addContextMenuItems: function(items, editor, editorText) {
         items.unshift(
             {
                 label: $ACESTR("acebug.executeselection"),
@@ -376,7 +375,6 @@ Firebug.largeCommandLineEditor = {
 				return;
 			} else if (cell.coffeeText) {
 				text = cell.coffeeText
-				var sourceLang = 'coffee '
 			} else
 				text = cell.body.map(function(x, i) {
 					if (bp[i + cell.bodyStart]) {
@@ -390,12 +388,21 @@ Firebug.largeCommandLineEditor = {
 					return x;
 				}).join('\n');
         }
-		if(text[text.length-1]=='.')
+		if(text[text.length-1] == '.')
 			text = text.slice(0, -1)
 
-		var thisValue
-        Firebug.largeCommandLineEditor.runCode(text, thisValue, sourceLang);
+		Firebug.largeCommandLineEditor.runUserCode(text, cell);
     },
+	
+	setThisValue: function(code, cell){
+		cell = cell || Firebug.Ace.win2.editor.session.getMode().getCurrentCell();
+		var thisValue = cell.headerText.match(/this\s*=(.*)/)
+		if (thisValue&&code){
+			code = '(function(){return eval(' + code.quote() + ')}).call(' + thisValue[1] + ')'
+		}
+		dump(code)
+		return code
+	},
 	
 	setErrorLocation: function(context){
 		Firebug.CommandLine.evaluate('++++', context, context.thisValue, null,
@@ -410,15 +417,16 @@ Firebug.largeCommandLineEditor = {
 			});
 	},
 	
-	runCode: function(code, thisValue, sourceLang) {
+	runUserCode: function(code, cell) {
 		var context = Firebug.currentContext
 		if(!context.errorLocation)
 			this.setErrorLocation(context)
 		
 		var shortExpr = cropString(code.replace(/\s*/g, ''), 100);
-        Firebug.Console.log("in:" + (inputNumber++) + ">>> " + (sourceLang||"") + shortExpr, context, "command", FirebugReps.Text);
+        Firebug.Console.log("in:" + (inputNumber++) + ">>> " + cell.sourceLang + shortExpr, context, "command", FirebugReps.Text);
 		
-		Firebug.CommandLine.evaluate(code, context, thisValue||context.thisValue, null,
+		this.setThisValue(code, this.cell)
+		Firebug.CommandLine.evaluate(code, context, context.thisValue, null,
                 Firebug.largeCommandLineEditor.logSuccess,
                 Firebug.largeCommandLineEditor.logError
             );

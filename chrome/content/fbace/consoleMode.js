@@ -131,8 +131,11 @@ oop.inherits(Mode, TextMode);
 		cell.body = session.getLines(cell.bodyStart, cell.bodyEnd)
 		cell.lang = session.getState(cell.headerStart).lang
 		
-		if(cell.lang=='coffee')
+		if (cell.lang=='coffee') {
 			compileJSCell(cell);
+			cell.sourceLang = 'coffee '
+		} else
+			cell.sourceLang = ''
 		
 		cell.headerText = cell.header.join('\n')
 					.replace(/lang\s*=\s*(\w+)\b/g,'')

@@ -47,9 +47,11 @@ function treeView(table) {
 Firebug.Ace.startAutocompleter = FBL.bind(function(editor) {
     var type = editor.session.autocompletionType;
 
-	if (type = 'console')
-        this.autocompleter = this.ConsoleAutocompleter;
-    else if (type == 'js')
+	//if (type = 'console')
+    //    this.autocompleter = this.ConsoleAutocompleter;
+    //else 
+	dump(type)
+	if (type == 'js')
         this.autocompleter = this.JSAutocompleter;
     else if (type == 'css')
         this.autocompleter = this.CSSAutocompleter;
@@ -383,11 +385,11 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
         this.filterRange.start.column = this.filterRange.end.column - nameFragment.length;		
 
 		if (eqName) { // style.eqName = '
-			this.unfilteredArray = Firebug.Ace.CSSAutocompleter.propValue(eqName)
+			this.unfilteredArray = Firebug.Ace.CSSAutocompleter.propValue([null,null,null,eqName])
 			this.filter(this.unfilteredArray, this.text);
 			this.showPanel();
 		}else
-			this.eval(evalString);
+			this.eval(Firebug.largeCommandLineEditor.setThisValue(evalString));
     },
 
     // *****************
@@ -792,7 +794,6 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
             return [mode,termChar,curWord]
         }
         if (ch==' ') {
-            var j = i;
             while(next() == ' ');
             if (ch && !rx.test(ch))
                 termChar = ch;
