@@ -96,8 +96,8 @@ exports.launch = function(env, options) {
     XMLMode = require("ace/mode/xml").Mode;
 	JSMode = require("ace/mode/javascript").Mode;
 
-	var HashHandler = require("ace/keyboard/hash_handler").HashHandler;
-	var Search = require("ace/search").Search;	
+	HashHandler = require("ace/keyboard/hash_handler").HashHandler;
+	Search = require("ace/search").Search;	
 	
 	
 	/**************************** breakpoint handler *********************************************/
@@ -231,6 +231,10 @@ exports.launch = function(env, options) {
 	// not needed in acebug
     Renderer.prototype.moveTextAreaToCursor =
 	require("ace/layer/text").Text.prototype.$pollSizeChanges=function(){}
+	Editor.prototype.setFontSize= function(size){
+		this.container.fontSize = size
+		this.renderer.$textLayer.checkForSizeChanges()
+	}
 
     var container = document.getElementById("editor");
     editor = env.editor = new Editor(new Renderer(container, options.theme));
@@ -322,6 +326,7 @@ exports.launch = function(env, options) {
     editor.autocompletionKeySet = new HashHandler({
         startAutocompleter: 'Ctrl-Space',
         complete: 'Return',
+        completeAndReplace: 'Shift-Return',
         dotComplete: 'Ctrl-.|Alt-.',
         cancelCompletion: 'Esc',
         nextEntry: 'Down',

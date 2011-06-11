@@ -47,10 +47,13 @@ var __AceBugDevel__ = {
     }
 };
 
-if (!document.getElementById('__AceBugDevel__')) {
+window.addEventListener('load', function(){
+	window.removeEventListener('load', arguments.callee.caller, false)
+
     let t = document.createElement('toolbarbutton');
-    document.getElementById("status-bar").appendChild(t);
+    var sb = document.getElementById("fbCommandToolbar") 
+	sb.appendChild(t);
     t.setAttribute('oncommand','__AceBugDevel__.doReload()');
     t.id = '__AceBugDevel__';
     t.label = 'AceBugDevel';
-}
+},false)

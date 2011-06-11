@@ -7,6 +7,7 @@
     <script type="application/x-javascript" src="chrome://acebug/content/aceEditor.js"/>
     <script type="application/x-javascript" src="chrome://acebug/content/autocompleter.js"/>
     <script type="application/x-javascript" src="chrome://acebug/content/resource.js"/>
+    <script type="application/x-javascript" src="chrome://acebug/content/__devel__.js"/>
 
     <vbox id="fbContentBox">
         <box id="fbPanelBox" flex="1">

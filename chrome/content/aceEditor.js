@@ -254,7 +254,7 @@ Firebug.largeCommandLineEditor = {
         var editor = Firebug.Ace.win2.editor;
         editor.session.owner = 'console';
         editor.session.href = '';
-        editor.session.autocompletionType = 'js';
+        editor.session.autocompletionType = 'console';
 		
 		// set mode which allows cells and, js+coffeescript combination 
 		Firebug.Ace.win2.initConsoleMode(editor)
@@ -380,15 +380,19 @@ Firebug.largeCommandLineEditor = {
 			} else
 				text = cell.body.map(function(x, i) {
 					if (bp[i + cell.bodyStart]) {
-						x = x.replace(/\/\/.*$/,'').replace(/;\s*$/,'') // strip comments and ;
-						if (x.search(/\bvar\b/)) {
-							x.replace(/\bvar\s*/)
-						}
-						x = 'console.log(' + x + ')'
+						// strip comments and ;
+						x = x.replace(/\/\/.*$/, '')
+							 .replace(/;\s*$/, '') 
+							 .replace(/^var\s+/g, '')
+						if(x)
+							x = 'console.log(' + x + ')'
 					}
 					return x;
 				}).join('\n');
         }
+		if(text[text.length-1]=='.')
+			text = text.slice(0, -1)
+
 		var thisValue
         Firebug.largeCommandLineEditor.runCode(text, thisValue, sourceLang);
     },
@@ -427,7 +431,7 @@ Firebug.largeCommandLineEditor = {
 	logError: function(error) {
 		var loc = Firebug.currentContext.errorLocation
 		if(loc.fileName == error.fileName) {
-			var cellStart = Firebug.largeCommandLineEditor.cell.headerEnd
+			var cellStart = Firebug.largeCommandLineEditor.cell.bodyStart; 
 			var lineNumber = error.lineNumber-loc.lineNumber;
 			var lines = error.source.slice(loc.before, loc.after).split('\n')
 			var line = lines[lineNumber]||lines[lineNumber-1]

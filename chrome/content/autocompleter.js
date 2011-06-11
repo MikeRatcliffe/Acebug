@@ -46,7 +46,10 @@ function treeView(table) {
 /**************************************/
 Firebug.Ace.startAutocompleter = FBL.bind(function(editor) {
     var type = editor.session.autocompletionType;
-    if (type == 'js')
+
+	if (type = 'console')
+        this.autocompleter = this.ConsoleAutocompleter;
+    else if (type == 'js')
         this.autocompleter = this.JSAutocompleter;
     else if (type == 'css')
         this.autocompleter = this.CSSAutocompleter;
@@ -163,6 +166,11 @@ Firebug.Ace.BaseAutocompleter = {
 
             complete: function() {
                 self.insertSuggestedText();
+                self.finish();
+            },
+
+            completeAndReplace: function() {
+                self.insertSuggestedText('', true);
                 self.finish();
             },
 
@@ -363,19 +371,23 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
         this.filterRange = range.clone();
         range.end.column = range.start.column;
         range.start.column = 0;
-        var evalString = editor.session.getTextRange(range);
 
-        var [objString, filterText, funcName] = this.parseJSFragment(evalString);
-        this.funcName = funcName;
+        var {evalString, nameFragment, functionName, eqName} = this.parseJSFragment(editor);
+        this.funcName = functionName;
+        this.text = nameFragment;
 
-        range.end.column = range.end.column - filterText.length - 1;
-        range.start.column = range.end.column - objString.length -1;
+        range.end.column = range.end.column - nameFragment.length - 1;
+        range.start.column = range.end.column - evalString.length -1;
         this.baseRange = range;
 
-        this.filterRange.start.column = this.filterRange.end.column - filterText.length;
+        this.filterRange.start.column = this.filterRange.end.column - nameFragment.length;		
 
-        this.text = filterText;
-        this.eval(objString);
+		if (eqName) { // style.eqName = '
+			this.unfilteredArray = Firebug.Ace.CSSAutocompleter.propValue(eqName)
+			this.filter(this.unfilteredArray, this.text);
+			this.showPanel();
+		}else
+			this.eval(evalString);
     },
 
     // *****************
@@ -394,7 +406,7 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
         return longDescriptor;
     },
 
-    insertSuggestedText: function(additionalText) {
+    insertSuggestedText: function(additionalText, replaceWord) {
         var c = this.tree.view.selection.currentIndex;
         if (c<0)
             return;
@@ -418,7 +430,21 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
             //l -= additionalText.length + 1;
         }
         var range = this.editor.selection.getRange();
+		var curLine = this.editor.session.getLine(range.end.row)
         range.start.column = s;
+		if (replaceWord){
+			var col = range.end.column;
+			var rx = /[a-z$_0-9]/i;
+			while((ch=curLine[col++]) && rx.test(ch)); //select word forward
+			range.end.column = col-1;
+		}
+
+		// do not add last )|}|] if it is already there
+		var lastChar = text.slice(-1);
+		var cursorChar = this.editor.session.getLine(range.end.row)[range.end.column];
+		if (cursorChar == lastChar && /\)|\}|\]|"/.test(lastChar))
+			text = text.slice(-1);
+
         this.editor.selection.setSelectionRange(range);
         this.editor.onTextInput(text);
     },
@@ -460,84 +486,145 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
         this.unfilteredArray = ans.concat(this.unfilteredArray);
     },
 
-    parseJSFragment: function(evalString) {
-        var i0, next, iBuff;
-        var i = evalString.length - 1;
-        var rx = /[a-z$_0-9]/i;
-        var skipWord = function() {
-            i0 = i;
-            while(rx.test(next = evalString.charAt(i))) {
-                i--;
-            }
-        };
-        var skipString = function(comma) {
-            next = evalString.charAt(--i);
-            while(next && (next != comma || evalString.charAt(i-1) === "\\")) {
-                next = evalString.charAt(--i);
-            }
-        };
-        var skipStacks = function() {
-            var stack = [];
-            while(next = evalString.charAt(--i)) {
-                skipWord(); //print(next)
-                switch(next) {
-                    case ".":
-                        skipWord();//print(next)
-                    break;
-                    case "'":
-                    case '"':
-                        skipString(next);
-                    break;
-                    case '}':
-                        stack.push("{");
-                    break;
-                    case ']':
-                        stack.push("[");
-                    break;
-                    case ')':
-                        stack.push("(");
-                    break;
-                        stack.push(next);
-                    break;
-                    case '{':
-                    case '[':
-                    case '(':
-                        //print(next + "bb");
-                        if (stack.pop() !== next)
-                            return;
-                        //print(next + "bb2");
-                    break;
-                    default:
-                        //print(next+22);
-                        if (stack.length === 0)
-                            return;
-                }
-            }
-        ++i;
-        };
+    parseJSFragment: function(editor) {
+        var cursor = editor.selection.getCursor();
+		var row = cursor.row,
+			col = cursor.column,
+			ch, captureCursor, objCursor;
+		var lines = editor.session.doc.$lines;
+		var curLine = lines[row];
 
-        var ans = {evalString:'', nameFragment:'', functionName:''};
+		function next() {
+			return ch = curLine[--col] || (
+				(curLine = lines[--row] || '', col = curLine.length, row<0?'':'\n'));
+		}
+		function peek() {
+			return curLine[col-1] || (row>0 && '\n');
+		}
 
-        skipWord();
-        iBuff = i;
-        ans.nameFragment = evalString.substr(iBuff + 1);
+		function clip(cursor){
+			cursor.column<0 && (cursor.column=0)
+			cursor.row<0 && (cursor.row=0)
+			return cursor
+		}
+		function getText(cursor) {
+			var t = editor.session.getTextRange({
+				start:clip({column:col, row: row}),
+				end: clip(cursor||captureCursor) 
+			});
 
-        if (next === "(") {
-            iBuff = i;
-            i--;
-            skipWord();
-            ans.functionName = evalString.substring(i+1, iBuff);
-        }
+			return ch?t.substr(1):t//.trim();
+		}
+		function capture()
+			captureCursor = {row:row,column:col+(ch?1:0)}
+		function getToken(tocFun){
+			capture()
+			tocFun()
+			return getText()
+		}
 
-        if (next === ".") {
-            iBuff = i;
-            skipStacks();
-            if (next || i < 0)
-                i++;
-            ans.evalString = evalString.substr(i, iBuff-i);
-        }
+		function eatString(comma) {           
+			while(next() && (ch!= comma || peek()=='\\') &&
+					(ch!= '\n' || peek()=='\\'));
+		};
+		var rx = /[a-z$_0-9]/i;
+		function eatWord() {
+			while(next() && rx.test(ch));
+			return ch
+		}
+		function eatSpace() {
+			while(next() == ' ');
+			return ch
+		}
+		function eatWhile(rx) {
+			while(next() && rx.test(ch));
+			return ch
+		}
+		function eatBrackets() {
+			var stack = [];
+			while(ch) {
+				switch(ch) {
+					case "'": case '"':
+						eatString(ch);
+					break;
+					case '}':
+						stack.push("{");
+					break;
+					case ']':
+						stack.push("[");
+					break;
+					case ')':
+						stack.push("(");
+					break;
+					case '{': case '[': case '(':
+						if (stack.pop() !== ch)
+							return;
+					break;				
+				}
+				next()
+				if (stack.length === 0)
+					return;
+			}
+		}
 
-        return [ans.evalString, ans.nameFragment, ans.functionName];
+		var ans = {evalString:'', nameFragment:'', functionName:'', eqName:''};
+		ans.nameFragment = getToken(eatWord)
+		if(ch=="'"||ch=='"'){
+			eatSpace()
+			if (ch=='('){
+				eatSpace()
+				ans.functionName = getToken(eatWord)
+			}else if(ch=='['){
+				eatSpace()
+				objCursor=capture()
+			}else if(ch=='='){
+				eatSpace()
+				ans.eqName = getToken(eatWord)
+			}
+		}
+		ch==' '&&eatSpace()
+		if (ch=='('){
+			eatSpace()
+			ans.functionName = getToken(eatWord)
+		}
+		if (ch=='.'){
+			eatWhile(/\s/)
+			objCursor=capture()
+		}
+		if (objCursor) {
+			outer: while (ch) {
+				switch (ch) {
+					case '.':
+						eatWhile(/\s/)
+					break;
+					case "\n":
+						capture()
+						eatWhile(/\s/);
+						if(ch!='.'){
+							col = captureCursor.column
+							row = captureCursor.row 
+							break outer;
+						}
+					break;
+					case " ":
+						eatSpace(ch);
+					break;
+					case ']':case ')':
+						eatBrackets();
+					break;
+					default:
+						if (rx.test(ch))
+							eatWord();
+						else
+							break outer;
+					break;
+				}
+			}
+
+			ans.evalString=getText(objCursor).trim()
+		}
+
+		return ans
     },
 
     compare: function() {
@@ -576,7 +663,7 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
         return;
     },
 
-    insertSuggestedText: function(additionalText) {
+    insertSuggestedText: function(additionalText, replaceWord) {
         var ch;
         var c = this.tree.view.selection.currentIndex;
         if (c < 0)
@@ -731,6 +818,9 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
         return  ['selector', termChar, curWord];
     }
 });
+
+Firebug.Ace.ConsoleAutocompleter = Firebug.Ace.JSAutocompleter
+
 //css completion helpers
 var getAllCSSPropertyNames=function() {
     var style = document.createElement('c').style;
