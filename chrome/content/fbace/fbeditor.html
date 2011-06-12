@@ -37,6 +37,10 @@ function transformPath(path) {
     if (path.indexOf(sub) === 0) {
         return path.substr(sub.length) + '.js';
     }
+    sub = 'res/';
+    if (path.indexOf(sub) === 0) {
+        return '../' + path + '.js';
+    }
     return aceRoot + path + '.js'
 }
 

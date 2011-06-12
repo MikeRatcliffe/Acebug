@@ -9,7 +9,7 @@ modes = {
 	js: new jsMode,
 	get coffee(){
 		var req  = window.require, def = window.define
-		require(["ace/mode/coffee", /*"worker-coffee"*/"fbace/coffee-script"], function(){
+		require(["ace/mode/coffee", "res/coffee-script"], function(){
 			var cf = require("ace/mode/coffee").Mode
 			modes.coffee = new cf
 			coffeeScriptCompiler = this.CoffeeScript
