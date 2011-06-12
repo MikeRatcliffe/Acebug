@@ -454,35 +454,57 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
     },
     // *****************
     appendSpecialEntries: function() {
-        var funcName = this.funcName;
+        var fu = this.funcName;
         var ans = [];
+		var pre = '\u2555"', post = '"', descr = '';
+		var createItem = function(x) {
+			x = pre + x + post;
+			ans.push({
+				name: x,
+				comName: x.toLowerCase(),
+				description: descr,
+				depth: -1,
+				isSpecial: true
+			});
+		};
         try {
-            if (funcName === "QueryInterface") {
-                supportedInterfaces(this.object).forEach(function(x) {
-                    ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,isSpecial:true});
-                });
-            } else if (funcName === "getInterface") {
-                supportedgetInterfaces(this.object).forEach(function(x) {
-                    ans.push({name:'\u2555Ci.'+x+')',comName: 'ci.'+x.toString().toLowerCase(),description:"interface", depth:-1,isSpecial:true});
-                });
-            } else if (funcName === "getElementById") {
+            if ('createInstance,getService,QueryInterface'.indexOf(fu) != -1) {
+				descr = "interface"
+				pre = '\u2555Ci.'
+				post = ')'
+                supportedInterfaces(this.object).forEach(createItem);
+            } else if (fu == "getInterface") {
+				descr = "interface"
+				pre = '\u2555Ci.'
+				post = ')'
+                supportedgetInterfaces(this.object).forEach(createItem);
+            } else if (fu == "getElementById") {
                 ans = getIDsInDoc(this.object);
-            } else if (funcName === "getElementsByClassName") {
+            } else if (fu == "getElementsByClassName") {
                 ans = getClassesInDoc(this.object);
-            } else if (funcName === "getAttribute" || funcName === "setAttribute" || funcName === "hasAttribute") {
+            } else if (fu == "getAttribute" || fu == "setAttribute" || fu == "hasAttribute") {
                 var att = this.object.attributes;
                 for(var i=0; i < att.length; i++) {
                     var x = att[i];
                     ans.push({name:'\u2555"'+x.nodeName+'")',comName: '"'+x.nodeName.toLowerCase(),description:x.value, depth:-1,isSpecial:true});
                 }
-            } else if (funcName === "addEventListener" || funcName === "removeEventListener") {
-                eventNames.forEach(function(x) {
-                    ans.push({name:'\u2555"'+x+'"',comName: '"'+x.toString().toLowerCase(),description:"event name", depth:-1,isSpecial:true});
-                });
-            } else if ('createElementNS,createAttributeNS,hasAttributeNS'.indexOf(funcName)!=-1) {
-                namespaces.forEach(function(x) {
-                    ans.push({name:'\u2555"'+x+'"',comName: '"'+x.toString().toLowerCase(),description:"ns", depth:-1,isSpecial:true});
-                });
+            } else if (fu == "addEventListener" || fu == "removeEventListener" || fu =='on') {
+				var er
+				if (er = this.object._eventRegistry) try{
+					if(er.forEach)
+						er.forEach(createItem)
+					else
+						Object.keys(er).forEach(createItem)
+				} catch(e){}
+				descr = "browser event name"
+				eventNames.forEach(createItem);
+            } else if ('createElementNS,createAttributeNS,hasAttributeNS'.indexOf(fu)!=-1) {
+				descr = "ns";
+                namespaces.forEach(createItem);
+            } else if (fu == 'require') {
+				descr = "module";
+				if(require && require.modules)
+					require.modules.forEach(createItem);
             }
         } catch(e) {
             Cu.reportError(e);
@@ -1199,10 +1221,9 @@ jn.inspect = function(x, isLong) {
             // fixme: reference stuff must be handled elswhwere
             var funcName = string.match(/ ([^\(]*)/)[1];
 
-
             return string.replace("()", "(~" + x.length + ")")+ '\n' +getMDCInfoFor(funcName);
         }
-        return    string;
+        return string;
     }
     if (Class === "XML")
         return Class + "`\n" + x.toXMLString();
@@ -1301,84 +1322,69 @@ var InspectHandlers = {
     }
 };
 
-var getParent = function(a) {
-    var utils = (window.getInterface ||
-        window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface)(Ci.nsIDOMWindowUtils);
+function handlerMaker(obj) {
+	var objStr = Object.prototype.toString.call(obj)
+	function toS()'[proxy wrapped'+objStr
+	return {
+		getOwnPropertyDescriptor: function(name) {
+			var desc = Object.getOwnPropertyDescriptor(obj, name);
+			// a trapping proxy's properties must always be configurable
+			desc.configurable = true;
+			return desc;
+		},
+		getPropertyDescriptor:  function(name) {
+			var desc = Object.getPropertyDescriptor(obj, name); // assumed
+			// a trapping proxy's properties must always be configurable
+			desc.configurable = true;
+			return desc;
+		},
+		getOwnPropertyNames: function() {
+			if(objStr=='[object Call]')
+				return Object.getOwnPropertyNames(obj);
+			// [object With]
+			var ans = []
+			for(var i in obj)
+				ans.push(i)
+			return ans
+		},
+		defineProperty: function(name, desc) {
+			Object.defineProperty(obj, name, desc);
+		},
+		delete: function(name) { return delete obj[name]; },
+		fix: function() {
+			if (Object.isFrozen(obj)) {
+				return Object.getOwnProperties(obj); // assumed
+			}
+			// As long as obj is not frozen, the proxy won't allow itself to be fixed
+			return undefined; // will cause a TypeError to be thrown
+		},
 
-    function handlerMaker(obj) {
-        return {
-            getOwnPropertyDescriptor: function(name) {
-                var desc = Object.getOwnPropertyDescriptor(obj, name);
-                // a trapping proxy's properties must always be configurable
-                desc.configurable = true;
-                return desc;
-            },
+		has: function(name) { return name in obj; },
+		hasOwn: function(name) { return ({}).hasOwnProperty.call(obj, name); },
+		get: function(receiver, name) {				
+			return name=='toString'?toS:obj[name]; },
+		set: function(receiver, name, val) { obj[name] = val; return true; }, // bad behavior when set fails in non-strict mode
+		enumerate:    function() {
+			var result = [];
+			for (var name in obj) { result.push(name); };
+			return result;
+		},
+		keys: function() { return Object.keys(obj); }
+	};
+}
 
-            getPropertyDescriptor:  function(name) {
-                var desc = Object.getPropertyDescriptor(obj, name); // assumed
-                // a trapping proxy's properties must always be configurable
-                desc.configurable = true;
-                return desc;
-            },
+jn.getParent=function(a) {
+	var utils = (window.getInterface || 
+				 window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface)(Ci.nsIDOMWindowUtils);	
 
-            getOwnPropertyNames: function() {
-                return Object.getOwnPropertyNames(obj);
-            },
-
-            defineProperty: function(name, desc) {
-                Object.defineProperty(obj, name, desc);
-            },
-
-            delete: function(name) {
-                return delete obj[name];
-            },
-
-            fix: function() {
-                if (Object.isFrozen(obj)) {
-                    return Object.getOwnProperties(obj); // assumed
-                }
-                // As long as obj is not frozen, the proxy won't allow itself to be fixed
-                return undefined; // will cause a TypeError to be thrown
-            },
-
-            has: function(name) {
-                return name in obj;
-            },
-
-            hasOwn: function(name) {
-                return ({}).hasOwnProperty.call(obj, name);
-            },
-
-            get: function(receiver, name) {
-                return name === "toString" ? function() {
-                    return "[object functionCall proxy]";
-                } : obj[name];
-            },
-
-            set: function(receiver, name, val) {
-                obj[name] = val;
-                return true;
-            }, // bad behavior when set fails in non-strict mode
-
-            enumerate: function() {
-                var result = [];
-                for (var name in obj) {
-                    result.push(name);
-                }
-                return result;
-            },
-
-            keys: function() {
-                return Object.keys(obj);
-            }
-        };
-    }
-
-    var parent = utils.getParent(a);
-    if (parent.toString)
-        return parent;
-    return Proxy.create(handlerMaker(parent));
-};
+	var parent = utils.getParent(a)
+	if (parent.toString) 
+		try{
+			parent.toString();
+			return parent
+		}catch(e){}// in [with] have toString which throws
+	return Proxy.create(handlerMaker(parent))
+}
 
 jn.getClass = function(x) {
     return Object.prototype.toString.call(x).slice(8,-1);
