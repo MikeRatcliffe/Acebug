@@ -47,11 +47,9 @@ function treeView(table) {
 Firebug.Ace.startAutocompleter = FBL.bind(function(editor) {
     var type = editor.session.autocompletionType;
 
-	//if (type = 'console')
-    //    this.autocompleter = this.ConsoleAutocompleter;
-    //else 
-	dump(type)
-	if (type == 'js')
+	if (type == 'console')
+       this.autocompleter = this.JSAutocompleter;
+    else if (type == 'js')
         this.autocompleter = this.JSAutocompleter;
     else if (type == 'css')
         this.autocompleter = this.CSSAutocompleter;
@@ -343,10 +341,14 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
     invalidCharRe: /[\+\-;,= \(\)\[\]\{\}\!><]/,
     onEvalSuccess: function(result, context) {
         this.object = result;
-        this.unfilteredArray = getProps(result);
 
-        if (this.funcName)
+        if (this.funcName) {
+			this.unfilteredArray = getProps(context.global);
             this.appendSpecialEntries();
+			this.object = context.global;
+		} else {
+			this.unfilteredArray = getProps(result);
+		}
 
         this.filter(this.unfilteredArray, this.text);
         this.showPanel();

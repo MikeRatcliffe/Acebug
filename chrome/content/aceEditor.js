@@ -362,14 +362,14 @@ Firebug.largeCommandLineEditor = {
     enter: function(runSelection, dir) {
 		this.$useConsoleDir = dir;
         var editor = Firebug.Ace.win2.editor;
+		var cell = editor.session.getMode().getCurrentCell();
+		this.cell = cell;
+		
         if (runSelection)
             var text = editor.getCopyText();
         if (!text) {
             //log lines with breakpoints
             var bp = editor.session.$breakpoints;
-			var cell = editor.session.getMode().getCurrentCell();
-			this.cell = cell;
-
 			if (cell.coffeeError) {
 				this.logCoffeeError(cell.coffeeError);
 				return;
@@ -425,7 +425,7 @@ Firebug.largeCommandLineEditor = {
 		var shortExpr = cropString(code.replace(/\s*/g, ''), 100);
         Firebug.Console.log("in:" + (inputNumber++) + ">>> " + cell.sourceLang + shortExpr, context, "command", FirebugReps.Text);
 		
-		this.setThisValue(code, this.cell)
+		code = this.setThisValue(code, this.cell)
 		Firebug.CommandLine.evaluate(code, context, context.thisValue, null,
                 Firebug.largeCommandLineEditor.logSuccess,
                 Firebug.largeCommandLineEditor.logError
