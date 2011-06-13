@@ -1235,7 +1235,7 @@ jn.inspect = function(x, isLong) {
         nameList.push("`" + Class + "` ~" + l);
         l = Math.min(isLong?100:10, l);
         for(i = 0; i < l; i++) {
-            nameList.push(x[i].toString());
+            nameList.push(x[i]);
         }
         return nameList.join(',\n   ');
     }
