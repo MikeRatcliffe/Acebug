@@ -78,6 +78,120 @@ exports.HashHandler = HashHandler;
 });
 
 
+define('ace/layer/gutter', function(require, exports, module) {
+var dom = require("pilot/dom");
+
+var Gutter = function(parentEl) {
+    this.element = dom.createElement("div");
+    this.element.className = "ace_layer ace_gutter-layer";
+    parentEl.appendChild(this.element);
+
+    this.$breakpoints = [];
+    this.$annotations = [];
+    this.$decorations = [];
+};
+
+(function() {
+
+    this.setSession = function(session) {
+        this.session = session;
+    };
+
+    this.addGutterDecoration = function(row, className){
+        if (!this.$decorations[row])
+            this.$decorations[row] = "";
+        this.$decorations[row] += " ace_" + className;
+    }
+
+    this.removeGutterDecoration = function(row, className){
+        this.$decorations[row] = this.$decorations[row].replace(" ace_" + className, "");
+    };
+
+    this.setBreakpoints = function(rows) {
+    };
+
+    this.setAnnotations = function(annotations) {
+        // iterate over sparse array
+        this.$annotations = [];
+        for (var row in annotations) if (annotations.hasOwnProperty(row)) {
+            var rowAnnotations = annotations[row];
+            if (!rowAnnotations)
+                continue;
+
+            var rowInfo = this.$annotations[row] = {
+                text: []
+            };
+            for (var i=0; i<rowAnnotations.length; i++) {
+                var annotation = rowAnnotations[i];
+                rowInfo.text.push(annotation.text.replace(/"/g, "&quot;").replace(/'/g, "&#8217;").replace(/</, "&lt;"));
+                var type = annotation.type;
+                if (type == "error")
+                    rowInfo.className = "ace_error";
+                else if (type == "warning" && rowInfo.className != "ace_error")
+                    rowInfo.className = "ace_warning";
+                else if (type == "info" && (!rowInfo.className))
+                    rowInfo.className = "ace_info";
+            }
+        }
+    };
+
+    this.update = function(config) {
+        this.$config = config;
+
+        var emptyAnno = {className: "", text: []};
+        var breakpoints = this.session.$breakpoints;
+        var html = [];
+        var i = config.firstRow;
+        var lastRow = config.lastRow;
+        var fold = this.session.getNextFold(i);
+        var foldStart = fold ? fold.start.row : Infinity;
+
+        while (true) {
+            if(i > foldStart) {
+                i = fold.end.row + 1;
+                fold = this.session.getNextFold(i);
+                foldStart = fold ?fold.start.row :Infinity;
+            }
+            if(i > lastRow)
+                break;
+
+            var annotation = this.$annotations[i] || emptyAnno;
+            html.push("<div class='ace_gutter-cell",
+                this.$decorations[i] || "",
+                breakpoints[i] ? " ace_breakpoint " : " ",
+                annotation.className,
+                "' title='", annotation.text.join("\n"),
+                "' style='height:", config.lineHeight, "px;'>" 
+				);
+			if (this.session.isLineFoldable(i)){
+				html.push(
+					"<span class='ace_fold-widget ",
+					i == foldStart?"closed":"open",
+					"'>", i, "</span>"
+				)
+			} else
+				html.push(i)
+
+            var wrappedRowLength = this.session.getRowLength(i) - 1;
+            while (wrappedRowLength--) {
+                html.push("</div><div class='ace_gutter-cell' style='height:", config.lineHeight, "px'>&brvbar;</div>");
+            }
+
+            html.push("</div>");
+
+            i++;
+        }
+        this.element = dom.setInnerHtml(this.element, html.join(""));
+        this.element.style.height = config.minHeight + "px";
+    };
+
+}).call(Gutter.prototype);
+
+exports.Gutter = Gutter;
+
+});
+
+
 define('fbace/startup', function(require, exports, module) {
 
 exports.launch = function(env, options) {
@@ -160,9 +274,33 @@ exports.launch = function(env, options) {
 			}, delay || 20)
 		};
 
-		this.updateDataOnDocChange = function(e){
-			ert=e
-			console.log(ert.data)
+		this.updateDataOnDocChange = function(e) {
+			var delta = e.data;
+			var range = delta.range;
+			var len, firstRow;
+			
+			if (delta.action == "insertText") {
+				len = range.end.row - range.start.row
+				firstRow = range.start.column == 0? range.start.row: range.start.row + 1;
+			} else if (delta.action == "insertLines") {
+				len = range.end.row - range.start.row;
+				firstRow = range.start.row;
+			} else if (delta.action == "removeText") {
+				return
+			} else if (delta.action == "removeLines") {
+				len = range.start.row - range.end.row
+				firstRow = range.start.row;
+			}
+			if (len > 0) {
+				args = Array(len);
+				this.$breakpoints.last += len;
+				args.unshift(firstRow, 0)
+				this.$breakpoints.splice.apply(this.$breakpoints, args);
+			} else if (len < 0){
+				var rem = this.$breakpoints.splice(firstRow + 1, -len);
+				if(!this.$breakpoints[firstRow] && rem.indexOf(true) != -1)
+					this.$breakpoints[firstRow] = true;
+			}
 		}
 	};
 	CStyleFolding.call(EditSession.prototype);
@@ -196,7 +334,7 @@ exports.launch = function(env, options) {
 		s.setWrapLimitRange(null, null);
 		
 		//hack to support folding
-		s.doc.on('change', s.updateDataOnDocChange)
+		s.doc.on('change', s.updateDataOnDocChange.bind(s))
 
         return s;
     };

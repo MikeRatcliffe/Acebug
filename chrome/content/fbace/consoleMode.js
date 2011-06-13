@@ -117,8 +117,19 @@ oop.inherits(Mode, TextMode);
 			headerStart: headerI,
 			headerEnd: minI-1,
 			bodyStart: minI,
-			bodyEnd: maxI
+			bodyEnd: maxI,
+			cursor: row
 		}
+	};
+	
+	this.getHeaderText = function(cell) {
+		if (cell) {
+			cell.headerText = cell.header.join('\n')
+					.replace(/lang\s*=\s*(\w+)\b/g,'')
+					.replace(delimiter, '', 'g')
+					.trim();
+			return cell
+		}	
 	};
 	
 	this.getCurrentCell = function() {
@@ -132,20 +143,17 @@ oop.inherits(Mode, TextMode);
 		cell.lang = session.getState(cell.headerStart).lang
 		
 		if (cell.lang=='coffee') {
-			compileJSCell(cell);
+			this.$compileJSCell(cell);
 			cell.sourceLang = 'coffee '
 		} else
 			cell.sourceLang = ''
 		
-		cell.headerText = cell.header.join('\n')
-					.replace(/lang\s*=\s*(\w+)\b/g,'')
-					.replace(delimiter, '', 'g')
-					.trim();
+		this.getHeaderText(cell)
 
 		return cell;			
 	};
 	
-	function compileJSCell(cell) {
+	this.$compileJSCell = function(cell) {
 		try {			
 			cell.coffeeText = coffeeScriptCompiler.compile(cell.body.join('\n'), {bare: true})
 		} catch(e) {
@@ -208,127 +216,3 @@ initConsoleMode = function(editor){
 	editor.session.setMode(new consoleMode);
 }
 
-function isLineFoldable(row) {
-	return !!this.getLine(row).match(/(\{|\[)\s*(\/\/.*)?$/)
-	
-	if (!this.foldWidgets)
-		this.foldWidgets = []
-	if (this.foldWidgets[row] != null)
-		return this.foldWidgets[row]
-	else
-		return this.foldWidgets[row] = !!this.getLine(row).match(/(\{|\[)\s*(\/\/.*)?$/)		
-}
-
-
-define('ace/layer/gutter', function(require, exports, module) {
-var dom = require("pilot/dom");
-
-var Gutter = function(parentEl) {
-    this.element = dom.createElement("div");
-    this.element.className = "ace_layer ace_gutter-layer";
-    parentEl.appendChild(this.element);
-
-    this.$breakpoints = [];
-    this.$annotations = [];
-    this.$decorations = [];
-};
-
-(function() {
-
-    this.setSession = function(session) {
-        this.session = session;
-    };
-
-    this.addGutterDecoration = function(row, className){
-        if (!this.$decorations[row])
-            this.$decorations[row] = "";
-        this.$decorations[row] += " ace_" + className;
-    }
-
-    this.removeGutterDecoration = function(row, className){
-        this.$decorations[row] = this.$decorations[row].replace(" ace_" + className, "");
-    };
-
-    this.setBreakpoints = function(rows) {
-    };
-
-    this.setAnnotations = function(annotations) {
-        // iterate over sparse array
-        this.$annotations = [];
-        for (var row in annotations) if (annotations.hasOwnProperty(row)) {
-            var rowAnnotations = annotations[row];
-            if (!rowAnnotations)
-                continue;
-
-            var rowInfo = this.$annotations[row] = {
-                text: []
-            };
-            for (var i=0; i<rowAnnotations.length; i++) {
-                var annotation = rowAnnotations[i];
-                rowInfo.text.push(annotation.text.replace(/"/g, "&quot;").replace(/'/g, "&#8217;").replace(/</, "&lt;"));
-                var type = annotation.type;
-                if (type == "error")
-                    rowInfo.className = "ace_error";
-                else if (type == "warning" && rowInfo.className != "ace_error")
-                    rowInfo.className = "ace_warning";
-                else if (type == "info" && (!rowInfo.className))
-                    rowInfo.className = "ace_info";
-            }
-        }
-    };
-
-    this.update = function(config) {
-        this.$config = config;
-
-        var emptyAnno = {className: "", text: []};
-        var breakpoints = this.session.$breakpoints;
-        var html = [];
-        var i = config.firstRow;
-        var lastRow = config.lastRow;
-        var fold = this.session.getNextFold(i);
-        var foldStart = fold ? fold.start.row : Infinity;
-
-        while (true) {
-            if(i > foldStart) {
-                i = fold.end.row + 1;
-                fold = this.session.getNextFold(i);
-                foldStart = fold ?fold.start.row :Infinity;
-            }
-            if(i > lastRow)
-                break;
-
-            var annotation = this.$annotations[i] || emptyAnno;
-            html.push("<div class='ace_gutter-cell",
-                this.$decorations[i] || "",
-                breakpoints[i] ? " ace_breakpoint " : " ",
-                annotation.className,
-                "' title='", annotation.text.join("\n"),
-                "' style='height:", config.lineHeight, "px;'>" 
-				);
-			if (this.session.isLineFoldable(i)){
-				html.push(
-					"<span class='ace_fold-widget ",
-					i == foldStart?"closed":"open",
-					"'>", i, "</span>"
-				)
-			} else
-				html.push(i)
-
-            var wrappedRowLength = this.session.getRowLength(i) - 1;
-            while (wrappedRowLength--) {
-                html.push("</div><div class='ace_gutter-cell' style='height:", config.lineHeight, "px'>&brvbar;</div>");
-            }
-
-            html.push("</div>");
-
-            i++;
-        }
-        this.element = dom.setInnerHtml(this.element, html.join(""));
-        this.element.style.height = config.minHeight + "px";
-    };
-
-}).call(Gutter.prototype);
-
-exports.Gutter = Gutter;
-
-});
