@@ -201,7 +201,7 @@ oop.inherits(Mode, TextMode);
     };
 	
 	this.transformAction = function(state, action, editor, session, param) {
-        return (modes[state.lang]||jsMode).transformAction(state, action, editor, session, param);
+        return (modes[state.lang]||jsMode).transformAction(state.state, action, editor, session, param);
     }
 
 }).call(Mode.prototype);

@@ -618,10 +618,12 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 			objCursor=capture()
 		}
 		if (objCursor) {
+			var state='.'
 			outer: while (ch) {
 				switch (ch) {
 					case '.':
 						eatWhile(/\s/)
+						state='.'
 					break;
 					case "\n":
 						capture()
@@ -636,9 +638,13 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 						eatSpace(ch);
 					break;
 					case ']':case ')':
-						eatBrackets();
+						if(state=='.')
+							eatBrackets()
+						else
+							break outer;
 					break;
 					default:
+						state=''
 						if (rx.test(ch))
 							eatWord();
 						else
