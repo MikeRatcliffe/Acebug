@@ -458,7 +458,8 @@ exports.launch = function(env, options) {
         startAutocompleter: "Ctrl-Space|Ctrl-.|Alt-.",
         execute: "Ctrl-Return",
 		dirExecute: "Ctrl-Shift-Return",
-        duplicate: "Ctrl-D|Alt-D"
+        duplicate: "Ctrl-D|Alt-D",
+		beautify: "Ctrl-Shift-B"
     };
 
     editor.autocompletionKeySet = new HashHandler({
@@ -551,6 +552,41 @@ exports.launch = function(env, options) {
         clear: function() {
             editor.session.doc.setValue("");
         },
+		
+		beautify: function(){
+			function a(){
+				var session = editor.session
+				var sel = session.selection
+				var range = sel.getRange()
+				
+				var options = {};
+				if (session.getUseSoftTabs()) {
+					options.indent_size = session.getTabSize();
+				} else {
+					options.indent_char = "\t";
+					options.indent_size = 1;
+				}
+				
+				var line = session.getLine(range.start.row)
+				var indent = line.match(/^\s*/)[0]
+				if(range.start.column<indent.length){
+					var doNotTrim = true;
+					range.start.column = 0
+				}
+				var value = session.getTextRange(range)
+				value = (/^\s*<\w/.test(value)? style_html :js_beautify)(value, options)
+				value = value.replace(/^/gm, indent)
+				if(!doNotTrim)
+					value = value.trim()
+
+				var end = session.replace(range, value);
+				sel.setSelectionRange(Range.fromPoints(range.start, end));
+			}
+			if (window.js_beautify)
+				a()
+			else
+				require(["res/beautify","res/beautify-html"], a)
+		}
     });
  
  	/**************************** folding commands ***********************************************/
