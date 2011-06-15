@@ -424,7 +424,7 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
         } else if (/^\d*$/.test(text)) {
             text = "[" + text + "]";
             s--;
-        } else if (!/^[a-z$_][a-z$_0-9]*$/i.test(text)) {
+        } else if (!/(^[a-z$_][a-z$_0-9]*$)|(^[\[\{\(]?".*"[\]\}\)]?$)|(^[\[\{\(]?'.*'[\]\}\)]?$)/i.test(text)) {
             text = '["' + text + '"]';
             s--;
         }
@@ -447,10 +447,9 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 		var lastChar = text.slice(-1);
 		var cursorChar = this.editor.session.getLine(range.end.row)[range.end.column];
 		if (cursorChar == lastChar && /\)|\}|\]|"/.test(lastChar))
-			text = text.slice(-1);
+			text = text.slice(0, -1);
 
-        this.editor.selection.setSelectionRange(range);
-        this.editor.onTextInput(text);
+		var end = this.editor.session.replace(range, text);
     },
     // *****************
     appendSpecialEntries: function() {
