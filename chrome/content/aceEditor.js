@@ -58,7 +58,7 @@ Firebug.Ace = {
         this.win1.startAce(null, this.getOptions());
         this.showPanel = function(browser, panel) {
 			if(panel.name=='console')
-				this.win2.editor.resize();
+				this.win2.editor.renderer.onResize();
 		}
     },
 
@@ -88,7 +88,7 @@ Firebug.Ace = {
         var panelID = toAce?"fbAceBrowser1-parent":'fbPanelBar1-browser';
         var panel = Firebug.chrome.$(panelID);
         panel.parentNode.selectedPanel=panel;
-		this.win1.editor.resize();
+		this.win1.editor.renderer.onResize();
     },
 
     setFontSize: function(sizePercent) {
