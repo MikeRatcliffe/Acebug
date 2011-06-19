@@ -53,15 +53,13 @@ function treeView(table) {
     this.cycleHeader = function(col, elem) {};
 }
 
-var enumerateRequests = function(fn)
-{
+var enumerateRequests = function(fn) {
     var netPanel = Firebug.currentContext.getPanel('net');
     if (!netPanel.table)
         return;
 
     var rows = netPanel.table.getElementsByClassName("netRow");
-    for (var i=0; i<rows.length; i++)
-    {
+    for (var i=0; i<rows.length; i++) {
         var row = rows[i];
         var pageRow = FBL.hasClass(row, "netPageRow");
 
@@ -86,8 +84,7 @@ function fileIconURL(isDir, name, ext, spec) {
     return "moz-icon://" + "." + ext + "?size=16";
 }
 
-var  getAllLocations = function()
-{
+var  getAllLocations = function() {
     var i, src;
     var document = Firebug.currentContext.window.document;
     var baseURI = document.baseURI;
@@ -151,7 +148,7 @@ a.map(function(a)a.href)
 // stylesheet panel
 Firebug.ResourcePanel = function ResourcePanel() {};
 
-Firebug.ResourcePanel.prototype = extend(Firebug.ActivablePanel,
+Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 {
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -187,13 +184,13 @@ Firebug.ResourcePanel.prototype = extend(Firebug.ActivablePanel,
 
         if (this.editor) {
             this.editor.renderer.onResize(true);
-            this.editor.setReadOnly(true);
+            //this.editor.setReadOnly(true);
             this.onSelect();
         } else {
             this.aceWindow.startAce(bind(function() {
                 this.editor = this.aceWindow.editor;
                 this.editor.renderer.onResize(true);
-                this.editor.setReadOnly(true);
+                //this.editor.setReadOnly(true);
                 this.setSession();
             }, this));
         }
