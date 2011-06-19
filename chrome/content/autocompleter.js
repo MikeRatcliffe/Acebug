@@ -505,9 +505,11 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 				post = ')'
                 supportedgetInterfaces(this.object).forEach(createItem);
             } else if (fu == "getElementById") {
-                ans = getIDsInDoc(this.object);
+                descr = 'id'
+				getIDsInDoc(this.object).forEach(createItem)				
             } else if (fu == "getElementsByClassName") {
-                ans = getClassesInDoc(this.object);
+				descr = 'class'
+				getClassesInDoc(this.object).forEach(createItem)
             } else if (fu == "getAttribute" || fu == "setAttribute" || fu == "hasAttribute") {
                 var att = this.object.attributes;
                 for(var i=0; i < att.length; i++) {
@@ -554,7 +556,7 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
 				this.sayInBubble(cell.coffeeText)
 		}
 
-        var $q = this.$q = backParse.js(editor);
+        var $q = this.$q = backParse.css(this.editor);
         this.text = $q.nameFragment;
 
 
@@ -580,9 +582,9 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
         var isSpecial = c.special;
         var text = c.name;
 
-        var range = this.editor.selection.getRange();
+        var range = this.$q.filterRange;
 
-        var cursor = this.editor.selection.getCursor();
+        var cursor = range.end;
         var row = cursor.row;
         var col = cursor.column;
         var curLine = this.editor.session.getLine(row);
@@ -591,14 +593,13 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
         while((ch=curLine[col++]) && rx.test(ch)); //select word forward
         range.end.column = col-1;
 
-        var s = this.baseRange.end.column + 1;
-        col = s;
         //pseudoclass
         if (text[0]==':') {
-            while (curLine[--col]==':')
+			var s = range.start.column;
+            while (curLine[s-1]==':')
                 s--;
+			range.start.column = s;
         }
-        range.start.column = s;
 
         this.editor.selection.setSelectionRange(range);
         this.editor.onTextInput(text);
@@ -621,7 +622,7 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
     },
     propValue: function(fragment) {
         var table = [];
-        for each(var i in FBL.getCSSKeywordsByProperty('html', fragment[3])) {
+        for each(var i in FBL.getCSSKeywordsByProperty('html', fragment.propName)) {
             table.push({name: i, comName: i.toLowerCase()});
         }
 
@@ -630,7 +631,7 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
     selector: function(fragment) {
         var i;
         var table = [];
-        if (fragment[1][0]==':') {
+        if (fragment.termChar[0] == ':') {
             for each(i in mozPseudoClasses) {
                 table.push({name: i, comName: i.toLowerCase()});
             }
@@ -640,11 +641,11 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
             for each(i in pseudoElements) {
                 table.push({name: i, comName: i.toLowerCase()});
             }
-        } else if (fragment[1]=='.') {
+        } else if (fragment.termChar == '.') {
             for each(i in getClassesInDoc(Firebug.currentContext.window.document)) {
                 table.push({name: i, comName: i.toLowerCase()});
             }
-        } else if (fragment[1]=='#') {
+        } else if (fragment.termChar == '#') {
             for each(i in getIDsInDoc(Firebug.currentContext.window.document)) {
                 table.push({name: i, comName: i.toLowerCase()});
             }
@@ -661,19 +662,18 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
 });
 
 var backParse = (function() {
-	var editor, $q;
+	var editor;
 	var cursor, range, col, row, ch;
 	var captureCursor, objCursor, lines, curLine;
 	var rx, jsRx = /[a-z$_0-9]/i, cssRx = /[\w$\-\[\]\(\)]/;
 
 	function init($editor) {
-		$q = $q || {};
 		editor = $editor;
 		cursor = editor.selection.getCursor();
 		range = editor.selection.getRange()
-		row = cursor.row,
-		col = cursor.column,
-		ch, captureCursor, objCursor;
+		row = cursor.row;
+		col = cursor.column;
+		ch = captureCursor = objCursor = null;
 		lines = editor.session.doc.$lines;
 		curLine = lines[row];
 	}
@@ -800,7 +800,6 @@ var backParse = (function() {
 						case "\n":
 							capture()
 							eatWhile(/\s/);
-							dump(captureCursor.column, captureCursor.row)
 							if(ch != '.'){
 								col = captureCursor.column
 								row = captureCursor.row
@@ -840,43 +839,55 @@ var backParse = (function() {
 		css: function(editor){
 			init(editor);
 			rx = cssRx;
-			var ans = {evalString:'', nameFragment:'', functionName:''};
+			var ans = {nameFragment:'', mode: 'selector'};
 			ans.nameFragment = getToken(eatWord)
 			ans.filterRange = range.clone();
-			 var colonSeen, mode, termChar = ch;
-			if (!ch) {//start of file
-					mode='selector';
-					return [mode,'',curWord]
-			}
-			if (ch==':' && peek()==':') {
-				termChar = '::';
-				mode = 'selector';
-				return [mode,termChar,curWord]
+			
+			range.end.row = range.start.row;
+			range.end.column = range.start.column;
+			ans.baseRange = range.clone();
+			ans.termChar = ch;
+			
+			var colonCursor
+			if (!ch) //start of file
+				return ans
+			
+			if (ch == ':' && peek() == ':') {
+				ans.termChar = '::';
+				return ans
 			}
 			if (ch==' ') {
-				while(next() == ' ');
+				eatWhile(/\s/)
 				if (ch && !rx.test(ch))
-					termChar = ch;
+					ans.termChar = ch;
 			}
-			if (ch==':')
-				colonSeen = true;
+			if (ch == ':'){
+				eatWhile(/\s/)
+				colonCursor = capture();
+				ans.propName = getToken(eatWord)
+				ans.baseRange = range.clone();
+			}
 
 			do {
 				if (ch == '}') {
-					mode='selector';
-					return [mode, termChar, curWord];
+					ans.mode = 'selector';
+					return ans;
 				} else if (ch == ':') {
-					colonSeen = true;
-					cursor = {row: row, column: col};
+					eatWhile(/\s/)
+					colonCursor = capture();
+					ans.propName = getToken(eatWord)
+					ans.baseRange = range.clone();
 				} else if (ch == ';' || ch == '{') {
-					mode = colonSeen? 'propValue' : 'propName';
-					if (colonSeen) {
-						return [mode, termChar, curWord, getText().trim()];
+					if (colonCursor) {
+						ans.mode = 'propValue';
+					} else {
+						ans.mode = 'propName';
 					}
-					return [mode, termChar, curWord];
+					return ans;
 				}
 			} while(next());
-			return  ['selector', termChar, curWord];
+			
+			return  ans;
 		}
 	}
 })()
@@ -1040,10 +1051,8 @@ var getIDsInDoc = function(doc) {
     var result = xpe.evaluate('//*[@id]', doc.documentElement, nsResolver, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
     var ans=[];
 
-    for(let i = 0, snapLen = result.snapshotLength; i < snapLen; i++) {
-        let x = result.snapshotItem(i).id;
-        ans[i] = {name:' "' + x + '")', comName: "ci." + x.toString().toLowerCase(), description: "id", depth: -1, isSpecial: true};
-    }
+    for(let i = 0, snapLen = result.snapshotLength; i < snapLen; i++)
+        ans[i] = result.snapshotItem(i).id;
 
     return ans;
 };

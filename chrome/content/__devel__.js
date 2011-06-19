@@ -61,7 +61,7 @@ function appendXML(element, xml){
 window.addEventListener('load', function(){
 	window.removeEventListener('load', arguments.callee.caller, false)
 	
-    var sb = document.getElementById("fbCommandToolbar") 
+    var sb = document.getElementById("fbPanelBar1-tabBox") 
 	var tb=document.createElement('toolbarbutton')
 	sb.appendChild(tb)
 	tb.type='menu-button'
