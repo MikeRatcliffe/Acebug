@@ -574,7 +574,7 @@ exports.launch = function(env, options) {
 					range.start.column = 0
 				}
 				var value = session.getTextRange(range)
-				value = (/^\s*<\w/.test(value)? style_html :js_beautify)(value, options)
+				value = (/^\s*<!?\w/.test(value)? style_html :js_beautify)(value, options)
 				value = value.replace(/^/gm, indent)
 				if(!doNotTrim)
 					value = value.trim()
@@ -730,7 +730,7 @@ exports.launch = function(env, options) {
 				var fold = s.getFoldAt(row, i+1, 1)
 				if (fold) {
 					s.expandFold(fold)
-					editor.renderer.scrollCursorIntoView()
+					//editor.renderer.scrollCursorIntoView()
 					//editor.renderer.scrollToRow(row)
 				} else {
 					var start = {row:row,column:i+1}
@@ -756,7 +756,7 @@ exports.launch = function(env, options) {
 				
 				if (fold) {
 					s.expandFold(fold)
-					editor.renderer.scrollCursorIntoView()
+					//editor.renderer.scrollCursorIntoView()
 				} else {
 					var cell = mode.getCellBounds(row)
 					var start = {row: row, column: 0};

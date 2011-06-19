@@ -8,8 +8,7 @@ FBL.ns(function() { with (FBL) {
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 
-Firebug.Ace =
-{
+Firebug.Ace = {
     dispatchName: "Ace",
 
     initializeUI: function() {
@@ -48,7 +47,7 @@ Firebug.Ace =
 		this.loadFBugPatch()
     },
 	
-	loadFBugPatch: function(){
+	loadFBugPatch: function() {
 		var script = document.createElementNS("http://www.w3.org/1999/xhtml", "script");
 		script.type = "text/javascript;version=1.8";
 		script.src ='chrome://acebug/content/patchUpFirebug.js'
@@ -312,8 +311,14 @@ Firebug.largeCommandLineEditor = {
     },
 
     set value(val) {
-        if (arguments.callee.caller == Firebug.CommandLine.commandHistory.onMouseUp || this._setValue)
+		if (this._setValue)
             return this.setValue(val);
+        if (arguments.callee.caller == Firebug.CommandLine.commandHistory.onMouseUp) {
+			var mode = Firebug.Ace.win2.editor.session.getMode()
+			if (mode.setCellText)
+				return mode.setCellText(val)
+			return this.setValue(val);
+		}
         return val;
     },
 
@@ -387,9 +392,12 @@ Firebug.largeCommandLineEditor = {
 					}
 					return x;
 				}).join('\n');
+			Firebug.CommandLine.commandHistory.appendToHistory(cell.body.join('\n'));
         }
 		if(text[text.length-1] == '.')
 			text = text.slice(0, -1)
+		
+
 
 		Firebug.largeCommandLineEditor.runUserCode(text, cell);
     },
@@ -559,8 +567,7 @@ $ACESTR = function(name) {
 
 /***********************************************************/
 
-function readEntireFile(file)
-{
+function readEntireFile(file) {
     var data = "",
         str = {},
         fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream),
@@ -578,8 +585,7 @@ function readEntireFile(file)
     return data;
 }
 
-function writeFile(file, text)
-{
+function writeFile(file, text) {
     var fostream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(Ci.nsIFileOutputStream),
         converter = Cc["@mozilla.org/intl/converter-output-stream;1"].createInstance(Ci.nsIConverterOutputStream);
 

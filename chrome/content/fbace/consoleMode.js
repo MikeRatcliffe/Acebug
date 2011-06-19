@@ -86,39 +86,48 @@ oop.inherits(Mode, TextMode);
 	this.dl = dl;
 	this.getCellBounds = function(row) {
 		var lines = editor.session.doc.$lines;
+		var cur = row
+		
+		// go to header end if row is inside header
+		var line = lines[row]
+		while (line && line.substr(0,dl) == delimiter) {
+			line = lines[++row]
+		}
+		if( !line)
+			line = lines[--row]
 
-		var i = row+1
-		var line = lines[i]
+		// read up to header
+		var i = row
 		while(line != null){
-			if(line.substr(0,dl)==delimiter)
+			if(line.substr(0,dl) == delimiter)
+				break
+			line = lines[--i]
+		}
+		var minI = i+1;
+		
+		// read header
+		while(line != null) {
+			if(line.substr(0,dl) != delimiter)
+				break
+			line = lines[--i]
+		}		
+		var headerI = i+1;
+		// read rest of the body
+		i = row + 1
+		line = lines[i]
+		while (line != null) {
+			if (line.substr(0, dl)==delimiter)
 				break
 			line = lines[++i]
 		}
 		var maxI = i-1;
-
-		i = row
-		line = lines[i]
-		while(line != null){
-			if(line.substr(0,dl)==delimiter)
-				break
-			line = lines[--i]
-		}
-		var minI = i+1
-		
-		while(line != null) {
-			if(line.substr(0,dl)!=delimiter)
-				break
-			line = lines[--i]
-		}
-		
-		var headerI = i+1
 
 		return {
 			headerStart: headerI,
 			headerEnd: minI-1,
 			bodyStart: minI,
 			bodyEnd: maxI,
-			cursor: row
+			cursor: cur
 		}
 	};
 	
@@ -152,6 +161,23 @@ oop.inherits(Mode, TextMode);
 
 		return cell;			
 	};
+	
+	this.setCellText = function(text){
+		var cursor = editor.getCursorPosition();
+		var session = editor.session
+		
+		var cell = this.getCellBounds(cursor.row);
+		var end = session.getLine(cell.bodyEnd).length;
+		
+		if (cell.bodyStart > cell.bodyEnd) { // empty cell
+			var range = new Range(cell.bodyEnd, end, cell.bodyEnd, end);
+			text = '\n' + text;
+		} else
+			var range = new Range(cell.bodyStart, 0, cell.bodyEnd, end)
+		
+		session.replace(range, text)
+		return text
+	}
 	
 	this.$compileJSCell = function(cell) {
 		try {			

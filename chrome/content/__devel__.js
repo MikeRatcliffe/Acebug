@@ -19,10 +19,14 @@ var __AceBugDevel__ = {
         "chrome://acebug/content/resource.js"
     ],
 
-    doReload: function() {
+    doReload: function(action) {
         FBL.ns = function(a) {
             a();
         };
+		if(action == 'full'){
+			Firebug.Ace.win1.location.reload()
+			Firebug.Ace.win2.location.reload()
+		}
         // clean up
         try{
             Firebug.Ace.win1.editor.autocompleteCommandsAdded = false;
@@ -46,14 +50,25 @@ var __AceBugDevel__ = {
         }
     }
 };
+function appendXML(element, xml){
+	var range = document.createRange()
+	range.selectNode(element)
+	range.collapse(true)
+	var fragment = range.createContextualFragment(xml)
 
+	return element.appendChild(fragment)
+}
 window.addEventListener('load', function(){
 	window.removeEventListener('load', arguments.callee.caller, false)
-
-    let t = document.createElement('toolbarbutton');
+	
     var sb = document.getElementById("fbCommandToolbar") 
-	sb.appendChild(t);
-    t.setAttribute('oncommand','__AceBugDevel__.doReload()');
-    t.id = '__AceBugDevel__';
-    t.label = 'AceBugDevel';
+	var tb=document.createElement('toolbarbutton')
+	sb.appendChild(tb)
+	tb.type='menu-button'
+	tb.label='ace\u27F3'
+	tb.setAttribute('oncommand', '__AceBugDevel__.doReload(event.target.getAttribute("action"))')
+	appendXML(tb,
+			<menupopup>
+				<menuitem label='fullreload&#10227;' action='full'/>
+			</menupopup>.toXMLString().replace(/>\s*</,'><'))
 },false)

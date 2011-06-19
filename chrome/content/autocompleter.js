@@ -111,6 +111,13 @@ Firebug.Ace.BaseAutocompleter = {
             this.addComandsToEditor();
         if (!this.selectionListener)
             this.selectionListener = FBL.bind(this.$selectionListener, this);
+		
+		for each(var i in this.$markers)
+			this.editor.session.removeMarker(i)
+		this.$markers = [
+			editor.session.addMarker(this.$q.filterRange, "ace_bracket k"),
+			editor.session.addMarker(this.$q.baseRange, "ace_bracket k")
+		];
 
         this.editor.selection.on('changeCursor', this.selectionListener);
 
@@ -126,16 +133,17 @@ Firebug.Ace.BaseAutocompleter = {
     },
 
     $selectionListener: function(e) {
-        e.data = this.editor.selection.getCursor();
-        if (this.baseRange.contains(e.data.row, e.data.column) || this.hidden)
+        var point = this.editor.selection.getCursor();
+		var range = this.$q.filterRange
+		if(range.compare(point.row, point.column) < 0 || this.hidden)
             return this.finish();
 
-        this.filterRange.end = e.data;
-        this.text = this.editor.session.getTextRange(this.filterRange);
+        range.end = point;
+        this.text = this.editor.session.getTextRange(range);
 
         if (this.invalidCharRe.test(this.text))
             return this.finish();
-        this.filter(this.unfilteredArray,this.text);
+        this.filter(this.unfilteredArray, this.text);
         this.setView(0);
     },
 
@@ -155,8 +163,8 @@ Firebug.Ace.BaseAutocompleter = {
                 if (o) {
                     self.insertSuggestedText('.');
                     var cursor = self.editor.selection.getCursor();
-                    self.baseRange.end.column = cursor.column - 1;
-                    var fr = self.filterRange;
+                    self.$q.baseRange.end.column = cursor.column - 1;
+                    var fr = self.$q.filterRange;
                     fr.end.column = fr.start.column = cursor.column;
                     fr.end.row = fr.start.row = cursor.row;
                     self.text = '';
@@ -204,12 +212,14 @@ Firebug.Ace.BaseAutocompleter = {
     },
 
     sayInBubble: function(text) {
+		if (!this.bubble)
+			this.initPanel()
         if (!text) {
             this.bubble.hidePopup();
             return;
         }
-        if (this.hidden)
-            return;
+        //if (this.hidden)
+        //    return;
         var item = this.bubble.firstChild;
         item.value = text;
         if (this.bubble.state!='open')
@@ -327,6 +337,9 @@ Firebug.Ace.BaseAutocompleter = {
     finish: function(i) {
         if (this.hidden)
             return;
+		for each(var i in this.$markers)
+			this.editor.session.removeMarker(i)
+
         this.hidden = true;
         this.editor.selection.removeEventListener('changeCursor', this.selectionListener);
         this.text = this.sortedArray = this.unfilteredArray = this.object = this.text = null;
@@ -338,11 +351,11 @@ Firebug.Ace.BaseAutocompleter = {
 };
 
 Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
-    invalidCharRe: /[\+\-;,= \(\)\[\]\{\}\!><]/,
+    invalidCharRe: /[\+\-;.:,= \(\)\[\]\{\}\!><]/,
     onEvalSuccess: function(result, context) {
         this.object = result;
 
-        if (this.funcName) {
+        if (this.$q.functionName) {
 			this.unfilteredArray = getProps(context.global);
             this.appendSpecialEntries();
 			this.object = context.global;
@@ -371,27 +384,22 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 
     start: function(editor) {
         this.editor = editor || this.editor;
-        var range = editor.selection.getRange();
-        this.filterRange = range.clone();
-        range.end.column = range.start.column;
-        range.start.column = 0;
+		
+		var cell = Firebug.Ace.win2.editor.session.getMode().getCurrentCell();
+		if(cell.cursor <= cell.headerEnd){
+			if (cell.coffeeText)
+				this.sayInBubble(cell.coffeeText)
+		}
 
-        var {evalString, nameFragment, functionName, eqName} = this.parseJSFragment(editor);
-        this.funcName = functionName;
-        this.text = nameFragment;
+        var $q = this.$q = this.parseJSFragment(editor);
+        this.text = $q.nameFragment;
 
-        range.end.column = range.end.column - nameFragment.length - 1;
-        range.start.column = range.end.column - evalString.length -1;
-        this.baseRange = range;
-
-        this.filterRange.start.column = this.filterRange.end.column - nameFragment.length;		
-
-		if (eqName) { // style.eqName = '
-			this.unfilteredArray = Firebug.Ace.CSSAutocompleter.propValue([null,null,null,eqName])
+		if ($q.eqName) { // style.eqName = '
+			this.unfilteredArray = Firebug.Ace.CSSAutocompleter.propValue([null,null,null,$q.eqName])
 			this.filter(this.unfilteredArray, this.text);
 			this.showPanel();
 		}else
-			this.eval(Firebug.largeCommandLineEditor.setThisValue(evalString));
+			this.eval(Firebug.largeCommandLineEditor.setThisValue($q.evalString));
     },
 
     // *****************
@@ -418,24 +426,28 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
         var isSpecial = c.isSpecial;
         var text = c.name;
 
-        var s = this.baseRange.end.column + 1;
+        var $q = this.$q;
+        var range = $q.filterRange;
+
         if (isSpecial) {
             text=text.substr(1);
-        } else if (/^\d*$/.test(text)) {
-            text = "[" + text + "]";
-            s--;
-        } else if (!/(^[a-z$_][a-z$_0-9]*$)|(^[\[\{\(]?".*"[\]\}\)]?$)|(^[\[\{\(]?'.*'[\]\}\)]?$)/i.test(text)) {
-            text = '["' + text + '"]';
-            s--;
-        }
+        } else if ($q.dotPosition){
+			if (/^\d*$/.test(text)) {
+				text = "[" + text + "]";
+				range.start = $q.dotPosition;
+			} else if (!/(^[a-z$_][a-z$_0-9]*$)|(^[\[\{\(]?".*"[\]\}\)]?$)|(^[\[\{\(]?'.*'[\]\}\)]?$)/i.test(text)) {
+				text = '["' + text + '"]';
+				range.start = $q.dotPosition;
+			}
+		}
+		
 
         if (additionalText) {
             text = text+additionalText;
             //l -= additionalText.length + 1;
         }
-        var range = this.editor.selection.getRange();
+
 		var curLine = this.editor.session.getLine(range.end.row)
-        range.start.column = s;
 		if (replaceWord){
 			var col = range.end.column;
 			var rx = /[a-z$_0-9]/i;
@@ -445,7 +457,7 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 
 		// do not add last )|}|] if it is already there
 		var lastChar = text.slice(-1);
-		var cursorChar = this.editor.session.getLine(range.end.row)[range.end.column];
+		var cursorChar = curLine[range.end.column];
 		if (cursorChar == lastChar && /\)|\}|\]|"/.test(lastChar))
 			text = text.slice(0, -1);
 
@@ -453,7 +465,7 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
     },
     // *****************
     appendSpecialEntries: function() {
-        var fu = this.funcName;
+        var fu = this.$q.functionName;
         var ans = [];
 		var pre = '\u2555"', post = '"', descr = '';
 		var createItem = function(x) {
@@ -513,6 +525,7 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 
     parseJSFragment: function(editor) {
         var cursor = editor.selection.getCursor();
+		var range = editor.selection.getRange()
 		var row = cursor.row,
 			col = cursor.column,
 			ch, captureCursor, objCursor;
@@ -533,19 +546,26 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 			return cursor
 		}
 		function getText(cursor) {
-			var t = editor.session.getTextRange({
-				start:clip({column:col, row: row}),
-				end: clip(cursor||captureCursor) 
-			});
-
-			return ch?t.substr(1):t//.trim();
+			range.start = clip({column:col, row: row})
+			range.end = clip(cursor||captureCursor)
+			var t = editor.session.getTextRange(range);
+			dump(ch, col, row, t)
+			if (ch == '\n') {
+				range.start.column = 0
+				range.start.row++
+				t = t.substr(1)
+			} else if(ch) {
+				range.start.column++
+				t = t.substr(1)
+			}
+			return t//.trim();
 		}
 		function capture()
 			captureCursor = {row:row,column:col+(ch?1:0)}
 		function getToken(tocFun){
 			capture()
 			tocFun()
-			return getText()
+			return getText(null)
 		}
 
 		function eatString(comma) {           
@@ -594,6 +614,8 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 
 		var ans = {evalString:'', nameFragment:'', functionName:'', eqName:''};
 		ans.nameFragment = getToken(eatWord)
+		ans.filterRange = range.clone();
+
 		if(ch=="'"||ch=='"'){
 			eatSpace()
 			if (ch=='('){
@@ -617,6 +639,8 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 			objCursor=capture()
 		}
 		if (objCursor) {
+			dump(objCursor.row,objCursor.column)
+			ans.dotPosition = objCursor
 			var state='.'
 			outer: while (ch) {
 				switch (ch) {
@@ -627,9 +651,11 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 					case "\n":
 						capture()
 						eatWhile(/\s/);
-						if(ch!='.'){
+						dump(captureCursor.column, captureCursor.row)
+						if(ch != '.'){
 							col = captureCursor.column
-							row = captureCursor.row 
+							row = captureCursor.row
+							ch = '\n'
 							break outer;
 						}
 					break;
@@ -653,6 +679,11 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 			}
 
 			ans.evalString=getText(objCursor).trim()
+			ans.baseRange = range;
+		} else {
+			range.end.row = range.start.row;
+			range.end.column = range.start.column;
+			ans.baseRange = range;
 		}
 
 		return ans
