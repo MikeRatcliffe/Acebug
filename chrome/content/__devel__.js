@@ -50,25 +50,35 @@ var __AceBugDevel__ = {
         }
     }
 };
-function appendXML(element, xml){
-	var range = document.createRange()
-	range.selectNode(element)
-	range.collapse(true)
-	var fragment = range.createContextualFragment(xml)
 
-	return element.appendChild(fragment)
-}
-window.addEventListener('load', function(){
-	window.removeEventListener('load', arguments.callee.caller, false)
-	
-    var sb = document.getElementById("fbPanelBar1-tabBox") 
-	var tb=document.createElement('toolbarbutton')
+setTimeout(function() {
+	function appendXML(element, xml) {
+		var range = document.createRange()
+		range.selectNode(element)
+		range.collapse(true)
+		var fragment = range.createContextualFragment(xml)
+		return element.appendChild(fragment)
+	}
+	var sb = document.getElementById("fbPanelBar1-tabBox") 
+	var tb = document.createElement('toolbarbutton')
 	sb.appendChild(tb)
 	tb.type='menu-button'
 	tb.label='ace\u27F3'
 	tb.setAttribute('oncommand', '__AceBugDevel__.doReload(event.target.getAttribute("action"))')
+	
 	appendXML(tb,
 			<menupopup>
 				<menuitem label='fullreload&#10227;' action='full'/>
 			</menupopup>.toXMLString().replace(/>\s*</,'><'))
-},false)
+}, 1000)
+
+
+function dump() {
+    var aMessage = "aMessage: ";
+    for (var i = 0; i < arguments.length; ++i) {
+        var a = arguments[i];
+        aMessage += (a && !a.toString ? "[object call]" : a) + " , ";
+    }
+    var consoleService = Components.classes['@mozilla.org/consoleservice;1'].getService(Components.interfaces.nsIConsoleService);
+    consoleService.logStringMessage("" + aMessage);
+}

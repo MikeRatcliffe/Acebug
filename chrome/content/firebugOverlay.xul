@@ -60,7 +60,7 @@
             >
                 <treechildren id="domfly" flex='1'/>
                 <treecols>
-                   <treecol id="name" hideheader="true" primary="true" flex="2" />
+                   <treecol id="name" hideheader="true" primary="true" flex="2" crop="start"/>
                 </treecols>
             </tree>
             <splitter position='2' hidden='true' collapse='before'><grippy/></splitter>

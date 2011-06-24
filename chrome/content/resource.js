@@ -89,26 +89,34 @@ var  getAllLocations = function() {
     var document = Firebug.currentContext.window.document;
     var baseURI = document.baseURI;
     var locationList = [{href: document.documentURI, type: 'text'}];
+	var hrefs = [];
+	function addLocation(href, type) {
+		href = href.trim().replace(/#.*$/, '');
+		if (!href || hrefs.indexOf(href)!=-1)
+			return;
+		hrefs.push(href);
+		locationList.push({href: href, type: type});
+	}
     //scripts
     var list = document.documentElement.getElementsByTagName('script');
     for(i = list.length; i--;) {
         src = list[i].getAttribute('src');
         if (src)
-            locationList.push({href: src, type: 'text'});
+            addLocation(src, 'text');
     }
     //images
     list = document.documentElement.getElementsByTagName('img');
     for(i = list.length; i--;) {
         src = list[i].getAttribute('src');
         if (src)
-            locationList.push({href: src, type: 'image'});
+            addLocation(src, 'image');
     }
     //stylesheets
     list = document.styleSheets;
     for(i = list.length; i--;) {
         src = list[i].href;
         if (src)
-            locationList.push({href: src, type: 'text'});
+            addLocation(src, 'text');
         else
             src = baseURI
         var cssRules = list[i].cssRules
@@ -121,7 +129,7 @@ var  getAllLocations = function() {
                 href = href.slice(5,-2)
                 if (href.indexOf('://')==-1 && href.slice(0, 5) != 'data:')
                     href = FBL.absoluteURL(href, baseURI)
-                locationList.push({href: href, type:'image'})
+                addLocation(href, 'image')
             }
         }
     }
@@ -131,8 +139,9 @@ var  getAllLocations = function() {
         var item = locationList[i];
         if (item.href.indexOf('://') === -1 && item.href.slice(0, 5) != 'data:')
             item.href = FBL.absoluteURL(item.href, baseURI);
-        var match = item.href.match(/\/([^\?\/#]+)(?:\?|#|$)/);
-        item.name = match?match[1]:'e  *'+item.href;
+       /* var match = item.href.match(/\/([^\?\/#]+)(?:\?|#|$)/);
+        item.name = match?match[1]:'e  *'+item.href;*/
+		item.name = item.href;
         item.iconURL = "moz-icon://" + item.name + "?size=16";
         //    if (ext=='ico')
         //      return spec+"?size=16"

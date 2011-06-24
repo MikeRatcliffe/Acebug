@@ -334,10 +334,16 @@ Firebug.largeCommandLineEditor = {
         var win = Firebug.Ace.win2;
         win && win.editor && win.editor.focus();
     },
-
+	
+	// emulate textarea for firebug compatibility 
     __noSuchMethod__: function() {
     },
-
+	style: {
+		set fontSizeAdjust(val) {
+			dump(val); return val
+		}
+	},
+	
     addContextMenuItems: function(items, editor, editorText) {
         items.unshift(
             {
@@ -394,10 +400,7 @@ Firebug.largeCommandLineEditor = {
 				}).join('\n');
 			Firebug.CommandLine.commandHistory.appendToHistory(cell.body.join('\n'));
         }
-		if(text[text.length-1] == '.')
-			text = text.slice(0, -1)
-		
-
+		text.replace(/\.\s*$/, '')
 
 		Firebug.largeCommandLineEditor.runUserCode(text, cell);
     },
