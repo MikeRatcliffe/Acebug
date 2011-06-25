@@ -674,7 +674,7 @@ HTMLPanelEditor.prototype = {
         delete this.target;
     },
 
-    saveEdit:  function() {
+    saveEdit: function() {
         // Make sure that we create at least one node here, even if it's just
         // an empty space, because this code depends on having something to replace
         var value = this.getValue() || " ";

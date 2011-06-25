@@ -191,10 +191,16 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         this.data = getAllLocations();
         this.tree.view = new treeView(this.data);
 
+		this.tree.ownerPanel = this
+
         if (this.editor) {
-            this.editor.renderer.onResize(true);
+            //this.editor.renderer.onResize(true);
             //this.editor.setReadOnly(true);
-            this.onSelect();
+			var sel = this.tree.view.selection
+			if(sel.currentIndex == this.selectedIndex)
+				this.onSelect();
+			else
+				sel.timedSelect(this.selectedIndex, 0)
         } else {
             this.aceWindow.startAce(bind(function() {
                 this.editor = this.aceWindow.editor;
@@ -214,6 +220,8 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
     {
         var index = this.tree.view.selection.currentIndex;
         var data = this.data[index], content, href;
+
+		this.selectedIndex = index;
 
 
         if (!data) {

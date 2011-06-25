@@ -57,7 +57,7 @@
         <hbox id='fbAceBrowser1-parent'>
             <tree id='fbAceFileListTree' position='1' hidden='true' persist='width' class='plain'
                 onselect="this.ownerPanel.onSelect()" hidecolumnpicker='true' treelines='true'
-            >
+				width='50'>
                 <treechildren id="domfly" flex='1'/>
                 <treecols>
                    <treecol id="name" hideheader="true" primary="true" flex="2" crop="start"/>

@@ -216,18 +216,14 @@ exports.launch = function(env, options) {
 	
 	/**************************** breakpoint handler *********************************************/
 
-	function CStyleFolding(){
-		this.isLineFoldable = function(row) {
-			return this.getLine(row).search(/(\{|\[)\s*(\/\/.*)?$/) != -1 ||
-					(this.getState(row).isHeader == 1 && row + 1 < env.editor.session.getLength())
-			
-			editor.session.getState(i).isHeader
-			if (!this.foldWidgets)
-				this.foldWidgets = []
+	function CStyleFolding() {
+		this.isLineFoldable = function(row) {			
 			if (this.foldWidgets[row] != null)
 				return this.foldWidgets[row]
-			else
-				return this.foldWidgets[row] = !!this.getLine(row).match(/(\{|\[)\s*(\/\/.*)?$/)		
+			else {
+				return this.foldWidgets[row] = this.getLine(row).search(/(\{|\[)\s*(\/\/.*)?$/) != -1 ||
+					(this.getState(row).isHeader == 1 && row + 1 < env.editor.session.getLength())
+			}
 		}
 
 		this.setBreakpoints = function(rows) {
@@ -277,7 +273,7 @@ exports.launch = function(env, options) {
 		this.updateDataOnDocChange = function(e) {
 			var delta = e.data;
 			var range = delta.range;
-			var len, firstRow;
+			var len, firstRow, f1;
 			
 			if (delta.action == "insertText") {
 				len = range.end.row - range.start.row
@@ -286,21 +282,35 @@ exports.launch = function(env, options) {
 				len = range.end.row - range.start.row;
 				firstRow = range.start.row;
 			} else if (delta.action == "removeText") {
-				return
+				len = range.end.row - range.start.row;
+				firstRow = range.start.row;
 			} else if (delta.action == "removeLines") {
 				len = range.start.row - range.end.row
 				firstRow = range.start.row;
 			}
+
 			if (len > 0) {
 				args = Array(len);
 				this.$breakpoints.last += len;
 				args.unshift(firstRow, 0)
 				this.$breakpoints.splice.apply(this.$breakpoints, args);
-			} else if (len < 0){
+				
+				args[0] = range.start.row
+				this.foldWidgets.splice.apply(this.foldWidgets, args);
+			} else if (len < 0) {
 				var rem = this.$breakpoints.splice(firstRow + 1, -len);
 				if(!this.$breakpoints[firstRow] && rem.indexOf(true) != -1)
 					this.$breakpoints[firstRow] = true;
+
+				this.foldWidgets.splice(firstRow, -len);
+			} else if (len == 0) {
+				this.foldWidgets[range.start.row] = null;
 			}
+		}
+		
+		this.$init = function() {
+			this.foldWidgets = [];
+			this.doc.on('change', this.updateDataOnDocChange.bind(this));
 		}
 	};
 	CStyleFolding.call(EditSession.prototype);
@@ -310,6 +320,18 @@ exports.launch = function(env, options) {
 	// global functions
     toggleGutter = function() {
         editor.renderer.setShowGutter(!env.editor.renderer.showGutter);
+    };
+	toggleWrapMode = function(useWrap, session) {
+		session = session || editor.session
+		if (useWrap == null)
+			useWrap = !session.$useWrapMode;
+
+		if (useWrap) {
+            session.setUseWrapMode(true);
+            session.setWrapLimitRange(null, null);
+		} else {
+            session.setUseWrapMode(false);		
+		}
     };
 	getExtension = function(name, mime) {
 		if(mime) return (mime.toLowerCase().match(/(xml|html?|css|jsm?|xul|rdf)/i)||[,'js'])[1]
@@ -329,12 +351,12 @@ exports.launch = function(env, options) {
 		s.setUndoManager(new UndoManager());
 
 		s.setUseSoftTabs(options.softtabs);
-		s.setUseWrapMode(options.wordwrap);
+		toggleWrapMode(options.wordwrap, s);
 		s.setTabSize(options.tabsize);
 		s.setWrapLimitRange(null, null);
 		
 		//hack to support folding
-		s.doc.on('change', s.updateDataOnDocChange.bind(s))
+		s.$init()
 
         return s;
     };
