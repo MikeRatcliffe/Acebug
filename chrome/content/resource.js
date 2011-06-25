@@ -174,6 +174,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         this.__defineGetter__('browser', function() {
             return Firebug.chrome.$("fbAceBrowser1-parent");
         });
+		this.search = bind(Firebug.Ace.search, this);
 
         Firebug.Panel.initialize.apply(this, arguments);
     },

@@ -243,6 +243,32 @@ Firebug.Ace = {
         }
     },
 
+	// search
+    search: function(text, reverse) {
+        var e = this.editor;
+        e.$search.set({
+			needle: text,
+			backwards: reverse,
+			caseSensitive: Firebug.searchCaseSensitive,
+			//regExp: Firebug.searchUseRegularExpression,
+		});
+
+        var range = e.$search.find(e.session);
+        if (!range) {
+            range = e.selection.getRange();
+            if (!range.isEmpty()) {
+                range.end = range.start;
+                e.selection.setSelectionRange(range);
+                range = e.$search.find(e.session);
+            }
+        }
+
+        if (range) {
+            e.gotoLine(range.end.row + 1, range.end.column);
+            e.selection.setSelectionRange(range);
+        }
+        return range&&!range.isEmpty();
+    }
 };
 
 Firebug.largeCommandLineEditor = {
@@ -638,7 +664,7 @@ HTMLPanelEditor.prototype = {
     show: function(target, panel, value, textSize, targetSize) {
         this.prepare(target);
         this.panel = panel;
-        this.panel.search = bind(this.search, this);
+        this.panel.search = bind(Firebug.Ace.search, this);
 
         this.setValue(value);
         this.editor.focus();
@@ -723,27 +749,6 @@ HTMLPanelEditor.prototype = {
         }
         var self = this;
         this.timerId = setTimeout(function() {self.timerId = null;self.onInput()}, 200);
-    },
-
-    search: function(text, reverse) {
-        var e = this.editor;
-        e.$search.set({backwards: reverse, needle: text});
-
-        var range = e.$search.find(this.session);
-        if (!range) {
-            range = e.selection.getRange();
-            if (!range.isEmpty()) {
-                range.end = range.start;
-                e.selection.setSelectionRange(range);
-                range = e.$search.find(this.session);
-            }
-        }
-
-        if (range) {
-            e.gotoLine(range.end.row + 1, range.end.column);
-            e.selection.setSelectionRange(range);
-        }
-        return range;
     }
 };
 
