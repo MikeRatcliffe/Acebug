@@ -5,6 +5,8 @@ var oop = require("pilot/oop");
 var TextMode = require("ace/mode/text").Mode;
 var Range = require("ace/range").Range;
 var jsMode = require("ace/mode/javascript").Mode
+var WorkerClient = require("ace/worker/worker_client").WorkerClient;
+
 modes = {
 	js: new jsMode,
 	get coffee(){
@@ -222,8 +224,28 @@ oop.inherits(Mode, TextMode);
         return (modes[state.lang]||jsMode).autoOutdent(state.state, doc, row);
     };
     
-    this.createWorker = function(session) {
-        //return this.jsMode.createWorker(session);
+	this.createWorker = function(session) {
+        var doc = session.getDocument();
+        var worker = new WorkerClient(["ace", "pilot"], "../../../res/worker-console.js", "ace/mode/console", "ConsoleWorker");
+        worker.call("setValue", [doc.getValue()]);
+        
+        doc.on("change", function(e) {
+            e.range = {
+                start: e.data.range.start,
+                end: e.data.range.end
+            };
+            worker.emit("change", e);
+        });
+            
+        worker.on("jslint", function(results) {      
+            session.setAnnotations(results.data.errors)
+        });
+        
+        worker.on("terminate", function() {
+            session.clearAnnotations();
+        });
+        
+        return worker;
     };
 	
 	this.transformAction = function(state, action, editor, session, param) {

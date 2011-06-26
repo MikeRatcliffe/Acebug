@@ -243,6 +243,13 @@ Firebug.Ace = {
         }
     },
 
+	savePopupShowing: function(popup) {
+	
+	},
+	
+	loadPopupShowing: function(popup) {
+	
+	},
 	// search
     search: function(text, reverse) {
         var e = this.editor;
@@ -426,7 +433,7 @@ Firebug.largeCommandLineEditor = {
 				}).join('\n');
 			Firebug.CommandLine.commandHistory.appendToHistory(cell.body.join('\n'));
         }
-		text.replace(/\.\s*$/, '')
+		text = text.replace(/\.\s*$/, '')
 
 		Firebug.largeCommandLineEditor.runUserCode(text, cell);
     },

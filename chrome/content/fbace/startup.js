@@ -316,7 +316,57 @@ exports.launch = function(env, options) {
 	CStyleFolding.call(EditSession.prototype);
 	
 	/**************************** initialize ****************************************************/
-	
+	// fix event addCommandKeyListener
+	event.addCommandKeyListener = function(el, callback) {
+		var keys = require("pilot/keys");
+		var lastKeyDownKeyCode = null;
+		el.addEventListener("keydown", function(e) {
+			lastKeyDownKeyCode = e.keyCode in keys.MODIFIER_KEYS? 0: e.keyCode;
+		}, true);
+		el.addEventListener("keypress", function(e) {
+			return normalizeCommandKeys(callback, e, lastKeyDownKeyCode);
+		}, true);
+		function normalizeCommandKeys(callback, e, keyCode) {
+			var hashId = 0 | (e.ctrlKey ? 1 : 0) | (e.altKey ? 2 : 0)
+					| (e.shiftKey ? 4 : 0) | (e.metaKey ? 8 : 0);
+
+			// workaround for windows right alt bug
+			if (keyCode==0 && e.type == "keypress")
+				return callback(e, hashId, e.charCode);
+
+			if (keyCode in keys.MODIFIER_KEYS) {
+				switch (keys.MODIFIER_KEYS[keyCode]) {
+					case "Alt":
+						hashId = 2;
+						break;
+					case "Shift":
+						hashId = 4;
+						break
+					case "Ctrl":
+						hashId = 1;
+						break;
+					default:
+						hashId = 8;
+						break;
+				}
+				keyCode = 0;
+			}
+
+			if (hashId & 8 && (keyCode == 91 || keyCode == 93)) {
+				keyCode = 0;
+			}
+
+			// If there is no hashID and the keyCode is not a function key, then
+			// we don't call the callback as we don't handle a command key here
+			// (it's a normal key/character input).
+			if (hashId == 0 && !(keyCode in keys.FUNCTION_KEYS)) {
+				return false;
+			}
+
+			return callback(e, hashId, keyCode);
+		}
+	};
+
 	// global functions
     toggleGutter = function() {
         editor.renderer.setShowGutter(!env.editor.renderer.showGutter);
@@ -575,7 +625,7 @@ exports.launch = function(env, options) {
             editor.session.doc.setValue("");
         },
 		
-		beautify: function(){
+		beautify: function() {
 			function a(){
 				var session = editor.session
 				var sel = session.selection
@@ -605,10 +655,36 @@ exports.launch = function(env, options) {
 				sel.setSelectionRange(Range.fromPoints(range.start, end));
 			}
 			if (window.js_beautify)
-				a()
+				a();
 			else
-				require(["res/beautify","res/beautify-html"], a)
-		}
+				require(["res/beautify","res/beautify-html"], a);
+		},
+		uglify: function() {
+			
+		}		
+    });
+	
+	canon.addCommand({
+        name: "save",
+        bindKey: {
+            win: "Ctrl-S",
+            mac: "Ctrl-S",
+            sender: "editor"
+        },
+        exec: function(env) {
+			
+        }
+    });
+	canon.addCommand({
+        name: "save",
+        bindKey: {
+            win: "Ctrl-Shift-S",
+            mac: "Ctrl-Shift-S",
+            sender: "editor"
+        },
+        exec: function(env) {
+			
+        }
     });
  
  	/**************************** folding commands ***********************************************/

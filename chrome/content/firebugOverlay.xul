@@ -39,12 +39,16 @@
                                 <toolbarbutton id="fbCmdLineToggleStreamCommentButton" insertafter='fbCmdLineToggleCommentButton'
                                     label="/*" oncommand="Firebug.Ace.win2.editor.execCommand('toggleStreamComment')"
                                     tooltiptext="&acebug.fbCmdToggleStreamCommentButton.tooltip;" />
-                                <toolbarbutton id="fbCmdLoadButton" label="&acebug.fbCmdLoadButton.label;"
+                                <toolbarbutton id="fbCmdLoadButton" label="&acebug.fbCmdLoadButton.label;" type='menu-button'
                                     tooltiptext="&acebug.fbCmdLoadButton.tooltip;"
-                                    oncommand="Firebug.Ace.loadFile(Firebug.Ace.win2.editor)" insertbefore="fbCommandToggleLarge"/>
-                                <toolbarbutton id="fbCmdSaveButton" label="&acebug.fbCmdSaveButton.label;"
+                                    oncommand="Firebug.Ace.loadFile(Firebug.Ace.win2.editor)" insertbefore="fbCommandToggleLarge">
+									<menupopup onpopupshowing="Firebug.Ace.loadPopupShowing(this)"/>
+								</toolbarbutton>
+                                <toolbarbutton id="fbCmdSaveButton" label="&acebug.fbCmdSaveButton.label;" type='menu-button'
                                     tooltiptext="&acebug.fbCmdSaveButton.tooltip;"
-                                    oncommand="Firebug.Ace.saveFile(Firebug.Ace.win2.editor)" insertbefore="fbCommandToggleLarge"/>
+                                    oncommand="Firebug.Ace.saveFile(Firebug.Ace.win2.editor)" insertbefore="fbCommandToggleLarge">
+									<menupopup onpopupshowing="Firebug.Ace.savePopupShowing(this)"/>
+								</toolbarbutton>
                             </hbox>
                         </vbox>
                     </deck>
