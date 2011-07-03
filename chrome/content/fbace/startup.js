@@ -404,7 +404,9 @@ exports.launch = function(env, options) {
 		toggleWrapMode(options.wordwrap, s);
 		s.setTabSize(options.tabsize);
 		s.setWrapLimitRange(null, null);
-		
+
+		s.setUseWorker(options.validateasyoutype);
+
 		//hack to support folding
 		s.$init()
 
@@ -455,7 +457,6 @@ exports.launch = function(env, options) {
     editor.setHighlightActiveLine(options.highlightactiveline);
     editor.setShowPrintMargin(false);
     editor.setHighlightSelectedWord(options.highlightselectedword);
-    editor.session.setUseWorker(options.validateasyoutype);
     editor.renderer.setHScrollBarAlwaysVisible(false);
 	editor.setBehavioursEnabled(true);
 
@@ -624,8 +625,8 @@ exports.launch = function(env, options) {
         clear: function() {
             editor.session.doc.setValue("");
         },
-		
-		beautify: function() {
+
+		beautify: function(){
 			function a(){
 				var session = editor.session
 				var sel = session.selection
@@ -866,7 +867,7 @@ exports.launch = function(env, options) {
 			}
 		}
 	}
-	env.editor.renderer.on('gutterclick',onGutterClick)
+	env.editor.renderer.on('gutterclick', onGutterClick)
 
 };
 });

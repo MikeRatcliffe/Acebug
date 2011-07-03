@@ -1,6 +1,6 @@
 /* See license.txt for terms of usage */
 
-FBL.ns(function() { with (FBL) {
+FBL.ns(function() {
 
 // ************************************************************************************************
 // Constants
@@ -29,39 +29,9 @@ Firebug.Ace = {
 
         acebugPrefObserver.register();
 
-        Firebug.CommandLine.getCommandLineLarge = function() {
-            return Firebug.largeCommandLineEditor;
-        };
-
-        Firebug.ConsolePanel.prototype.detach = function(oldChrome, newChrome) {
-            var oldFrame = oldChrome.$("fbAceBrowser");
-            var newFrame = newChrome.$("fbAceBrowser");
-            if (oldFrame.contentWindow == Firebug.Ace.win2Wrapped) {
-                oldFrame.QueryInterface(Ci.nsIFrameLoaderOwner).swapFrameLoaders(newFrame);
-                // swap other window too
-                oldFrame = oldChrome.$("fbAceBrowser1");
-                newFrame = newChrome.$("fbAceBrowser1");
-                oldFrame.QueryInterface(Ci.nsIFrameLoaderOwner).swapFrameLoaders(newFrame);
-            }
-        };
-		this.loadFBugPatch()
+		this.hookIntoFirebug()
     },
 	
-	loadFBugPatch: function() {
-		var script = document.createElementNS("http://www.w3.org/1999/xhtml", "script");
-		script.type = "text/javascript;version=1.8";
-		script.src ='chrome://acebug/content/patchUpFirebug.js'
-		document.documentElement.appendChild(script)
-	},
-
-    showPanel: function(browser, panel) {
-        this.win1.startAce(null, this.getOptions());
-        this.showPanel = function(browser, panel) {
-			if(panel.name=='console')
-				this.win2.editor.renderer.onResize();
-		}
-    },
-
     getOptions: function() {
         var prefs = Components.classes["@mozilla.org/preferences-service;1"]
             .getService(Components.interfaces.nsIPrefService);
@@ -83,6 +53,42 @@ Firebug.Ace = {
         Firebug.Ace.showautocompletionhints = options.showautocompletionhints;
         return options;
     },
+	
+	// firebug hook
+	hookIntoFirebug: function() {
+		Firebug.CommandLine.getCommandLineLarge = function() {
+            return Firebug.largeCommandLineEditor;
+        };
+        Firebug.ConsolePanel.prototype.detach = this.detach
+		this.loadFBugPatch()
+	},
+	
+	detach: function(oldChrome, newChrome) {
+		var oldFrame = oldChrome.$("fbAceBrowser");
+		var newFrame = newChrome.$("fbAceBrowser");
+		if (oldFrame.contentWindow == Firebug.Ace.win2Wrapped) {
+			oldFrame.QueryInterface(Ci.nsIFrameLoaderOwner).swapFrameLoaders(newFrame);
+			// swap other window too
+			oldFrame = oldChrome.$("fbAceBrowser1");
+			newFrame = newChrome.$("fbAceBrowser1");
+			oldFrame.QueryInterface(Ci.nsIFrameLoaderOwner).swapFrameLoaders(newFrame);
+		}
+	},
+	
+	loadFBugPatch: function() {
+		var script = document.createElementNS("http://www.w3.org/1999/xhtml", "script");
+		script.type = "text/javascript;version=1.8";
+		script.src ='chrome://acebug/content/patchUpFirebug.js'
+		document.documentElement.appendChild(script)
+	},
+
+    showPanel: function(browser, panel) {
+        this.win1.startAce(null, this.getOptions());
+        this.showPanel = function(browser, panel) {
+			if(panel.name=='console')
+				this.win2.editor.renderer.onResize();
+		}
+    },
 
     switchPanels: function(toAce) {
         var panelID = toAce?"fbAceBrowser1-parent":'fbPanelBar1-browser';
@@ -95,7 +101,8 @@ Firebug.Ace = {
         this.win1Wrapped.document.getElementById('editor').style.fontSize = sizePercent;
         this.win2Wrapped.document.getElementById('editor').style.fontSize = sizePercent;
     },
-    // context menu
+    
+	// context menu
     getContextMenuItems: function(nada, target) {
         var env = target.ownerDocument.defaultView.wrappedJSObject;
 
@@ -177,7 +184,6 @@ Firebug.Ace = {
     },
 
     // save and load
-
     initFilePicker: function(session, mode) {
         var ext = session.extension,
             fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker),
@@ -250,6 +256,7 @@ Firebug.Ace = {
 	loadPopupShowing: function(popup) {
 	
 	},
+	
 	// search
     search: function(text, reverse) {
         var e = this.editor;
@@ -313,7 +320,7 @@ Firebug.largeCommandLineEditor = {
             return;
         this._loadingStarted = true;
 
-        Firebug.Ace.win2.startAce(bind(this.initialize,this),
+        Firebug.Ace.win2.startAce(FBL.bind(this.initialize,this),
 			Firebug.Ace.getOptions(), ['fbace/consoleMode']);
     },
 
@@ -466,7 +473,7 @@ Firebug.largeCommandLineEditor = {
 		if(!context.errorLocation)
 			this.setErrorLocation(context)
 		
-		var shortExpr = cropString(code.replace(/\s*/g, ''), 100);
+		var shortExpr = FBL.cropString(code.replace(/\s*/g, ''), 100);
         Firebug.Console.log("in:" + (inputNumber++) + ">>> " + cell.sourceLang + shortExpr, context, "command", FirebugReps.Text);
 		
 		code = this.setThisValue(code, this.cell)
@@ -598,7 +605,7 @@ var gClipboardHelper = {
 /***********************************************************/
 
 $ACESTR = function(name) {
-    return $STR(name, "strings_acebug");
+    return FBL.$STR(name, "strings_acebug");
 };
 
 /***********************************************************/
@@ -640,7 +647,7 @@ var HTMLPanelEditor = function() {
     this.aceWindow = Firebug.Ace.win1;
     this.editor = this.aceWindow.editor;
     this.session = this.aceWindow.createSession('', '.html');
-    this.onInput = bind(this.onInput, this);
+    this.onInput = FBL.bind(this.onInput, this);
     this.session.on('change', this.onInput);
     this.session.owner = 'htmlEditor';
     //
@@ -671,7 +678,7 @@ HTMLPanelEditor.prototype = {
     show: function(target, panel, value, textSize, targetSize) {
         this.prepare(target);
         this.panel = panel;
-        this.panel.search = bind(Firebug.Ace.search, this);
+        this.panel.search = FBL.bind(Firebug.Ace.search, this);
 
         this.setValue(value);
         this.editor.focus();
@@ -768,7 +775,7 @@ var StyleSheetEditor = function() {
     this.aceWindow = Firebug.Ace.win1;
     this.editor = this.aceWindow.editor;
     this.session = this.aceWindow.createSession('', '.css');
-    this.onInput = bind(this.onInput, this);
+    this.onInput = FBL.bind(this.onInput, this);
     this.session.on('change', this.onInput);
     this.session.owner = 'stylesheetEditor';
     this.session.autocompletionType = 'css';
@@ -776,7 +783,7 @@ var StyleSheetEditor = function() {
     this.cmdID = Firebug.version<'1.8'? 'cmd_toggleCSSEditing': 'cmd_togglecssEditMode';
 };
 
-StyleSheetEditor.prototype = extend(HTMLPanelEditor.prototype, {
+StyleSheetEditor.prototype = FBL.extend(HTMLPanelEditor.prototype, {
     saveEdit: function() {
         Firebug.CSSModule.freeEdit(this.styleSheet, this.getValue())
     },
@@ -838,4 +845,4 @@ Firebug.registerModule(Firebug.Ace);
 
 // ************************************************************************************************
 
-}});
+});
