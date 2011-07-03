@@ -475,6 +475,13 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 		var cursorChar = curLine[range.end.column];
 		if (cursorChar == lastChar && /\)|\}|\]|"/.test(lastChar))
 			text = text.slice(0, -1);
+		// do not add first " if it is already there
+		var firstChar = text[0];
+		var cursorChar = curLine[range.start.column-1];
+		dump(firstChar,cursorChar)
+		if (firstChar == '"' && (cursorChar == '"' || cursorChar == "'")) {
+			range.start.column--
+		}
 
 		var end = this.editor.session.replace(range, text);
     },
@@ -788,7 +795,6 @@ var backParse = (function() {
 				objCursor=capture()
 			}
 			if (objCursor) {
-				dump(objCursor.row,objCursor.column)
 				ans.dotPosition = objCursor
 				var state='.'
 				outer: while (ch) {
@@ -797,18 +803,18 @@ var backParse = (function() {
 							eatWhile(/\s/)
 							state='.'
 						break;
+						case " ":
+						case "\t":
 						case "\n":
 							capture()
+							var capCh = ch
 							eatWhile(/\s/);
-							if(ch != '.'){
-								col = captureCursor.column
+							if(ch != '.' && state != '.'){
+								col = captureCursor.column - 1
 								row = captureCursor.row
-								ch = '\n'
+								ch = capCh
 								break outer;
 							}
-						break;
-						case " ":
-							eatSpace(ch);
 						break;
 						case ']':case ')':
 							if(state=='.')

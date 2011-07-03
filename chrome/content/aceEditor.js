@@ -425,7 +425,7 @@ Firebug.largeCommandLineEditor = {
 						// strip comments and ;
 						x = x.replace(/\/\/.*$/, '')
 							 .replace(/;\s*$/, '') 
-							 .replace(/^var\s+/g, '')
+							 .replace(/^\s*var\s+/g, '')
 						if(x)
 							x = 'console.log(' + x + ')'
 					}

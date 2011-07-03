@@ -226,7 +226,7 @@ oop.inherits(Mode, TextMode);
     
 	this.createWorker = function(session) {
         var doc = session.getDocument();
-        var worker = new WorkerClient(["ace", "pilot"], "../../../res/worker-console.js", "ace/mode/console", "ConsoleWorker");
+        var worker = new WorkerClient(["ace", "pilot"], "../../../res/worker-console.js", "ace/mode/console_worker", "ConsoleWorker");
         worker.call("setValue", [doc.getValue()]);
         
         doc.on("change", function(e) {

@@ -173,7 +173,7 @@ var ConsoleWorker = exports.ConsoleWorker = function(sender) {
 		console.log("lint time: " + (new Date() - start));
     }
     
-}).call(JavaScriptWorker.prototype);
+}).call(ConsoleWorker.prototype);
 
 })
 
