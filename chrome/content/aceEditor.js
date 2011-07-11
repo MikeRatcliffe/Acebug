@@ -56,9 +56,23 @@ Firebug.Ace = {
 	
 	// firebug hook
 	hookIntoFirebug: function() {
-		Firebug.CommandLine.getCommandLineLarge = function() {
-            return Firebug.largeCommandLineEditor;
-        };
+		var fName = "getCommandLineLarge"
+		if (Firebug.CommandLine.getCommandEditor) {
+			// required for 1.8 compatibility
+			// see http://code.google.com/p/fbug/source/detail?r=11301
+			fName = "getCommandEditor"
+			
+			let oldEl = Firebug.chrome.$("fbLargeCommandBox")
+			let newEl = Firebug.chrome.$("fbCommandEditorBox")
+			let toolbar = Firebug.chrome.$("fbCommandToolbar")
+			newEl.parentNode.removeChild(newEl)
+			oldEl.appendChild(toolbar)
+			oldEl.id = "fbCommandEditorBox"
+		}
+
+		Firebug.CommandLine[fName] = function() {
+			return Firebug.largeCommandLineEditor;
+		};
         Firebug.ConsolePanel.prototype.detach = this.detach
 		this.loadFBugPatch()
 	},
