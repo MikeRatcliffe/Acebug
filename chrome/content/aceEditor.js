@@ -264,12 +264,15 @@ Firebug.Ace = {
     },
 
 	savePopupShowing: function(popup) {
-	
+		FBL.eraseNode(popup)
+		FBL.createMenuItem(popup, {label: 'save As', nol10n: true });
 	},
 	
 	loadPopupShowing: function(popup) {
-	
+		FBL.eraseNode(popup)
+		FBL.createMenuItem(popup, {label: 'save As', nol10n: true });
 	},
+	
 	
 	// search
     search: function(text, reverse) {
