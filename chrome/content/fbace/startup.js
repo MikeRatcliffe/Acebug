@@ -209,6 +209,8 @@ exports.launch = function(env, options) {
     HTMLMode = require("ace/mode/html").Mode;
     XMLMode = require("ace/mode/xml").Mode;
 	JSMode = require("ace/mode/javascript").Mode;
+	
+	[CSSMode, HTMLMode, XMLMode, JSMode].forEach(function(x){delete x.prototype.createWorker})
 
 	HashHandler = require("ace/keyboard/hash_handler").HashHandler;
 	Search = require("ace/search").Search;	

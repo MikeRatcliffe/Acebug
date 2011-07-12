@@ -13,24 +13,34 @@ Firebug.Ace = {
 
     initializeUI: function() {
         var browser = FBL.$("fbAceBrowser");
-        this.win2Wrapped = browser.contentWindow;
-        this.win2 = this.win2Wrapped.wrappedJSObject;
+        var win2Wrapped = browser.contentWindow;
+        this.win2 = win2Wrapped.wrappedJSObject;
 
         var browser = FBL.$("fbAceBrowser1");
-        this.win1Wrapped = browser.contentWindow;
-        this.win1 = this.win1Wrapped.wrappedJSObject;
+        win1Wrapped = browser.contentWindow;
+        this.win1 = win1Wrapped.wrappedJSObject;
 
         this.win1.startAcebugAutocompleter =
         this.win2.startAcebugAutocompleter = this.startAutocompleter;
 
-        //set Firebug.largeCommandLineEditor on wrapped window so that Firebug.getElementPanel can access it
-        this.win1Wrapped.document.getElementById('editor').ownerPanel = this;
-        this.win2Wrapped.document.getElementById('editor').ownerPanel = this;
+        //set Firebug.Ace on wrapped window so that Firebug.getElementPanel can access it
+        win1Wrapped.document.getElementById('editor').ownerPanel = this;
+        win2Wrapped.document.getElementById('editor').ownerPanel = this;
+		
+		this.win1.aceManager = this.win2.aceManager = this
+		this.win1.onclose = this.win2.onclose = this.shutdown.bind(this)
 
         acebugPrefObserver.register();
 
 		this.hookIntoFirebug()
     },
+	
+	shutdown: function() {		
+		if(!this.win1)
+			return
+		this.win1.aceManager = this.win2.aceManager = null
+		this.win1 = this.win2 = null
+	},
 	
     getOptions: function() {
         var prefs = Components.classes["@mozilla.org/preferences-service;1"]
@@ -57,7 +67,11 @@ Firebug.Ace = {
 	// firebug hook
 	hookIntoFirebug: function() {
 		var fName = "getCommandLineLarge"
-		if (Firebug.CommandLine.getCommandEditor) {
+		if (Firebug.CommandLine.getCommandEditor &&
+			!Firebug.CommandLine.getCommandEditorPatched
+			) {
+			Firebug.CommandLine.getCommandEditorPatched = true
+
 			// required for 1.8 compatibility
 			// see http://code.google.com/p/fbug/source/detail?r=11301
 			fName = "getCommandEditor"
@@ -482,7 +496,8 @@ Firebug.largeCommandLineEditor = {
 					before: source[0].length,
 					after: -source[1].length,
 				}
-			});
+			}
+		);
 	},
 	
 	runUserCode: function(code, cell) {
@@ -494,10 +509,11 @@ Firebug.largeCommandLineEditor = {
         Firebug.Console.log("in:" + (inputNumber++) + ">>> " + cell.sourceLang + shortExpr, context, "command", FirebugReps.Text);
 		
 		code = this.setThisValue(code, this.cell)
+		this.lastEvaledCode = code;
 		Firebug.CommandLine.evaluate(code, context, context.thisValue, null,
-                Firebug.largeCommandLineEditor.logSuccess,
-                Firebug.largeCommandLineEditor.logError
-            );
+			Firebug.largeCommandLineEditor.logSuccess,
+			Firebug.largeCommandLineEditor.logError
+		);
 	},
 	logSuccess: function(e){
 		Firebug.largeCommandLineEditor.$useConsoleDir?
@@ -506,10 +522,13 @@ Firebug.largeCommandLineEditor = {
 	},
 	logError: function(error) {
 		var loc = Firebug.currentContext.errorLocation
-		if(loc.fileName == error.fileName) {
-			var cellStart = Firebug.largeCommandLineEditor.cell.bodyStart; 
-			var lineNumber = error.lineNumber-loc.lineNumber;
-			var lines = error.source.slice(loc.before, loc.after).split('\n')
+		var self = Firebug.largeCommandLineEditor
+		var source = error.source.slice(loc.before, loc.after)
+
+		if(loc.fileName == error.fileName && source == self.lastEvaledCode) {
+			var cellStart = self.cell.bodyStart; 
+			var lineNumber = error.lineNumber - loc.lineNumber;
+			var lines = source.split('\n')
 			var line = lines[lineNumber]||lines[lineNumber-1]
 			Firebug.Console.log(error.message + ' `' + line + '` @'+(lineNumber+cellStart))
 		} else
@@ -755,7 +774,7 @@ HTMLPanelEditor.prototype = {
         if (this.innerEditMode)
             this.editingElements[0].innerHTML = value;
         else
-            this.editingElements = setOuterHTML(this.editingElements[0], value);
+            this.editingElements = FBL.setOuterHTML(this.editingElements[0], value);
     },
 
     endEditing: function() {
