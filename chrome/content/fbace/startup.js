@@ -533,7 +533,7 @@ exports.launch = function(env, options) {
         startAutocompleter: "Ctrl-Space|Ctrl-.|Alt-.",
         execute: "Ctrl-Return",
 		dirExecute: "Ctrl-Shift-Return",
-        duplicate: "Ctrl-D|Alt-D",
+        duplicate: "Ctrl-D",
 		beautify: "Ctrl-Shift-B"
     };
 
@@ -666,6 +666,11 @@ exports.launch = function(env, options) {
 			
 		}		
     });
+	
+	var com = canon.getCommand('removeline')
+	com.bindKey.win = com.bindKey.mac = 'Alt-D'
+	canon.removeCommand('removeline')
+	canon.addCommand(com)
 	
 	canon.addCommand({
         name: "save",

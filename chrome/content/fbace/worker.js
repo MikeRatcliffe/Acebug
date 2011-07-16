@@ -1,4 +1,10 @@
-exports.callWhenIdle = function(fcn) {
+define("fbace/worker", function(require, exports, module) {
+
+var lang = require("pilot/lang");
+var lint = require("ace/worker/jshint").JSHINT;
+    
+
+var callWhenIdle = function(fcn) {
     var timer = null;
     var callback = function() {
         timer = null;
@@ -8,7 +14,7 @@ exports.callWhenIdle = function(fcn) {
     var deferred = function(timeout) {
         if (timer != null) 
 			deferred.cancel();
-		timer = setTimeout(callback, timeout || 0);
+		timer = setTimeout(callback, timeout||0);
         
         return deferred;
     }
@@ -29,59 +35,87 @@ exports.callWhenIdle = function(fcn) {
 
     return deferred;
 };
+	
+var delimiter = '#>>'
+var dl = delimiter.length
 
-,define("fbace/worker",	function(require, exports, module) {
-
-var lang = require("pilot/lang");
-var lint = require("ace/worker/jshint").JSHINT;
+exports.ConsoleWorker = function(session) {
+	this.lintOptions = {undef: false, onevar: false, passfail: false, asi: true}
     
-var ConsoleWorker = exports.ConsoleWorker = function(sender) {
-    this.sender = sender;
-    var doc = this.doc = new Document("");
+	this.session = session;    
+    this.deferredUpdate = callWhenIdle(this.updateAnnotations.bind(this));
     
-    var deferredUpdate = this.deferredUpdate = lang.deferredCall(this.onUpdate.bind(this));
-    
-    var _self = this;
-    sender.on("change", function(e) {
-        doc.applyDeltas([e.data]);        
-        deferredUpdate.schedule(_self.$timeout);
-    });
-    this.setTimeout(500);
+	this.session.$annotations = {}	
+	this.onUpdate = this.onUpdate.bind(this)
+    session.on("change", this.onUpdate);	
 };
 
 (function() {        
-    this.$timeout = 500;
+    this.$timeout = 600;
     
     this.setTimeout = function(timeout) {
         this.$timeout = timeout;
     };
-        
-    this.onUpdate = function() {
-        var value = this.doc.getValue();
-        value = value.replace(/^#!.*\n/, "\n");
-                
-        var start = new Date();console.log("jslint")
-		
-        lint(value, {undef: false, onevar: false, passfail: false})
-		
+	
+    this.onUpdate = function(e) {
+		var range = e.data.range;
+			
+		if (range.end.row != range.start.row) 
+			this.session.setAnnotations([])
+		else
+			delete this.session.$annotations[range.start.row]
+		this.deferredUpdate.schedule(this.$timeout);
+	};
+	
+    this.updateAnnotations = function() {
+        var lines = this.session.doc.$lines;
 		var errors = [];
+                
+        var startTime = new Date();console.log("jslint")
+		var n = lines.length
+		for (var start = 0, end = 0; end < n; end++){
+			console.log(start, end)
+			if (lines[end].slice(0, dl) != delimiter)
+				continue;
+			
+			if (start < end)
+				this.lintJS(errors, lines.slice(start, end).join('\n'), start)
+			
+			while (end < n && lines[end].slice(0, dl) == delimiter)
+				end++;
+			start = end
+		}
+		console.log(start, end)
+		if (start < end)
+			this.lintJS(errors, lines.slice(start, end).join('\n'), start)
+		
+		console.log("lint time: " + (new Date() - startTime));
+
+        this.session.setAnnotations(errors)        
+    }
+	
+	this.lintJS = function(errors, value, startLineNumber){
+		lint(value, this.lintOptions)
+		
 		for (var i=0; i < lint.errors.length; i++) {
 			var error = lint.errors[i];
 			if (error)
 				errors.push({
-					row: error.line-1,
+					row: error.line-1+startLineNumber,
 					column: error.character-1,
 					text: error.reason,
 					type: error.reason.slice(0, 9) == 'Stopping,'? "error": "warning",
 					lint: error
 				})
 		}
-		this.sender.emit("jslint", {errors: errors, startLine:0, endLine:0});
-        
-		console.log("lint time: " + (new Date() - start));
-    }
+	}
+	
+	this.terminate = function() {
+        session.clearAnnotations();
+		session.removeEventListener("change", this.onUpdate)
+    };
     
-}).call(ConsoleWorker.prototype);
+}).call(exports.ConsoleWorker.prototype);
 
 })
 

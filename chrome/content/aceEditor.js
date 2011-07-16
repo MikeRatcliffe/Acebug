@@ -352,7 +352,7 @@ Firebug.largeCommandLineEditor = {
         this._loadingStarted = true;
 
         Firebug.Ace.win2.startAce(FBL.bind(this.initialize,this),
-			Firebug.Ace.getOptions(), ['fbace/consoleMode']);
+			Firebug.Ace.getOptions(), ['fbace/consoleMode', "fbace/worker"]);
     },
 
     getValue: function() {

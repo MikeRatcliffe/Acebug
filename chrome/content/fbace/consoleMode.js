@@ -5,7 +5,6 @@ var oop = require("pilot/oop");
 var TextMode = require("ace/mode/text").Mode;
 var Range = require("ace/range").Range;
 var jsMode = require("ace/mode/javascript").Mode
-var WorkerClient = require("ace/worker/worker_client").WorkerClient;
 
 modes = {
 	js: new jsMode,
@@ -225,25 +224,8 @@ oop.inherits(Mode, TextMode);
     };
     
 	this.createWorker = function(session) {
-        var doc = session.getDocument();
-        var worker = new WorkerClient(["ace", "pilot"], "../../../res/worker-console.js", "ace/mode/console_worker", "ConsoleWorker");
-        worker.call("setValue", [doc.getValue()]);
-        
-        doc.on("change", function(e) {
-            e.range = {
-                start: e.data.range.start,
-                end: e.data.range.end
-            };
-            worker.emit("change", e);
-        });
-            
-        worker.on("jslint", function(results) {      
-            session.setAnnotations(results.data.errors)
-        });
-        
-        worker.on("terminate", function() {
-            session.clearAnnotations();
-        });
+        var cw = require("fbace/worker").ConsoleWorker
+		d = new cw(session)
         
         return worker;
     };
