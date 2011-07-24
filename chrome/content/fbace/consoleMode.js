@@ -225,7 +225,7 @@ oop.inherits(Mode, TextMode);
     
 	this.createWorker = function(session) {
         var cw = require("fbace/worker").ConsoleWorker
-		d = new cw(session)
+		var worker = new cw(session)
         
         return worker;
     };

@@ -139,7 +139,9 @@ Firebug.Ace = {
             clipBoardText = gClipboardHelper.getData(),
             editorText = editor.getCopyText(),
             self = this;
-
+		// important: make sure editor is focused
+		editor.focus()
+		
         items.push(
             {
                 label: $ACESTR("acebug.copy"),
@@ -523,8 +525,7 @@ Firebug.largeCommandLineEditor = {
 	logError: function(error) {
 		var loc = Firebug.currentContext.errorLocation
 		var self = Firebug.largeCommandLineEditor
-		var source = error.source.slice(loc.before, loc.after)
-
+		var source = error.source.slice(loc.before, loc.after);
 		if(loc.fileName == error.fileName && source == self.lastEvaledCode) {
 			var cellStart = self.cell.bodyStart; 
 			var lineNumber = error.lineNumber - loc.lineNumber;
@@ -610,7 +611,7 @@ var acebugPrefObserver = {
 };
 
 /***********************************************************/
-var gClipboardHelper = {
+var gClipboardHelper = Firebug.Ace.gClipboardHelper = {
     cbHelperService: Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper),
 
     copyString: function(str) {

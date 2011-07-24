@@ -272,72 +272,31 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
     },
     // context menu
     getContextMenuItems: function(nada, target) {
+		if (target.tagName == 'treechildren') {
+			var view = target.parentNode.view
+			var url = view.getCellText(view.selection.currentIndex,{id:'name'})
+		}
         var env = target.ownerDocument.defaultView.wrappedJSObject;
 
-        var items = [],
-            editor = env.editor,
-            clipBoardText = gClipboardHelper.getData(),
-            editorText = editor.getCopyText(),
-            self = this;
+        var items = []
 
         items.push(
             {
                 label: $ACESTR("acebug.copy"),
                 command: function() {
-                    gClipboardHelper.copyString(editorText);
+                    gClipboardHelper.copyString(url);
                 },
-                disabled: !editorText
-            },
-            {
-                label: $ACESTR("acebug.cut"),
-                command: function() {
-                    gClipboardHelper.copyString(editorText);
-                    editor.onCut();
-                },
-                disabled: !editorText
-            },
-            {
-                label: $ACESTR("acebug.paste"),
-                command: function() {
-                    editor.onTextInput(clipBoardText);
-                },
-                disabled: !clipBoardText
-            },
-            "-",/*
-            {
-                label: $ACESTR("acebug options"),
-                command: function() {
-                    openDialog('chrome://acebug/content/options.xul','','resizable,centerscreen')
-                }
-            },*/
-            {
-                label: $ACESTR("acebug.reportissue"),
-                command: function() {
-                    var wm = Components.classes["@mozilla.org/appshell/window-mediator;1"]
-                        .getService(Components.interfaces.nsIWindowMediator);
-                    var mainWindow = wm.getMostRecentWindow("navigator:browser");
-                    mainWindow.gBrowser.selectedTab = mainWindow.gBrowser.addTab("https://github.com/MikeRatcliffe/Acebug/issues");
-                }
+                disabled: !url
             }
         );
 
-        var sessionOwner;
-        switch(editor.session.owner) {
-            case 'console':
-                sessionOwner = Firebug.largeCommandLineEditor;
-            break;
-            case 'stylesheetEditor':
-                sessionOwner = StyleSheetEditor.prototype;
-            break;
-            case 'htmlEditor':
-                sessionOwner = null;
-            break;
-        }
-        sessionOwner && sessionOwner.addContextMenuItems(items, editor, editorText);
-
         return items;
     },
-
+	// for ace editor
+	addContextMenuItems: function(items, editor, editorText){
+		return items;
+	},
+	
     getSourceLink: function(target, object) {
         var env = target.ownerDocument.defaultView.wrappedJSObject;
         var session = env.editor.session;
@@ -359,7 +318,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 
 });
 
-
+var gClipboardHelper = Firebug.Ace.gClipboardHelper
 // ************************************************************************************************
 
 Firebug.registerPanel(Firebug.ResourcePanel);
