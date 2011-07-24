@@ -161,16 +161,16 @@ var Gutter = function(parentEl) {
                 breakpoints[i] ? " ace_breakpoint " : " ",
                 annotation.className,
                 "' title='", annotation.text.join("\n"),
-                "' style='height:", config.lineHeight, "px;'>" 
-				);
-			if (this.session.isLineFoldable(i)){
-				html.push(
-					"<span class='ace_fold-widget ",
-					i == foldStart?"closed":"open",
-					"'>", i, "</span>"
-				)
-			} else
-				html.push(i)
+                "' style='height:", config.lineHeight, "px;'>"
+                );
+            if (this.session.isLineFoldable(i)){
+                html.push(
+                    "<span class='ace_fold-widget ",
+                    i == foldStart?"closed":"open",
+                    "'>", i, "</span>"
+                )
+            } else
+                html.push(i)
 
             var wrappedRowLength = this.session.getRowLength(i) - 1;
             while (wrappedRowLength--) {
@@ -208,209 +208,209 @@ exports.launch = function(env, options) {
     CSSMode = require("ace/mode/css").Mode;
     HTMLMode = require("ace/mode/html").Mode;
     XMLMode = require("ace/mode/xml").Mode;
-	JSMode = require("ace/mode/javascript").Mode;
-	
-	[CSSMode, HTMLMode, XMLMode, JSMode].forEach(function(x){delete x.prototype.createWorker})
+    JSMode = require("ace/mode/javascript").Mode;
 
-	HashHandler = require("ace/keyboard/hash_handler").HashHandler;
-	Search = require("ace/search").Search;	
-	
-	
-	/**************************** breakpoint handler *********************************************/
+    [CSSMode, HTMLMode, XMLMode, JSMode].forEach(function(x){delete x.prototype.createWorker})
 
-	function CStyleFolding() {
-		this.isLineFoldable = function(row) {			
-			if (this.foldWidgets[row] != null)
-				return this.foldWidgets[row]
-			else {
-				return this.foldWidgets[row] = this.getLine(row).search(/(\{|\[)\s*(\/\/.*)?$/) != -1 ||
-					(this.getState(row).isHeader == 1 && row + 1 < env.editor.session.getLength())
-			}
-		}
+    HashHandler = require("ace/keyboard/hash_handler").HashHandler;
+    Search = require("ace/search").Search;
 
-		this.setBreakpoints = function(rows) {
-			this.$breakpoints = [];
-			for (var i=0; i<rows.length; i++) {
-				this.$breakpoints[rows[i]] = true;
-			}
-			this.$lastBreakpoint = this.$breakpoints.lastIndexOf(true);
-			this._dispatchEvent("changeBreakpoint", {});
-		};
 
-		this.clearBreakpoints = function() {
-			this.$breakpoints = [];
-			this.$breakpoints.last = 0;
-			this._dispatchEvent("changeBreakpoint", {});
-		};
+    /**************************** breakpoint handler *********************************************/
 
-		this.setBreakpoint = function(row) {
-			this.$breakpoints[row] = true;
-			this.$breakpoints.last = this.$breakpoints.lastIndexOf(true);
-			this._dispatchEvent("changeBreakpoint", {});
-		};
+    function CStyleFolding() {
+        this.isLineFoldable = function(row) {
+            if (this.foldWidgets[row] != null)
+                return this.foldWidgets[row]
+            else {
+                return this.foldWidgets[row] = this.getLine(row).search(/(\{|\[)\s*(\/\/.*)?$/) != -1 ||
+                    (this.getState(row).isHeader == 1 && row + 1 < env.editor.session.getLength())
+            }
+        }
 
-		this.clearBreakpoint = function(row) {
-			delete this.$breakpoints[row];
-			this.$breakpoints.last = this.$breakpoints.lastIndexOf(true);
-			this._dispatchEvent("changeBreakpoint", {});
-		};
+        this.setBreakpoints = function(rows) {
+            this.$breakpoints = [];
+            for (var i=0; i<rows.length; i++) {
+                this.$breakpoints[rows[i]] = true;
+            }
+            this.$lastBreakpoint = this.$breakpoints.lastIndexOf(true);
+            this._dispatchEvent("changeBreakpoint", {});
+        };
 
-		this.getBreakpoints = function() {
-			return this.$breakpoints;
-		};
+        this.clearBreakpoints = function() {
+            this.$breakpoints = [];
+            this.$breakpoints.last = 0;
+            this._dispatchEvent("changeBreakpoint", {});
+        };
 
-		this._delayedDispatchEvent = function(eventName, e, delay) {
-			if (this[eventName+'_Timeout'] !=null || !this._eventRegistry) return;
+        this.setBreakpoint = function(row) {
+            this.$breakpoints[row] = true;
+            this.$breakpoints.last = this.$breakpoints.lastIndexOf(true);
+            this._dispatchEvent("changeBreakpoint", {});
+        };
 
-			var listeners = this._eventRegistry[eventName];
-			if (!listeners || !listeners.length) return;
+        this.clearBreakpoint = function(row) {
+            delete this.$breakpoints[row];
+            this.$breakpoints.last = this.$breakpoints.lastIndexOf(true);
+            this._dispatchEvent("changeBreakpoint", {});
+        };
 
-			var self = this;
-			this[eventName+'_Timeout'] = setTimeout(function(){
-				self[eventName+'_Timeout'] = null
-				self._dispatchEvent(eventName, e)
-			}, delay || 20)
-		};
+        this.getBreakpoints = function() {
+            return this.$breakpoints;
+        };
 
-		this.updateDataOnDocChange = function(e) {
-			var delta = e.data;
-			var range = delta.range;
-			var len, firstRow, f1;
-			
-			if (delta.action == "insertText") {
-				len = range.end.row - range.start.row
-				firstRow = range.start.column == 0? range.start.row: range.start.row + 1;
-			} else if (delta.action == "insertLines") {
-				len = range.end.row - range.start.row;
-				firstRow = range.start.row;
-			} else if (delta.action == "removeText") {
-				len = range.end.row - range.start.row;
-				firstRow = range.start.row;
-			} else if (delta.action == "removeLines") {
-				len = range.start.row - range.end.row
-				firstRow = range.start.row;
-			}
+        this._delayedDispatchEvent = function(eventName, e, delay) {
+            if (this[eventName+'_Timeout'] !=null || !this._eventRegistry) return;
 
-			if (len > 0) {
-				args = Array(len);
-				this.$breakpoints.last += len;
-				args.unshift(firstRow, 0)
-				this.$breakpoints.splice.apply(this.$breakpoints, args);
-				
-				args[0] = range.start.row
-				this.foldWidgets.splice.apply(this.foldWidgets, args);
-			} else if (len < 0) {
-				var rem = this.$breakpoints.splice(firstRow + 1, -len);
-				if(!this.$breakpoints[firstRow] && rem.indexOf(true) != -1)
-					this.$breakpoints[firstRow] = true;
+            var listeners = this._eventRegistry[eventName];
+            if (!listeners || !listeners.length) return;
 
-				this.foldWidgets.splice(firstRow, -len);
-			} else if (len == 0) {
-				this.foldWidgets[range.start.row] = null;
-			}
-		}
-		
-		this.$init = function() {
-			this.foldWidgets = [];
-			this.doc.on('change', this.updateDataOnDocChange.bind(this));
-		}
-	};
-	CStyleFolding.call(EditSession.prototype);
-	
-	/**************************** initialize ****************************************************/
-	// fix event addCommandKeyListener
-	event.addCommandKeyListener = function(el, callback) {
-		var keys = require("pilot/keys");
-		var lastKeyDownKeyCode = null;
-		el.addEventListener("keydown", function(e) {
-			lastKeyDownKeyCode = e.keyCode in keys.MODIFIER_KEYS? 0: e.keyCode;
-		}, true);
-		el.addEventListener("keypress", function(e) {
-			return normalizeCommandKeys(callback, e, lastKeyDownKeyCode);
-		}, true);
-		function normalizeCommandKeys(callback, e, keyCode) {
-			var hashId = 0 | (e.ctrlKey ? 1 : 0) | (e.altKey ? 2 : 0)
-					| (e.shiftKey ? 4 : 0) | (e.metaKey ? 8 : 0);
+            var self = this;
+            this[eventName+'_Timeout'] = setTimeout(function(){
+                self[eventName+'_Timeout'] = null
+                self._dispatchEvent(eventName, e)
+            }, delay || 20)
+        };
 
-			// workaround for windows right alt bug
-			if (keyCode==0 && e.type == "keypress")
-				return callback(e, hashId, e.charCode);
+        this.updateDataOnDocChange = function(e) {
+            var delta = e.data;
+            var range = delta.range;
+            var len, firstRow, f1;
 
-			if (keyCode in keys.MODIFIER_KEYS) {
-				switch (keys.MODIFIER_KEYS[keyCode]) {
-					case "Alt":
-						hashId = 2;
-						break;
-					case "Shift":
-						hashId = 4;
-						break
-					case "Ctrl":
-						hashId = 1;
-						break;
-					default:
-						hashId = 8;
-						break;
-				}
-				keyCode = 0;
-			}
+            if (delta.action == "insertText") {
+                len = range.end.row - range.start.row
+                firstRow = range.start.column == 0? range.start.row: range.start.row + 1;
+            } else if (delta.action == "insertLines") {
+                len = range.end.row - range.start.row;
+                firstRow = range.start.row;
+            } else if (delta.action == "removeText") {
+                len = range.end.row - range.start.row;
+                firstRow = range.start.row;
+            } else if (delta.action == "removeLines") {
+                len = range.start.row - range.end.row
+                firstRow = range.start.row;
+            }
 
-			if (hashId & 8 && (keyCode == 91 || keyCode == 93)) {
-				keyCode = 0;
-			}
+            if (len > 0) {
+                args = Array(len);
+                this.$breakpoints.last += len;
+                args.unshift(firstRow, 0)
+                this.$breakpoints.splice.apply(this.$breakpoints, args);
 
-			// If there is no hashID and the keyCode is not a function key, then
-			// we don't call the callback as we don't handle a command key here
-			// (it's a normal key/character input).
-			if (hashId == 0 && !(keyCode in keys.FUNCTION_KEYS)) {
-				return false;
-			}
+                args[0] = range.start.row
+                this.foldWidgets.splice.apply(this.foldWidgets, args);
+            } else if (len < 0) {
+                var rem = this.$breakpoints.splice(firstRow + 1, -len);
+                if(!this.$breakpoints[firstRow] && rem.indexOf(true) != -1)
+                    this.$breakpoints[firstRow] = true;
 
-			return callback(e, hashId, keyCode);
-		}
-	};
+                this.foldWidgets.splice(firstRow, -len);
+            } else if (len == 0) {
+                this.foldWidgets[range.start.row] = null;
+            }
+        }
 
-	// global functions
+        this.$init = function() {
+            this.foldWidgets = [];
+            this.doc.on('change', this.updateDataOnDocChange.bind(this));
+        }
+    };
+    CStyleFolding.call(EditSession.prototype);
+
+    /**************************** initialize ****************************************************/
+    // fix event addCommandKeyListener
+    event.addCommandKeyListener = function(el, callback) {
+        var keys = require("pilot/keys");
+        var lastKeyDownKeyCode = null;
+        el.addEventListener("keydown", function(e) {
+            lastKeyDownKeyCode = e.keyCode in keys.MODIFIER_KEYS? 0: e.keyCode;
+        }, true);
+        el.addEventListener("keypress", function(e) {
+            return normalizeCommandKeys(callback, e, lastKeyDownKeyCode);
+        }, true);
+        function normalizeCommandKeys(callback, e, keyCode) {
+            var hashId = 0 | (e.ctrlKey ? 1 : 0) | (e.altKey ? 2 : 0)
+                    | (e.shiftKey ? 4 : 0) | (e.metaKey ? 8 : 0);
+
+            // workaround for windows right alt bug
+            if (keyCode==0 && e.type == "keypress")
+                return callback(e, hashId, e.charCode);
+
+            if (keyCode in keys.MODIFIER_KEYS) {
+                switch (keys.MODIFIER_KEYS[keyCode]) {
+                    case "Alt":
+                        hashId = 2;
+                        break;
+                    case "Shift":
+                        hashId = 4;
+                        break
+                    case "Ctrl":
+                        hashId = 1;
+                        break;
+                    default:
+                        hashId = 8;
+                        break;
+                }
+                keyCode = 0;
+            }
+
+            if (hashId & 8 && (keyCode == 91 || keyCode == 93)) {
+                keyCode = 0;
+            }
+
+            // If there is no hashID and the keyCode is not a function key, then
+            // we don't call the callback as we don't handle a command key here
+            // (it's a normal key/character input).
+            if (hashId == 0 && !(keyCode in keys.FUNCTION_KEYS)) {
+                return false;
+            }
+
+            return callback(e, hashId, keyCode);
+        }
+    };
+
+    // global functions
     toggleGutter = function() {
         editor.renderer.setShowGutter(!env.editor.renderer.showGutter);
     };
-	toggleWrapMode = function(useWrap, session) {
-		session = session || editor.session
-		if (useWrap == null)
-			useWrap = !session.$useWrapMode;
+    toggleWrapMode = function(useWrap, session) {
+        session = session || editor.session
+        if (useWrap == null)
+            useWrap = !session.$useWrapMode;
 
-		if (useWrap) {
+        if (useWrap) {
             session.setUseWrapMode(true);
             session.setWrapLimitRange(null, null);
-		} else {
-            session.setUseWrapMode(false);		
-		}
+        } else {
+            session.setUseWrapMode(false);
+        }
     };
-	getExtension = function(name, mime) {
-		if(mime) return (mime.toLowerCase().match(/(xml|html?|css|jsm?|xul|rdf)/i)||[,'js'])[1]
-		return (name.match(/.(xml|html?|css|jsm?|xul|rdf)($|\?|\#)/i)||[,'js'])[1]
-	};
-	getMode = function(ext) {
-		if("xml|html|xul|rdf".indexOf(ext)!=-1)return HTMLMode
-		if("css".indexOf(ext)!=-1)return CSSMode
-		if("jsm".indexOf(ext)!=-1)return JSMode
-		// default
-		return JSMode
-	};
-	createSession = function(value, name, mimeType) {
-		var s = new EditSession(value);
-		s.setFileInfo(name.toLowerCase(), mimeType);
-		s.setMode(new (getMode(s.extension)));
-		s.setUndoManager(new UndoManager());
+    getExtension = function(name, mime) {
+        if(mime) return (mime.toLowerCase().match(/(xml|html?|css|jsm?|xul|rdf)/i)||[,'js'])[1]
+        return (name.match(/.(xml|html?|css|jsm?|xul|rdf)($|\?|\#)/i)||[,'js'])[1]
+    };
+    getMode = function(ext) {
+        if("xml|html|xul|rdf".indexOf(ext)!=-1)return HTMLMode
+        if("css".indexOf(ext)!=-1)return CSSMode
+        if("jsm".indexOf(ext)!=-1)return JSMode
+        // default
+        return JSMode
+    };
+    createSession = function(value, name, mimeType) {
+        var s = new EditSession(value);
+        s.setFileInfo(name.toLowerCase(), mimeType);
+        s.setMode(new (getMode(s.extension)));
+        s.setUndoManager(new UndoManager());
 
-		s.setUseSoftTabs(options.softtabs);
-		toggleWrapMode(options.wordwrap, s);
-		s.setTabSize(options.tabsize);
-		s.setWrapLimitRange(null, null);
+        s.setUseSoftTabs(options.softtabs);
+        toggleWrapMode(options.wordwrap, s);
+        s.setTabSize(options.tabsize);
+        s.setWrapLimitRange(null, null);
 
-		s.setUseWorker(options.validateasyoutype);
+        s.setUseWorker(options.validateasyoutype);
 
-		//hack to support folding
-		s.$init()
+        //hack to support folding
+        s.$init()
 
         return s;
     };
@@ -441,14 +441,14 @@ exports.launch = function(env, options) {
     window.env = env;
 
     jsDoc = createSession('', '.js');
-	
-	// not needed in acebug
+
+    // not needed in acebug
     Renderer.prototype.moveTextAreaToCursor =
-	require("ace/layer/text").Text.prototype.$pollSizeChanges=function(){}
-	Editor.prototype.setFontSize= function(size){
-		this.container.fontSize = size
-		this.renderer.$textLayer.checkForSizeChanges()
-	}
+    require("ace/layer/text").Text.prototype.$pollSizeChanges=function(){}
+    Editor.prototype.setFontSize= function(size){
+        this.container.fontSize = size
+        this.renderer.$textLayer.checkForSizeChanges()
+    }
 
     var container = document.getElementById("editor");
     editor = env.editor = new Editor(new Renderer(container, options.theme));
@@ -460,7 +460,7 @@ exports.launch = function(env, options) {
     editor.setShowPrintMargin(false);
     editor.setHighlightSelectedWord(options.highlightselectedword);
     editor.renderer.setHScrollBarAlwaysVisible(false);
-	editor.setBehavioursEnabled(true);
+    editor.setBehavioursEnabled(true);
 
     // not needed in acebug
     editor.textInput.onContextMenu = function() {};
@@ -532,9 +532,9 @@ exports.launch = function(env, options) {
     var bindings = {
         startAutocompleter: "Ctrl-Space|Ctrl-.|Alt-.",
         execute: "Ctrl-Return",
-		dirExecute: "Ctrl-Shift-Return",
+        dirExecute: "Ctrl-Shift-Return",
         duplicate: "Ctrl-D",
-		beautify: "Ctrl-Shift-B"
+        beautify: "Ctrl-Shift-B"
     };
 
     editor.autocompletionKeySet = new HashHandler({
@@ -628,51 +628,51 @@ exports.launch = function(env, options) {
             editor.session.doc.setValue("");
         },
 
-		beautify: function(){
-			function a(){
-				var session = editor.session
-				var sel = session.selection
-				var range = sel.getRange()
-				
-				var options = {};
-				if (session.getUseSoftTabs()) {
-					options.indent_size = session.getTabSize();
-				} else {
-					options.indent_char = "\t";
-					options.indent_size = 1;
-				}
-				
-				var line = session.getLine(range.start.row)
-				var indent = line.match(/^\s*/)[0]
-				if(range.start.column<indent.length){
-					var doNotTrim = true;
-					range.start.column = 0
-				}
-				var value = session.getTextRange(range)
-				value = (/^\s*<!?\w/.test(value)? style_html :js_beautify)(value, options)
-				value = value.replace(/^/gm, indent)
-				if(!doNotTrim)
-					value = value.trim()
+        beautify: function(){
+            function a(){
+                var session = editor.session
+                var sel = session.selection
+                var range = sel.getRange()
 
-				var end = session.replace(range, value);
-				sel.setSelectionRange(Range.fromPoints(range.start, end));
-			}
-			if (window.js_beautify)
-				a();
-			else
-				require(["res/beautify","res/beautify-html"], a);
-		},
-		uglify: function() {
-			
-		}		
+                var options = {};
+                if (session.getUseSoftTabs()) {
+                    options.indent_size = session.getTabSize();
+                } else {
+                    options.indent_char = "\t";
+                    options.indent_size = 1;
+                }
+
+                var line = session.getLine(range.start.row)
+                var indent = line.match(/^\s*/)[0]
+                if(range.start.column<indent.length){
+                    var doNotTrim = true;
+                    range.start.column = 0
+                }
+                var value = session.getTextRange(range)
+                value = (/^\s*<!?\w/.test(value)? style_html :js_beautify)(value, options)
+                value = value.replace(/^/gm, indent)
+                if(!doNotTrim)
+                    value = value.trim()
+
+                var end = session.replace(range, value);
+                sel.setSelectionRange(Range.fromPoints(range.start, end));
+            }
+            if (window.js_beautify)
+                a();
+            else
+                require(["res/beautify","res/beautify-html"], a);
+        },
+        uglify: function() {
+
+        }
     });
-	
-	var com = canon.getCommand('removeline')
-	com.bindKey.win = com.bindKey.mac = 'Alt-D'
-	canon.removeCommand('removeline')
-	canon.addCommand(com)
-	
-	canon.addCommand({
+
+    var com = canon.getCommand('removeline')
+    com.bindKey.win = com.bindKey.mac = 'Alt-D'
+    canon.removeCommand('removeline')
+    canon.addCommand(com)
+
+    canon.addCommand({
         name: "save",
         bindKey: {
             win: "Ctrl-S",
@@ -680,10 +680,10 @@ exports.launch = function(env, options) {
             sender: "editor"
         },
         exec: function(env) {
-			
+
         }
     });
-	canon.addCommand({
+    canon.addCommand({
         name: "save",
         bindKey: {
             win: "Ctrl-Shift-S",
@@ -691,12 +691,12 @@ exports.launch = function(env, options) {
             sender: "editor"
         },
         exec: function(env) {
-			
+
         }
     });
- 
+
  	/**************************** folding commands ***********************************************/
-	canon.addCommand({
+    canon.addCommand({
         name: "newCell",
         bindKey: {
             win: "Shift-Return",
@@ -704,24 +704,24 @@ exports.launch = function(env, options) {
             sender: "editor"
         },
         exec: function(env) {
-			var editor = env.editor, session = editor.session
+            var editor = env.editor, session = editor.session
             var c = editor.getCursorPosition()
-			if((c.column!=0 || c.row==0) && c.column != session.getLine(c.row).length)
-				var addNewLine = true
-				
-			if (c.column==0)
-				c1 = session.insert(c,'#>>')
-			else
-				c1 = session.insert(c,'\n#>>')
+            if((c.column!=0 || c.row==0) && c.column != session.getLine(c.row).length)
+                var addNewLine = true
 
-			if (addNewLine) {
-				session.insert(c1,'\n')
-				editor.selection.setSelectionRange({start:c1,end:c1})
-			}
+            if (c.column==0)
+                c1 = session.insert(c,'#>>')
+            else
+                c1 = session.insert(c,'\n#>>')
+
+            if (addNewLine) {
+                session.insert(c1,'\n')
+                editor.selection.setSelectionRange({start:c1,end:c1})
+            }
         }
     });
-	
-	canon.addCommand({
+
+    canon.addCommand({
         name: "fold",
         bindKey: {
             win: "Alt-L",
@@ -824,57 +824,57 @@ exports.launch = function(env, options) {
         }
     }
 
-	function onGutterClick(e) {
-		var editor = env.editor, s = editor.session, row = e.row;
-		if (e.htmlEvent.target.className.indexOf('ace_fold-widget') < 0)
-			s[s.$breakpoints[e.row]?'clearBreakpoint':'setBreakpoint'](row);
-		else {
-			var line = s.getLine(row)
-			var match = line.match(/(\{|\[)\s*(\/\/.*)?$/)
-			if (match) {
-				var i = match.index
-				var fold = s.getFoldAt(row, i+1, 1)
-				if (fold) {
-					s.expandFold(fold)
-					//editor.renderer.scrollCursorIntoView()
-					//editor.renderer.scrollToRow(row)
-				} else {
-					var start = {row:row,column:i+1}
-					var end = s.$findClosingBracket(match[1], start)
-					if (end)
-						s.addFold("...", Range.fromPoints(start, end));
-				}
-				return
-			}
-			var mode = s.$mode
-			if (!mode.delimiter)
-				return
+    function onGutterClick(e) {
+        var editor = env.editor, s = editor.session, row = e.row;
+        if (e.htmlEvent.target.className.indexOf('ace_fold-widget') < 0)
+            s[s.$breakpoints[e.row]?'clearBreakpoint':'setBreakpoint'](row);
+        else {
+            var line = s.getLine(row)
+            var match = line.match(/(\{|\[)\s*(\/\/.*)?$/)
+            if (match) {
+                var i = match.index
+                var fold = s.getFoldAt(row, i+1, 1)
+                if (fold) {
+                    s.expandFold(fold)
+                    //editor.renderer.scrollCursorIntoView()
+                    //editor.renderer.scrollToRow(row)
+                } else {
+                    var start = {row:row,column:i+1}
+                    var end = s.$findClosingBracket(match[1], start)
+                    if (end)
+                        s.addFold("...", Range.fromPoints(start, end));
+                }
+                return
+            }
+            var mode = s.$mode
+            if (!mode.delimiter)
+                return
 
-			if (line.substr(0, mode.dl) == mode.delimiter) {
-				var fold = s.getFoldAt(row, 0, 1)
-				if (!fold){
-					var foldLine = s.getFoldLine(row);
-					if(foldLine && foldLine.start.row != foldLine.end.row) {
-						s.expandFolds(foldLine.folds)
-						return
-					}
-				}
-				
-				if (fold) {
-					s.expandFold(fold)
-					//editor.renderer.scrollCursorIntoView()
-				} else {
-					var cell = mode.getCellBounds(row)
-					var start = {row: row, column: 0};
-					var end = {row: cell.bodyEnd, column: s.getLine(cell.bodyEnd).length};
-					var placeholder = s.getLine(cell.headerStart).slice(0,10) + "_______";
-					s.addFold(placeholder, Range.fromPoints(start, end));
-				}
-				return
-			}
-		}
-	}
-	env.editor.renderer.on('gutterclick', onGutterClick)
+            if (line.substr(0, mode.dl) == mode.delimiter) {
+                var fold = s.getFoldAt(row, 0, 1)
+                if (!fold){
+                    var foldLine = s.getFoldLine(row);
+                    if(foldLine && foldLine.start.row != foldLine.end.row) {
+                        s.expandFolds(foldLine.folds)
+                        return
+                    }
+                }
+
+                if (fold) {
+                    s.expandFold(fold)
+                    //editor.renderer.scrollCursorIntoView()
+                } else {
+                    var cell = mode.getCellBounds(row)
+                    var start = {row: row, column: 0};
+                    var end = {row: cell.bodyEnd, column: s.getLine(cell.bodyEnd).length};
+                    var placeholder = s.getLine(cell.headerStart).slice(0,10) + "_______";
+                    s.addFold(placeholder, Range.fromPoints(start, end));
+                }
+                return
+            }
+        }
+    }
+    env.editor.renderer.on('gutterclick', onGutterClick)
 
 };
 });

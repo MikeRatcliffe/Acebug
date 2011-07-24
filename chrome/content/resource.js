@@ -89,14 +89,14 @@ var  getAllLocations = function() {
     var document = Firebug.currentContext.window.document;
     var baseURI = document.baseURI;
     var locationList = [{href: document.documentURI, type: 'text'}];
-	var hrefs = [];
-	function addLocation(href, type) {
-		href = href.trim().replace(/#.*$/, '');
-		if (!href || hrefs.indexOf(href)!=-1)
-			return;
-		hrefs.push(href);
-		locationList.push({href: href, type: type});
-	}
+    var hrefs = [];
+    function addLocation(href, type) {
+        href = href.trim().replace(/#.*$/, '');
+        if (!href || hrefs.indexOf(href)!=-1)
+            return;
+        hrefs.push(href);
+        locationList.push({href: href, type: type});
+    }
     //scripts
     var list = document.documentElement.getElementsByTagName('script');
     for(i = list.length; i--;) {
@@ -141,7 +141,7 @@ var  getAllLocations = function() {
             item.href = FBL.absoluteURL(item.href, baseURI);
        /* var match = item.href.match(/\/([^\?\/#]+)(?:\?|#|$)/);
         item.name = match?match[1]:'e  *'+item.href;*/
-		item.name = item.href;
+        item.name = item.href;
         item.iconURL = "moz-icon://" + item.name + "?size=16";
         //    if (ext=='ico')
         //      return spec+"?size=16"
@@ -174,7 +174,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         this.__defineGetter__('browser', function() {
             return Firebug.chrome.$("fbAceBrowser1-parent");
         });
-		this.search = bind(Firebug.Ace.search, this);
+        this.search = bind(Firebug.Ace.search, this);
 
         Firebug.Panel.initialize.apply(this, arguments);
     },
@@ -192,16 +192,16 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         this.data = getAllLocations();
         this.tree.view = new treeView(this.data);
 
-		this.tree.ownerPanel = this
+        this.tree.ownerPanel = this
 
         if (this.editor) {
             //this.editor.renderer.onResize(true);
             //this.editor.setReadOnly(true);
-			var sel = this.tree.view.selection
-			if(sel.currentIndex == this.selectedIndex)
-				this.onSelect();
-			else
-				sel.timedSelect(this.selectedIndex, 0)
+            var sel = this.tree.view.selection
+            if(sel.currentIndex == this.selectedIndex)
+                this.onSelect();
+            else
+                sel.timedSelect(this.selectedIndex, 0)
         } else {
             this.aceWindow.startAce(bind(function() {
                 this.editor = this.aceWindow.editor;
@@ -222,7 +222,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         var index = this.tree.view.selection.currentIndex;
         var data = this.data[index], content, href;
 
-		this.selectedIndex = index;
+        this.selectedIndex = index;
 
 
         if (!data) {
@@ -272,10 +272,10 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
     },
     // context menu
     getContextMenuItems: function(nada, target) {
-		if (target.tagName == 'treechildren') {
-			var view = target.parentNode.view
-			var url = view.getCellText(view.selection.currentIndex,{id:'name'})
-		}
+        if (target.tagName == 'treechildren') {
+            var view = target.parentNode.view
+            var url = view.getCellText(view.selection.currentIndex,{id:'name'})
+        }
         var env = target.ownerDocument.defaultView.wrappedJSObject;
 
         var items = []
@@ -292,11 +292,11 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 
         return items;
     },
-	// for ace editor
-	addContextMenuItems: function(items, editor, editorText){
-		return items;
-	},
-	
+    // for ace editor
+    addContextMenuItems: function(items, editor, editorText){
+        return items;
+    },
+
     getSourceLink: function(target, object) {
         var env = target.ownerDocument.defaultView.wrappedJSObject;
         var session = env.editor.session;

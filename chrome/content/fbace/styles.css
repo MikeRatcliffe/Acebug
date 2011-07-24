@@ -83,7 +83,7 @@ body {
 }
 
 .ace_gutter-cell.ace_breakpoint{
-	background: url("chrome://firebug/skin/breakpoint.png") no-repeat;
+    background: url("chrome://firebug/skin/breakpoint.png") no-repeat;
 }
 
 
@@ -126,28 +126,28 @@ body {
 
 
 .ace_cellHead{
-	background:rgba(120,50,100,0.1);
-	color: darkred;
+    background:rgba(120,50,100,0.1);
+    color: darkred;
 }
 .ace_filler{
     //background: none repeat scroll 0 0 rgba(100, 50, 100, 0.2);
     display: inline-block;
-	border-top: 1px solid gray;
+    border-top: 1px solid gray;
     width: 100%;
 }
 
 .ace_firstcell{
-	border-top: 1px solid gray;
+    border-top: 1px solid gray;
 }
 
 .ace_cellHead{
-	background:rgba(120,50,100,0.1);
-	color: darkred;
+    background:rgba(120,50,100,0.1);
+    color: darkred;
 }
 .ace_filler{
     //background: none repeat scroll 0 0 rgba(100, 50, 100, 0.2);
     display: inline-block;
-	border-top: 1px solid gray;
+    border-top: 1px solid gray;
     width: 100%;
 }
 

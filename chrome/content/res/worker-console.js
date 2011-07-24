@@ -16,15 +16,15 @@ var require = function(id) {
         }
         return module.exports;
     }
-    
+
     var chunks = id.split("/");
     chunks[0] = require.tlns[chunks[0]] || chunks[0];
     path = chunks.join("/") + ".js";
-    
+
     require.id = id;
 //    console.log("require " +  path + " " + id)
     importScripts(path);
-    return require(id);    
+    return require(id);
 };
 
 require.modules = {};
@@ -37,10 +37,10 @@ var define = function(id, deps, factory) {
         factory = id;
         id = require.id;
     }
-    
-    if (id.indexOf("text!") === 0) 
+
+    if (id.indexOf("text!") === 0)
         return;
-    
+
     require.modules[id] = {
         factory: function() {
             var module = {
@@ -62,13 +62,13 @@ function initSender() {
 
     var EventEmitter = require("pilot/event_emitter").EventEmitter;
     var oop = require("pilot/oop");
-    
+
     var Sender = function() {};
-    
+
     (function() {
-        
+
         oop.implement(this, EventEmitter);
-                
+
         this.callback = function(data, callbackId) {
             postMessage({
                 type: "call",
@@ -76,7 +76,7 @@ function initSender() {
                 data: data
             });
         };
-    
+
         this.emit = function(name, data) {
             postMessage({
                 type: "event",
@@ -84,9 +84,9 @@ function initSender() {
                 data: data
             });
         };
-        
+
     }).call(Sender.prototype);
-    
+
     return new Sender();
 }
 
@@ -98,12 +98,12 @@ onmessage = function(e) {
     if (msg.command) {
         main[msg.command].apply(main, msg.args);
     }
-    else if (msg.init) {        
+    else if (msg.init) {
         initBaseUrls(msg.tlns);
         sender = initSender();
         var clazz = require(msg.module)[msg.classname];
         main = new clazz(sender);
-    } 
+    }
     else if (msg.event && sender) {
         sender._dispatchEvent(msg.event, msg.data);
     }
@@ -111,68 +111,68 @@ onmessage = function(e) {
 
 
 ,define("ace/mode/console_worker",
-	["require","exports","module","ace/document","pilot/lang","ace/worker/jshint"],
-	function(require, exports, module) {
-    
+    ["require","exports","module","ace/document","pilot/lang","ace/worker/jshint"],
+    function(require, exports, module) {
+
 var Document = require("ace/document").Document;
 var lang = require("pilot/lang");
 var lint = require("ace/worker/jshint").JSHINT;
-    
+
 var ConsoleWorker = exports.ConsoleWorker = function(sender) {
     this.sender = sender;
     var doc = this.doc = new Document("");
-    
+
     var deferredUpdate = this.deferredUpdate = lang.deferredCall(this.onUpdate.bind(this));
-    
+
     var _self = this;
     sender.on("change", function(e) {
-        doc.applyDeltas([e.data]);        
+        doc.applyDeltas([e.data]);
         deferredUpdate.schedule(_self.$timeout);
     });
     this.setTimeout(500);
 };
 
-(function() {        
+(function() {
     this.$timeout = 500;
-    
+
     this.setTimeout = function(timeout) {
         this.$timeout = timeout;
     };
-    
+
     this.setValue = function(value) {
         this.doc.setValue(value);
         this.deferredUpdate.schedule(this.$timeout);
     };
-    
+
     this.getValue = function(callbackId) {
         this.sender.callback(this.doc.getValue(), callbackId);
     };
-    
+
     this.onUpdate = function() {
         var value = this.doc.getValue();
         value = value.replace(/^#!.*\n/, "\n");
-                
+
         var start = new Date();console.log("jslint")
-		
+
         lint(value, {undef: false, onevar: false, passfail: false})
-		
-		var errors = [];
-		for (var i=0; i < lint.errors.length; i++) {
-			var error = lint.errors[i];
-			if (error)
-				errors.push({
-					row: error.line-1,
-					column: error.character-1,
-					text: error.reason,
-					type: error.reason.slice(0, 9) == 'Stopping,'? "error": "warning",
-					lint: error
-				})
-		}
-		this.sender.emit("jslint", {errors: errors, startLine:0, endLine:0});
-        
-		console.log("lint time: " + (new Date() - start));
+
+        var errors = [];
+        for (var i=0; i < lint.errors.length; i++) {
+            var error = lint.errors[i];
+            if (error)
+                errors.push({
+                    row: error.line-1,
+                    column: error.character-1,
+                    text: error.reason,
+                    type: error.reason.slice(0, 9) == 'Stopping,'? "error": "warning",
+                    lint: error
+                })
+        }
+        this.sender.emit("jslint", {errors: errors, startLine:0, endLine:0});
+
+        console.log("lint time: " + (new Date() - start));
     }
-    
+
 }).call(ConsoleWorker.prototype);
 
 })

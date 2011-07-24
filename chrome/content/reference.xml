@@ -765,7 +765,7 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
 <summary>Decodes a Uniform Resource Identifier (URI) component previously created by encodeURIComponent or by a similar routine.</summary>
 <syntax>decodeURIComponent(encodedURI);</syntax>
 <params>
-	<param name="encodedURI">An encoded component of a Uniform Resource Identifier.</param>
+    <param name="encodedURI">An encoded component of a Uniform Resource Identifier.</param>
 </params>
 <link>JavaScript/Reference/Global_Objects/decodeURIComponent</link>
         </global>
@@ -773,7 +773,7 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
 <summary>Encodes a Uniform Resource Identifier (URI) by replacing each instance of certain characters by one, two, three, or four escape sequences representing the UTF-8 encoding of the character (will only be four escape sequences for characters composed of two "surrogate" characters).</summary>
 <syntax>encodeURI(URI);</syntax>
 <params>
-	<param name="URI">A complete Uniform Resource Identifier.</param>
+    <param name="URI">A complete Uniform Resource Identifier.</param>
 </params>
 <link>JavaScript/Reference/Global_Objects/encodeURI</link>
         </global>
@@ -781,7 +781,7 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
 <summary>Encodes a Uniform Resource Identifier (URI) component by replacing each instance of certain characters by one, two, three, or four escape sequences representing the UTF-8 encoding of the character (will only be four escape sequences for characters composed of two "surrogate" characters).</summary>
 <syntax>var encoded = encodeURIComponent(str);</syntax>
 <params>
-	<param name="str">A component of a URI.</param>
+    <param name="str">A component of a URI.</param>
 </params>
 <link>JavaScript/Reference/Global_Objects/encodeURIComponent</link>
         </global>
@@ -789,7 +789,7 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
 <summary>Evaluates a string of JavaScript code without reference to a particular object.</summary>
 <syntax>eval(string);</syntax>
 <params>
-	<param name="string">A string representing a JavaScript expression, statement, or sequence of statements. The expression can include variables and properties of existing objects.</param>
+    <param name="string">A string representing a JavaScript expression, statement, or sequence of statements. The expression can include variables and properties of existing objects.</param>
 </params>
 <link>JavaScript/Reference/Global_Objects/eval</link>
         </global>
@@ -797,7 +797,7 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
 <summary>Evaluates an argument to determine whether it is a finite number.</summary>
 <syntax>isFinite(number);</syntax>
 <params>
-	<param name="number">The number to evaluate.</param>
+    <param name="number">The number to evaluate.</param>
 </params>
 <link>JavaScript/Reference/Global_Objects/isFinite</link>
         </global>
@@ -805,7 +805,7 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
 <summary>Evaluates an argument to determine if it is not a number.</summary>
 <syntax>isNaN(testValue);</syntax>
 <params>
-	<param name="testValue">The value you want to evaluate.</param>
+    <param name="testValue">The value you want to evaluate.</param>
 </params>
 <link>JavaScript/Reference/Global_Objects/isNaN</link>
         </global>
@@ -813,7 +813,7 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
 <summary>Parses a string argument and returns a floating point number.</summary>
 <syntax>parseFloat(string);</syntax>
 <params>
-	<param name="string">A string that represents the value you want to parse.</param>
+    <param name="string">A string that represents the value you want to parse.</param>
 </params>
 <link>JavaScript/Reference/Global_Objects/parseFloat</link>
         </global>
@@ -821,8 +821,8 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
 <summary>Parses a string argument and returns an integer of the specified radix or base.</summary>
 <syntax>var intValue = parseInt(string[, radix]);</syntax>
 <params>
-	<param name="string">A string that represents the value you want to parse.</param>
-	<param name="radix">An integer that represents the radix of the above mentioned string.</param>
+    <param name="string">A string that represents the value you want to parse.</param>
+    <param name="radix">An integer that represents the radix of the above mentioned string.</param>
 </params>
 <link>JavaScript/Reference/Global_Objects/parseInt</link>
         </global>
@@ -830,9 +830,9 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
 <summary>Creates an error object.</summary>
 <syntax>new Error([message[, fileName[, lineNumber]]]);</syntax>
 <params>
-	<param name="message">Human-readable description of the error</param>
-	<param name="fileName">The name of the file containing the code that caused the exception</param>
-	<param name="lineNumber">The line number of the code that caused the exception</param>
+    <param name="message">Human-readable description of the error</param>
+    <param name="fileName">The name of the file containing the code that caused the exception</param>
+    <param name="lineNumber">The line number of the code that caused the exception</param>
 </params>
 <link>JavaScript/Reference/Global_Objects/Error</link>
         </global>
@@ -840,9 +840,9 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
 <summary>Represents an error regarding the eval function.</summary>
 <syntax>new EvalError([message[, fileName[, lineNumber]]]);</syntax>
 <params>
-	<param name="message">Human-readable description of the error</param>
-	<param name="fileName">The name of the file containing the code that caused the exception</param>
-	<param name="lineNumber">The line number of the code that caused the exception</param>
+    <param name="message">Human-readable description of the error</param>
+    <param name="fileName">The name of the file containing the code that caused the exception</param>
+    <param name="lineNumber">The line number of the code that caused the exception</param>
 </params>
 <link>JavaScript/Reference/Global_Objects/EvalError</link>
         </global>
@@ -850,9 +850,9 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
 <summary>Represents an error when a number is not within the correct range allowed.</summary>
 <syntax>new RangeError([message[, fileName[, lineNumber]]]);</syntax>
 <params>
-	<param name="message">Human-readable description of the error</param>
-	<param name="fileName">The name of the file containing the code that caused the exception</param>
-	<param name="lineNumber">The line number of the code that caused the exception</param>
+    <param name="message">Human-readable description of the error</param>
+    <param name="fileName">The name of the file containing the code that caused the exception</param>
+    <param name="lineNumber">The line number of the code that caused the exception</param>
 </params>
 <link>JavaScript/Reference/Global_Objects/RangeError</link>
         </global>
@@ -860,9 +860,9 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
 <summary>Represents an error when a non-existent variable is referenced.</summary>
 <syntax>new ReferenceError([message[, fileName[, lineNumber]]]);</syntax>
 <params>
-	<param name="message">Human-readable description of the error</param>
-	<param name="fileName">The name of the file containing the code that caused the exception</param>
-	<param name="lineNumber">The line number of the code that caused the exception</param>
+    <param name="message">Human-readable description of the error</param>
+    <param name="fileName">The name of the file containing the code that caused the exception</param>
+    <param name="lineNumber">The line number of the code that caused the exception</param>
 </params>
 <link>JavaScript/Reference/Global_Objects/ReferenceError</link>
         </global>
@@ -870,9 +870,9 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
 <summary>Represents an error when trying to interpret syntactically invalid code.</summary>
 <syntax>new SyntaxError([message[, fileName[, lineNumber]]]);</syntax>
 <params>
-	<param name="message">Human-readable description of the error</param>
-	<param name="fileName">The name of the file containing the code that caused the exception</param>
-	<param name="lineNumber">The line number of the code that caused the exception</param>
+    <param name="message">Human-readable description of the error</param>
+    <param name="fileName">The name of the file containing the code that caused the exception</param>
+    <param name="lineNumber">The line number of the code that caused the exception</param>
 </params>
 <link>JavaScript/Reference/Global_Objects/SyntaxError</link>
         </global>
@@ -880,9 +880,9 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
 <summary>Represents an error when a value is not of the expected type.</summary>
 <syntax>new TypeError([message[, fileName[, lineNumber]]]);</syntax>
 <params>
-	<param name="message">Human-readable description of the error</param>
-	<param name="fileName">The name of the file containing the code that caused the exception</param>
-	<param name="lineNumber">The line number of the code that caused the exception</param>
+    <param name="message">Human-readable description of the error</param>
+    <param name="fileName">The name of the file containing the code that caused the exception</param>
+    <param name="lineNumber">The line number of the code that caused the exception</param>
 </params>
 <link>JavaScript/Reference/Global_Objects/TypeError</link>
         </global>
@@ -890,9 +890,9 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
 <summary>Represents an error when a malformed URI is encountered.</summary>
 <syntax>new URIError([message[, fileName[, lineNumber]]]);</syntax>
 <params>
-	<param name="message">Human-readable description of the error</param>
-	<param name="fileName">The name of the file containing the code that caused the exception</param>
-	<param name="lineNumber">The line number of the code that caused the exception</param>
+    <param name="message">Human-readable description of the error</param>
+    <param name="fileName">The name of the file containing the code that caused the exception</param>
+    <param name="lineNumber">The line number of the code that caused the exception</param>
 </params>
 <link>JavaScript/Reference/Global_Objects/URIError</link>
         </global>

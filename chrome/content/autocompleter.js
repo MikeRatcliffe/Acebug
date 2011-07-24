@@ -47,7 +47,7 @@ function treeView(table) {
 Firebug.Ace.startAutocompleter = FBL.bind(function(editor) {
     var type = editor.session.autocompletionType;
 
-	if (type == 'console')
+    if (type == 'console')
        this.autocompleter = this.JSAutocompleter;
     else if (type == 'js')
         this.autocompleter = this.JSAutocompleter;
@@ -111,13 +111,13 @@ Firebug.Ace.BaseAutocompleter = {
             this.addComandsToEditor();
         if (!this.selectionListener)
             this.selectionListener = FBL.bind(this.$selectionListener, this);
-		
-		for each(var i in this.$markers)
-			this.editor.session.removeMarker(i)
-		this.$markers = [
-			editor.session.addMarker(this.$q.filterRange, "ace_bracket k"),
-			editor.session.addMarker(this.$q.baseRange, "ace_bracket k")
-		];
+
+        for each(var i in this.$markers)
+            this.editor.session.removeMarker(i)
+        this.$markers = [
+            editor.session.addMarker(this.$q.filterRange, "ace_bracket k"),
+            editor.session.addMarker(this.$q.baseRange, "ace_bracket k")
+        ];
 
         this.editor.selection.on('changeCursor', this.selectionListener);
 
@@ -134,8 +134,8 @@ Firebug.Ace.BaseAutocompleter = {
 
     $selectionListener: function(e) {
         var point = this.editor.selection.getCursor();
-		var range = this.$q.filterRange
-		if(range.compare(point.row, point.column) < 0 || this.hidden)
+        var range = this.$q.filterRange
+        if(range.compare(point.row, point.column) < 0 || this.hidden)
             return this.finish();
 
         range.end = point;
@@ -143,7 +143,7 @@ Firebug.Ace.BaseAutocompleter = {
 
         if (this.invalidCharRe.test(this.text))
             return this.finish();
-		if (this.chainRe && this.chainRe.test(this.text))
+        if (this.chainRe && this.chainRe.test(this.text))
             return this.chain();
 
         this.filter(this.unfilteredArray, this.text);
@@ -165,7 +165,7 @@ Firebug.Ace.BaseAutocompleter = {
                 var o = self.sortedArray[self.tree.currentIndex];
                 if (o && self.chain) {
                     self.insertSuggestedText('.');
-					self.chain(o.object);
+                    self.chain(o.object);
                 }
             },
 
@@ -209,8 +209,8 @@ Firebug.Ace.BaseAutocompleter = {
     },
 
     sayInBubble: function(text) {
-		if (!this.bubble)
-			this.initPanel()
+        if (!this.bubble)
+            this.initPanel()
         if (!text) {
             this.bubble.hidePopup();
             return;
@@ -334,8 +334,8 @@ Firebug.Ace.BaseAutocompleter = {
     finish: function(i) {
         if (this.hidden)
             return;
-		for each(var i in this.$markers)
-			this.editor.session.removeMarker(i)
+        for each(var i in this.$markers)
+            this.editor.session.removeMarker(i)
 
         this.hidden = true;
         this.editor.selection.removeEventListener('changeCursor', this.selectionListener);
@@ -349,34 +349,34 @@ Firebug.Ace.BaseAutocompleter = {
 
 Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
     invalidCharRe: /[\+\-;:,= \(\)\[\]\{\}\!><]/,
-	chainRe: /\.$/,
-	chain: function(o) {
-		var t = this.text.slice(0, -1)
-		var o = o || this.object[t]
-		if (!o)
-			return this.finish()
+    chainRe: /\.$/,
+    chain: function(o) {
+        var t = this.text.slice(0, -1)
+        var o = o || this.object[t]
+        if (!o)
+            return this.finish()
 
-		var br = this.$q.baseRange
-		var fr = this.$q.filterRange
-		br.end.row = fr.end.row
-		br.end.column = fr.end.column - 1;
-		
-		var cursor = this.editor.selection.getCursor();
-		fr.end.column = fr.start.column = cursor.column;
-		fr.end.row = fr.start.row = cursor.row;
-		this.text = '';
-		this.onEvalSuccess(o);
-	},
+        var br = this.$q.baseRange
+        var fr = this.$q.filterRange
+        br.end.row = fr.end.row
+        br.end.column = fr.end.column - 1;
+
+        var cursor = this.editor.selection.getCursor();
+        fr.end.column = fr.start.column = cursor.column;
+        fr.end.row = fr.start.row = cursor.row;
+        this.text = '';
+        this.onEvalSuccess(o);
+    },
     onEvalSuccess: function(result, context) {
         this.object = result;
 
         if (this.$q.functionName) {
-			this.unfilteredArray = getProps(context.global);
+            this.unfilteredArray = getProps(context.global);
             this.appendSpecialEntries();
-			this.object = context.global;
-		} else {
-			this.unfilteredArray = getProps(result);
-		}
+            this.object = context.global;
+        } else {
+            this.unfilteredArray = getProps(result);
+        }
 
         this.filter(this.unfilteredArray, this.text);
         this.showPanel();
@@ -399,22 +399,22 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 
     start: function(editor) {
         this.editor = editor || this.editor;
-		
-		var cell = Firebug.Ace.win2.editor.session.getMode().getCurrentCell();
-		if(cell.cursor <= cell.headerEnd){
-			if (cell.coffeeText)
-				this.sayInBubble(cell.coffeeText)
-		}
+
+        var cell = Firebug.Ace.win2.editor.session.getMode().getCurrentCell();
+        if(cell.cursor <= cell.headerEnd){
+            if (cell.coffeeText)
+                this.sayInBubble(cell.coffeeText)
+        }
 
         var $q = this.$q = backParse.js(editor);
         this.text = $q.nameFragment;
 
-		if ($q.eqName) { // style.eqName = '
-			this.unfilteredArray = Firebug.Ace.CSSAutocompleter.propValue([null,null,null,$q.eqName])
-			this.filter(this.unfilteredArray, this.text);
-			this.showPanel();
-		}else
-			this.eval(Firebug.largeCommandLineEditor.setThisValue($q.evalString));
+        if ($q.eqName) { // style.eqName = '
+            this.unfilteredArray = Firebug.Ace.CSSAutocompleter.propValue([null,null,null,$q.eqName])
+            this.filter(this.unfilteredArray, this.text);
+            this.showPanel();
+        }else
+            this.eval(Firebug.largeCommandLineEditor.setThisValue($q.evalString));
     },
 
     // *****************
@@ -447,76 +447,76 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
         if (isSpecial) {
             text=text.substr(1);
         } else if ($q.dotPosition){
-			if (/^\d*$/.test(text)) {
-				text = "[" + text + "]";
-				range.start = $q.dotPosition;
-			} else if (!/(^[a-z$_][a-z$_0-9]*$)|(^[\[\{\(]?".*"[\]\}\)]?$)|(^[\[\{\(]?'.*'[\]\}\)]?$)/i.test(text)) {
-				text = '["' + text + '"]';
-				range.start = $q.dotPosition;
-			}
-		}
-		
+            if (/^\d*$/.test(text)) {
+                text = "[" + text + "]";
+                range.start = $q.dotPosition;
+            } else if (!/(^[a-z$_][a-z$_0-9]*$)|(^[\[\{\(]?".*"[\]\}\)]?$)|(^[\[\{\(]?'.*'[\]\}\)]?$)/i.test(text)) {
+                text = '["' + text + '"]';
+                range.start = $q.dotPosition;
+            }
+        }
+
 
         if (additionalText) {
             text = text+additionalText;
             //l -= additionalText.length + 1;
         }
 
-		var curLine = this.editor.session.getLine(range.end.row)
-		if (replaceWord){
-			var col = range.end.column;
-			var rx = /[a-z$_0-9]/i;
-			while((ch=curLine[col++]) && rx.test(ch)); //select word forward
-			range.end.column = col-1;
-		}
+        var curLine = this.editor.session.getLine(range.end.row)
+        if (replaceWord){
+            var col = range.end.column;
+            var rx = /[a-z$_0-9]/i;
+            while((ch=curLine[col++]) && rx.test(ch)); //select word forward
+            range.end.column = col-1;
+        }
 
-		// do not add last )|}|] if it is already there
-		var lastChar = text.slice(-1);
-		var cursorChar = curLine[range.end.column];
-		if (cursorChar == lastChar && /\)|\}|\]|"/.test(lastChar))
-			text = text.slice(0, -1);
-		// do not add first " if it is already there
-		var firstChar = text[0];
-		var cursorChar = curLine[range.start.column-1];
-		dump(firstChar,cursorChar)
-		if (firstChar == '"' && (cursorChar == '"' || cursorChar == "'")) {
-			range.start.column--
-		}
+        // do not add last )|}|] if it is already there
+        var lastChar = text.slice(-1);
+        var cursorChar = curLine[range.end.column];
+        if (cursorChar == lastChar && /\)|\}|\]|"/.test(lastChar))
+            text = text.slice(0, -1);
+        // do not add first " if it is already there
+        var firstChar = text[0];
+        var cursorChar = curLine[range.start.column-1];
+        dump(firstChar,cursorChar)
+        if (firstChar == '"' && (cursorChar == '"' || cursorChar == "'")) {
+            range.start.column--
+        }
 
-		var end = this.editor.session.replace(range, text);
+        var end = this.editor.session.replace(range, text);
     },
     // *****************
     appendSpecialEntries: function() {
         var fu = this.$q.functionName;
         var ans = [];
-		var pre = '\u2555"', post = '"', descr = '';
-		var createItem = function(x) {
-			x = pre + x + post;
-			ans.push({
-				name: x,
-				comName: x.toLowerCase(),
-				description: descr,
-				depth: -1,
-				isSpecial: true
-			});
-		};
+        var pre = '\u2555"', post = '"', descr = '';
+        var createItem = function(x) {
+            x = pre + x + post;
+            ans.push({
+                name: x,
+                comName: x.toLowerCase(),
+                description: descr,
+                depth: -1,
+                isSpecial: true
+            });
+        };
         try {
             if ('createInstance,getService,QueryInterface'.indexOf(fu) != -1) {
-				descr = "interface"
-				pre = '\u2555Ci.'
-				post = ')'
+                descr = "interface"
+                pre = '\u2555Ci.'
+                post = ')'
                 supportedInterfaces(this.object).forEach(createItem);
             } else if (fu == "getInterface") {
-				descr = "interface"
-				pre = '\u2555Ci.'
-				post = ')'
+                descr = "interface"
+                pre = '\u2555Ci.'
+                post = ')'
                 supportedgetInterfaces(this.object).forEach(createItem);
             } else if (fu == "getElementById") {
                 descr = 'id'
-				getIDsInDoc(this.object).forEach(createItem)				
+                getIDsInDoc(this.object).forEach(createItem)
             } else if (fu == "getElementsByClassName") {
-				descr = 'class'
-				getClassesInDoc(this.object).forEach(createItem)
+                descr = 'class'
+                getClassesInDoc(this.object).forEach(createItem)
             } else if (fu == "getAttribute" || fu == "setAttribute" || fu == "hasAttribute") {
                 var att = this.object.attributes;
                 for(var i=0; i < att.length; i++) {
@@ -524,29 +524,29 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
                     ans.push({name:'\u2555"'+x.nodeName+'")',comName: '"'+x.nodeName.toLowerCase(),description:x.value, depth:-1,isSpecial:true});
                 }
             } else if (fu == "addEventListener" || fu == "removeEventListener" || fu =='on') {
-				var er
-				if (er = this.object._eventRegistry) try{
-					if(er.forEach)
-						er.forEach(createItem)
-					else
-						Object.keys(er).forEach(createItem)
-				} catch(e){}
-				descr = "browser event name"
-				eventNames.forEach(createItem);
+                var er
+                if (er = this.object._eventRegistry) try{
+                    if(er.forEach)
+                        er.forEach(createItem)
+                    else
+                        Object.keys(er).forEach(createItem)
+                } catch(e){}
+                descr = "browser event name"
+                eventNames.forEach(createItem);
             } else if ('createElementNS,createAttributeNS,hasAttributeNS'.indexOf(fu)!=-1) {
-				descr = "ns";
+                descr = "ns";
                 namespaces.forEach(createItem);
             } else if (fu == 'require') {
-				descr = "module";
-				if(require && require.modules)
-					require.modules.forEach(createItem);
+                descr = "module";
+                if(require && require.modules)
+                    require.modules.forEach(createItem);
             }
         } catch(e) {
             Cu.reportError(e);
         }
         this.unfilteredArray = ans.concat(this.unfilteredArray);
     },
-	
+
     compare: function() {
         this.sayInBubble(compareWithPrototype.compare(this.object).join("\n"));
     }
@@ -556,12 +556,12 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
     invalidCharRe: /[\+;:,= \(\)\[\]\{\}\><]/,
     start: function(editor) {
         this.editor = editor || this.editor;
-		
-		var cell = Firebug.Ace.win2.editor.session.getMode().getCurrentCell();
-		if(cell.cursor <= cell.headerEnd){
-			if (cell.coffeeText)
-				this.sayInBubble(cell.coffeeText)
-		}
+
+        var cell = Firebug.Ace.win2.editor.session.getMode().getCurrentCell();
+        if(cell.cursor <= cell.headerEnd){
+            if (cell.coffeeText)
+                this.sayInBubble(cell.coffeeText)
+        }
 
         var $q = this.$q = backParse.css(this.editor);
         this.text = $q.nameFragment;
@@ -602,10 +602,10 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
 
         //pseudoclass
         if (text[0]==':') {
-			var s = range.start.column;
+            var s = range.start.column;
             while (curLine[s-1]==':')
                 s--;
-			range.start.column = s;
+            range.start.column = s;
         }
 
         this.editor.selection.setSelectionRange(range);
@@ -665,237 +665,237 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
         return table;
     },
 
-    
+
 });
 
 var backParse = (function() {
-	var editor;
-	var cursor, range, col, row, ch;
-	var captureCursor, objCursor, lines, curLine;
-	var rx, jsRx = /[a-z$_0-9]/i, cssRx = /[\w$\-\[\]\(\)]/;
+    var editor;
+    var cursor, range, col, row, ch;
+    var captureCursor, objCursor, lines, curLine;
+    var rx, jsRx = /[a-z$_0-9]/i, cssRx = /[\w$\-\[\]\(\)]/;
 
-	function init($editor) {
-		editor = $editor;
-		cursor = editor.selection.getCursor();
-		range = editor.selection.getRange()
-		row = cursor.row;
-		col = cursor.column;
-		ch = captureCursor = objCursor = null;
-		lines = editor.session.doc.$lines;
-		curLine = lines[row];
-	}
-	function next() {
-		return ch = curLine[--col] || (
-			(curLine = lines[--row] || '', col = curLine.length, row<0?'':'\n'));
-	}
-	function peek() {
-		return curLine[col-1] || (row>0 && '\n');
-	}
+    function init($editor) {
+        editor = $editor;
+        cursor = editor.selection.getCursor();
+        range = editor.selection.getRange()
+        row = cursor.row;
+        col = cursor.column;
+        ch = captureCursor = objCursor = null;
+        lines = editor.session.doc.$lines;
+        curLine = lines[row];
+    }
+    function next() {
+        return ch = curLine[--col] || (
+            (curLine = lines[--row] || '', col = curLine.length, row<0?'':'\n'));
+    }
+    function peek() {
+        return curLine[col-1] || (row>0 && '\n');
+    }
 
-	function clip(cursor){
-		cursor.column<0 && (cursor.column=0)
-		cursor.row<0 && (cursor.row=0)
-		return cursor
-	}
-	function getText(cursor) {
-		range.start = clip({column:col, row: row})
-		range.end = clip(cursor||captureCursor)
-		var t = editor.session.getTextRange(range);
-		dump(ch, col, row, t)
-		if (ch == '\n') {
-			range.start.column = 0
-			range.start.row++
-			t = t.substr(1)
-		} else if(ch) {
-			range.start.column++
-			t = t.substr(1)
-		}
-		return t//.trim();
-	}
-	function capture() {
-		return captureCursor = {row:row,column:col+(ch?1:0)}
-	}
-	function getToken(tocFun){
-		capture()
-		tocFun()
-		return getText(null)
-	}
+    function clip(cursor){
+        cursor.column<0 && (cursor.column=0)
+        cursor.row<0 && (cursor.row=0)
+        return cursor
+    }
+    function getText(cursor) {
+        range.start = clip({column:col, row: row})
+        range.end = clip(cursor||captureCursor)
+        var t = editor.session.getTextRange(range);
+        dump(ch, col, row, t)
+        if (ch == '\n') {
+            range.start.column = 0
+            range.start.row++
+            t = t.substr(1)
+        } else if(ch) {
+            range.start.column++
+            t = t.substr(1)
+        }
+        return t//.trim();
+    }
+    function capture() {
+        return captureCursor = {row:row,column:col+(ch?1:0)}
+    }
+    function getToken(tocFun){
+        capture()
+        tocFun()
+        return getText(null)
+    }
 
-	function eatString(comma) {           
-		while(next() && (ch!= comma || peek()=='\\') &&
-				(ch!= '\n' || peek()=='\\'));
-	};
-	function eatWord() {
-		while(next() && rx.test(ch));
-		return ch
-	}
-	function eatSpace() {
-		while(next() == ' ');
-		return ch
-	}
-	function eatWhile(rx) {
-		while(next() && rx.test(ch));
-		return ch
-	}
-	function eatBrackets() {
-		var stack = [];
-		while(ch) {
-			switch(ch) {
-				case "'": case '"':
-					eatString(ch);
-				break;
-				case '}':
-					stack.push("{");
-				break;
-				case ']':
-					stack.push("[");
-				break;
-				case ')':
-					stack.push("(");
-				break;
-				case '{': case '[': case '(':
-					if (stack.pop() !== ch)
-						return;
-				break;				
-			}
-			next()
-			if (stack.length === 0)
-				return;
-		}
-	}
+    function eatString(comma) {
+        while(next() && (ch!= comma || peek()=='\\') &&
+                (ch!= '\n' || peek()=='\\'));
+    };
+    function eatWord() {
+        while(next() && rx.test(ch));
+        return ch
+    }
+    function eatSpace() {
+        while(next() == ' ');
+        return ch
+    }
+    function eatWhile(rx) {
+        while(next() && rx.test(ch));
+        return ch
+    }
+    function eatBrackets() {
+        var stack = [];
+        while(ch) {
+            switch(ch) {
+                case "'": case '"':
+                    eatString(ch);
+                break;
+                case '}':
+                    stack.push("{");
+                break;
+                case ']':
+                    stack.push("[");
+                break;
+                case ')':
+                    stack.push("(");
+                break;
+                case '{': case '[': case '(':
+                    if (stack.pop() !== ch)
+                        return;
+                break;
+            }
+            next()
+            if (stack.length === 0)
+                return;
+        }
+    }
 
-	return {
-		js: function(editor){
-			init(editor)
-			rx = jsRx;
-			var ans = {evalString:'', nameFragment:'', functionName:'', eqName:''};
-			ans.nameFragment = getToken(eatWord)
-			ans.filterRange = range.clone();
+    return {
+        js: function(editor){
+            init(editor)
+            rx = jsRx;
+            var ans = {evalString:'', nameFragment:'', functionName:'', eqName:''};
+            ans.nameFragment = getToken(eatWord)
+            ans.filterRange = range.clone();
 
-			if(ch=="'"||ch=='"'){
-				eatSpace()
-				if (ch=='('){
-					eatSpace()
-					ans.functionName = getToken(eatWord)
-				}else if(ch=='['){
-					eatSpace()
-					objCursor=capture()
-				}else if(ch=='='){
-					eatSpace()
-					ans.eqName = getToken(eatWord)
-				}
-			}
-			ch==' '&&eatSpace()
-			if (ch=='('){
-				eatSpace()
-				ans.functionName = getToken(eatWord)
-			}
-			if (ch=='.'){
-				eatWhile(/\s/)
-				objCursor=capture()
-			}
-			if (objCursor) {
-				ans.dotPosition = objCursor
-				var state='.'
-				outer: while (ch) {
-					switch (ch) {
-						case '.':
-							eatWhile(/\s/)
-							state='.'
-						break;
-						case " ":
-						case "\t":
-						case "\n":
-							capture()
-							var capCh = ch
-							eatWhile(/\s/);
-							if(ch != '.' && state != '.'){
-								col = captureCursor.column - 1
-								row = captureCursor.row
-								ch = capCh
-								break outer;
-							}
-						break;
-						case ']':case ')':
-							if(state=='.')
-								eatBrackets()
-							else
-								break outer;
-						break;
-						default:
-							state=''
-							if (rx.test(ch))
-								eatWord();
-							else
-								break outer;
-						break;
-					}
-				}
+            if(ch=="'"||ch=='"'){
+                eatSpace()
+                if (ch=='('){
+                    eatSpace()
+                    ans.functionName = getToken(eatWord)
+                }else if(ch=='['){
+                    eatSpace()
+                    objCursor=capture()
+                }else if(ch=='='){
+                    eatSpace()
+                    ans.eqName = getToken(eatWord)
+                }
+            }
+            ch==' '&&eatSpace()
+            if (ch=='('){
+                eatSpace()
+                ans.functionName = getToken(eatWord)
+            }
+            if (ch=='.'){
+                eatWhile(/\s/)
+                objCursor=capture()
+            }
+            if (objCursor) {
+                ans.dotPosition = objCursor
+                var state='.'
+                outer: while (ch) {
+                    switch (ch) {
+                        case '.':
+                            eatWhile(/\s/)
+                            state='.'
+                        break;
+                        case " ":
+                        case "\t":
+                        case "\n":
+                            capture()
+                            var capCh = ch
+                            eatWhile(/\s/);
+                            if(ch != '.' && state != '.'){
+                                col = captureCursor.column - 1
+                                row = captureCursor.row
+                                ch = capCh
+                                break outer;
+                            }
+                        break;
+                        case ']':case ')':
+                            if(state=='.')
+                                eatBrackets()
+                            else
+                                break outer;
+                        break;
+                        default:
+                            state=''
+                            if (rx.test(ch))
+                                eatWord();
+                            else
+                                break outer;
+                        break;
+                    }
+                }
 
-				ans.evalString=getText(objCursor).trim()
-				ans.baseRange = range.clone();
-			} else {
-				range.end.row = range.start.row;
-				range.end.column = range.start.column;
-				ans.baseRange = range.clone();
-			}
+                ans.evalString=getText(objCursor).trim()
+                ans.baseRange = range.clone();
+            } else {
+                range.end.row = range.start.row;
+                range.end.column = range.start.column;
+                ans.baseRange = range.clone();
+            }
 
-			return ans
-		},
-		css: function(editor){
-			init(editor);
-			rx = cssRx;
-			var ans = {nameFragment:'', mode: 'selector'};
-			ans.nameFragment = getToken(eatWord)
-			ans.filterRange = range.clone();
-			
-			range.end.row = range.start.row;
-			range.end.column = range.start.column;
-			ans.baseRange = range.clone();
-			ans.termChar = ch;
-			
-			var colonCursor
-			if (!ch) //start of file
-				return ans
-			
-			if (ch == ':' && peek() == ':') {
-				ans.termChar = '::';
-				return ans
-			}
-			if (ch==' ') {
-				eatWhile(/\s/)
-				if (ch && !rx.test(ch))
-					ans.termChar = ch;
-			}
-			if (ch == ':'){
-				eatWhile(/\s/)
-				colonCursor = capture();
-				ans.propName = getToken(eatWord)
-				ans.baseRange = range.clone();
-			}
+            return ans
+        },
+        css: function(editor){
+            init(editor);
+            rx = cssRx;
+            var ans = {nameFragment:'', mode: 'selector'};
+            ans.nameFragment = getToken(eatWord)
+            ans.filterRange = range.clone();
 
-			do {
-				if (ch == '}') {
-					ans.mode = 'selector';
-					return ans;
-				} else if (ch == ':') {
-					eatWhile(/\s/)
-					colonCursor = capture();
-					ans.propName = getToken(eatWord)
-					ans.baseRange = range.clone();
-				} else if (ch == ';' || ch == '{') {
-					if (colonCursor) {
-						ans.mode = 'propValue';
-					} else {
-						ans.mode = 'propName';
-					}
-					return ans;
-				}
-			} while(next());
-			
-			return  ans;
-		}
-	}
+            range.end.row = range.start.row;
+            range.end.column = range.start.column;
+            ans.baseRange = range.clone();
+            ans.termChar = ch;
+
+            var colonCursor
+            if (!ch) //start of file
+                return ans
+
+            if (ch == ':' && peek() == ':') {
+                ans.termChar = '::';
+                return ans
+            }
+            if (ch==' ') {
+                eatWhile(/\s/)
+                if (ch && !rx.test(ch))
+                    ans.termChar = ch;
+            }
+            if (ch == ':'){
+                eatWhile(/\s/)
+                colonCursor = capture();
+                ans.propName = getToken(eatWord)
+                ans.baseRange = range.clone();
+            }
+
+            do {
+                if (ch == '}') {
+                    ans.mode = 'selector';
+                    return ans;
+                } else if (ch == ':') {
+                    eatWhile(/\s/)
+                    colonCursor = capture();
+                    ans.propName = getToken(eatWord)
+                    ans.baseRange = range.clone();
+                } else if (ch == ';' || ch == '{') {
+                    if (colonCursor) {
+                        ans.mode = 'propValue';
+                    } else {
+                        ans.mode = 'propName';
+                    }
+                    return ans;
+                }
+            } while(next());
+
+            return  ans;
+        }
+    }
 })()
 
 //css completion helpers
@@ -1171,13 +1171,13 @@ if (!modernfox) { //for old versions
         if (typeof targetObj === "object") {
             x = XPCNativeWrapper.unwrap(targetObj)
 
-			if (targetObj != x) {
-				data.push({name:'wrappedJSObject', comName: 'wrappedjsobject',description:'', depth:-1})
-				targetObj = x
-			}
-		}
+            if (targetObj != x) {
+                data.push({name:'wrappedJSObject', comName: 'wrappedjsobject',description:'', depth:-1})
+                targetObj = x
+            }
+        }
 
-		var maxProtoDepth = 20
+        var maxProtoDepth = 20
         while(x) {
             var props = Object.getOwnPropertyNames(x);
             innerloop: for each(var i in props) {
@@ -1194,9 +1194,9 @@ if (!modernfox) { //for old versions
                 data.push({name: i, comName: i.toLowerCase(), description: d, depth:depth, object: o});
             }
             protoList.push(x);
-			// some objects (XML, Proxy) may have infinite list of __proto__
-			if(!maxProtoDepth--)
-				break;
+            // some objects (XML, Proxy) may have infinite list of __proto__
+            if(!maxProtoDepth--)
+                break;
             x = x.__proto__;
             depth++;
             allProps = allProps.concat(props);
@@ -1373,67 +1373,67 @@ var InspectHandlers = {
 };
 
 function handlerMaker(obj) {
-	var objStr = Object.prototype.toString.call(obj)
-	function toS()'[proxy wrapped'+objStr
-	return {
-		getOwnPropertyDescriptor: function(name) {
-			var desc = Object.getOwnPropertyDescriptor(obj, name);
-			// a trapping proxy's properties must always be configurable
-			desc.configurable = true;
-			return desc;
-		},
-		getPropertyDescriptor:  function(name) {
-			var desc = Object.getPropertyDescriptor(obj, name); // assumed
-			// a trapping proxy's properties must always be configurable
-			desc.configurable = true;
-			return desc;
-		},
-		getOwnPropertyNames: function() {
-			if(objStr=='[object Call]')
-				return Object.getOwnPropertyNames(obj);
-			// [object With]
-			var ans = []
-			for(var i in obj)
-				ans.push(i)
-			return ans
-		},
-		defineProperty: function(name, desc) {
-			Object.defineProperty(obj, name, desc);
-		},
-		delete: function(name) { return delete obj[name]; },
-		fix: function() {
-			if (Object.isFrozen(obj)) {
-				return Object.getOwnProperties(obj); // assumed
-			}
-			// As long as obj is not frozen, the proxy won't allow itself to be fixed
-			return undefined; // will cause a TypeError to be thrown
-		},
+    var objStr = Object.prototype.toString.call(obj)
+    function toS()'[proxy wrapped'+objStr
+    return {
+        getOwnPropertyDescriptor: function(name) {
+            var desc = Object.getOwnPropertyDescriptor(obj, name);
+            // a trapping proxy's properties must always be configurable
+            desc.configurable = true;
+            return desc;
+        },
+        getPropertyDescriptor:  function(name) {
+            var desc = Object.getPropertyDescriptor(obj, name); // assumed
+            // a trapping proxy's properties must always be configurable
+            desc.configurable = true;
+            return desc;
+        },
+        getOwnPropertyNames: function() {
+            if(objStr=='[object Call]')
+                return Object.getOwnPropertyNames(obj);
+            // [object With]
+            var ans = []
+            for(var i in obj)
+                ans.push(i)
+            return ans
+        },
+        defineProperty: function(name, desc) {
+            Object.defineProperty(obj, name, desc);
+        },
+        delete: function(name) { return delete obj[name]; },
+        fix: function() {
+            if (Object.isFrozen(obj)) {
+                return Object.getOwnProperties(obj); // assumed
+            }
+            // As long as obj is not frozen, the proxy won't allow itself to be fixed
+            return undefined; // will cause a TypeError to be thrown
+        },
 
-		has: function(name) { return name in obj; },
-		hasOwn: function(name) { return ({}).hasOwnProperty.call(obj, name); },
-		get: function(receiver, name) {				
-			return name=='toString'?toS:obj[name]; },
-		set: function(receiver, name, val) { obj[name] = val; return true; }, // bad behavior when set fails in non-strict mode
-		enumerate:    function() {
-			var result = [];
-			for (var name in obj) { result.push(name); };
-			return result;
-		},
-		keys: function() { return Object.keys(obj); }
-	};
+        has: function(name) { return name in obj; },
+        hasOwn: function(name) { return ({}).hasOwnProperty.call(obj, name); },
+        get: function(receiver, name) {
+            return name=='toString'?toS:obj[name]; },
+        set: function(receiver, name, val) { obj[name] = val; return true; }, // bad behavior when set fails in non-strict mode
+        enumerate:    function() {
+            var result = [];
+            for (var name in obj) { result.push(name); };
+            return result;
+        },
+        keys: function() { return Object.keys(obj); }
+    };
 }
 
 jn.getParent=function(a) {
-	var utils = (window.getInterface || 
-				 window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface)(Ci.nsIDOMWindowUtils);	
+    var utils = (window.getInterface ||
+                 window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface)(Ci.nsIDOMWindowUtils);
 
-	var parent = utils.getParent(a)
-	if (parent.toString) 
-		try{
-			parent.toString();
-			return parent
-		}catch(e){}// in [with] have toString which throws
-	return Proxy.create(handlerMaker(parent))
+    var parent = utils.getParent(a)
+    if (parent.toString)
+        try{
+            parent.toString();
+            return parent
+        }catch(e){}// in [with] have toString which throws
+    return Proxy.create(handlerMaker(parent))
 }
 
 jn.getClass = function(x) {

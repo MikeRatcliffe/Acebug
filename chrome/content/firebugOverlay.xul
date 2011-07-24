@@ -9,54 +9,54 @@
     <script type="application/x-javascript" src="chrome://acebug/content/resource.js"/>
     <script type="application/x-javascript" src="chrome://acebug/content/__devel__.js"/>
 
-	<textbox id="fbLargeCommandLine" multiline="true" flex="1"
-		newlines="pasteintact"
-		label="LargeCommandLine" style="display:none;-moz-binding:none;" />
+    <textbox id="fbLargeCommandLine" multiline="true" flex="1"
+        newlines="pasteintact"
+        label="LargeCommandLine" style="display:none;-moz-binding:none;" />
 
 
-	<hbox id="fbCommandToolbar">		
-		<toolbarbutton id="fbCmdLineRunButton" label="firebug.Run"
-			class="toolbar-text-button fbInternational"
-			tooltiptext="firebug.Run_the_entered_command"
-			onclick="Firebug.largeCommandLineEditor.enter(event.button, event.shiftKey|event.ctrlKey)"
-			oncommand=""/>
-		<toolbarbutton id="fbCmdLineClearButton" label="firebug.Clear"
-			class="toolbar-text-button fbInternational"
-			tooltiptext="firebug.Clear_the_Command_Editor"
-			oncommand="Firebug.Ace.win2.editor.execCommand('clear')"/>
-		<toolbarbutton id="fbCmdLineCopyButton" removeelement='true'/>
-		<toolbarbutton id="fbCmdLineToggleCommentButton" insertafter='fbCmdLineClearButton'
-			label="//" oncommand="Firebug.Ace.win2.editor.execCommand('togglecomment')"
-			tooltiptext="&acebug.fbCmdToggleCommentButton.tooltip;" />
-		<toolbarbutton id="fbCmdLineToggleStreamCommentButton" insertafter='fbCmdLineToggleCommentButton'
-			label="/*" oncommand="Firebug.Ace.win2.editor.execCommand('toggleStreamComment')"
-			tooltiptext="&acebug.fbCmdToggleStreamCommentButton.tooltip;" />
-		<toolbarbutton id="fbCmdLoadButton" label="&acebug.fbCmdLoadButton.label;" type='menu-button'
-			tooltiptext="&acebug.fbCmdLoadButton.tooltip;"
-			oncommand="Firebug.Ace.loadFile(Firebug.Ace.win2.editor)" insertbefore="fbCommandToggleLarge">
-			<menupopup onpopupshowing="Firebug.Ace.loadPopupShowing(this)"/>
-		</toolbarbutton>
-		<toolbarbutton id="fbCmdSaveButton" label="&acebug.fbCmdSaveButton.label;" type='menu-button'
-			tooltiptext="&acebug.fbCmdSaveButton.tooltip;"
-			oncommand="Firebug.Ace.saveFile(Firebug.Ace.win2.editor)" insertbefore="fbCommandToggleLarge">
-			<menupopup onpopupshowing="Firebug.Ace.savePopupShowing(this)"/>
-		</toolbarbutton>
-	</hbox>
-	
-	<deck id="fbSidePanelDeck" persist="width,height">
-		<vbox id="fbLargeCommandBox">
-			<iframe id="fbAceBrowser" type="content" flex="1"
-					 tooltip="fbTooltip" contextmenu="fbContextMenu"
-					 src="chrome://acebug/content/fbace/fbeditor.html"
-					 position="1"/>
-		</vbox>
-	</deck>
+    <hbox id="fbCommandToolbar">
+        <toolbarbutton id="fbCmdLineRunButton" label="firebug.Run"
+            class="toolbar-text-button fbInternational"
+            tooltiptext="firebug.Run_the_entered_command"
+            onclick="Firebug.largeCommandLineEditor.enter(event.button, event.shiftKey|event.ctrlKey)"
+            oncommand=""/>
+        <toolbarbutton id="fbCmdLineClearButton" label="firebug.Clear"
+            class="toolbar-text-button fbInternational"
+            tooltiptext="firebug.Clear_the_Command_Editor"
+            oncommand="Firebug.Ace.win2.editor.execCommand('clear')"/>
+        <toolbarbutton id="fbCmdLineCopyButton" removeelement='true'/>
+        <toolbarbutton id="fbCmdLineToggleCommentButton" insertafter='fbCmdLineClearButton'
+            label="//" oncommand="Firebug.Ace.win2.editor.execCommand('togglecomment')"
+            tooltiptext="&acebug.fbCmdToggleCommentButton.tooltip;" />
+        <toolbarbutton id="fbCmdLineToggleStreamCommentButton" insertafter='fbCmdLineToggleCommentButton'
+            label="/*" oncommand="Firebug.Ace.win2.editor.execCommand('toggleStreamComment')"
+            tooltiptext="&acebug.fbCmdToggleStreamCommentButton.tooltip;" />
+        <toolbarbutton id="fbCmdLoadButton" label="&acebug.fbCmdLoadButton.label;" type='menu-button'
+            tooltiptext="&acebug.fbCmdLoadButton.tooltip;"
+            oncommand="Firebug.Ace.loadFile(Firebug.Ace.win2.editor)" insertbefore="fbCommandToggleLarge">
+            <menupopup onpopupshowing="Firebug.Ace.loadPopupShowing(this)"/>
+        </toolbarbutton>
+        <toolbarbutton id="fbCmdSaveButton" label="&acebug.fbCmdSaveButton.label;" type='menu-button'
+            tooltiptext="&acebug.fbCmdSaveButton.tooltip;"
+            oncommand="Firebug.Ace.saveFile(Firebug.Ace.win2.editor)" insertbefore="fbCommandToggleLarge">
+            <menupopup onpopupshowing="Firebug.Ace.savePopupShowing(this)"/>
+        </toolbarbutton>
+    </hbox>
+
+    <deck id="fbSidePanelDeck" persist="width,height">
+        <vbox id="fbLargeCommandBox">
+            <iframe id="fbAceBrowser" type="content" flex="1"
+                     tooltip="fbTooltip" contextmenu="fbContextMenu"
+                     src="chrome://acebug/content/fbace/fbeditor.html"
+                     position="1"/>
+        </vbox>
+    </deck>
 
     <deck id="fbPanelBar1-deck" >
         <hbox id='fbAceBrowser1-parent'>
             <tree id='fbAceFileListTree' position='1' hidden='true' persist='width' class='plain'
                 onselect="this.ownerPanel.onSelect()" hidecolumnpicker='true' treelines='true'
-				width='50'>
+                width='50'>
                 <treechildren id="domfly" flex='1' contextmenu="fbContextMenu"/>
                 <treecols>
                    <treecol id="name" hideheader="true" primary="true" flex="2" crop="start" />
