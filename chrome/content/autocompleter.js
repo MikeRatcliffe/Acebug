@@ -401,19 +401,29 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
         this.editor = editor || this.editor;
 
         var cell = Firebug.Ace.win2.editor.session.getMode().getCurrentCell();
-        if(cell.cursor <= cell.headerEnd){
-            if (cell.coffeeText)
-                this.sayInBubble(cell.coffeeText)
-        }
+        var parserName = cell.cursor <= cell.headerEnd ? 'cell' : 'js';
 
-        var $q = this.$q = backParse.js(editor);
+        var $q = this.$q = backParse[parserName](editor);
         this.text = $q.nameFragment;
 
-        if ($q.eqName) { // style.eqName = '
-            this.unfilteredArray = Firebug.Ace.CSSAutocompleter.propValue([null,null,null,$q.eqName])
+        if ($q.cell) {
+			this.unfilteredArray = [{
+				name:'lang=js',
+				comName:'lang=js',
+				isSpecial: true
+			},{
+				name: 'lang=cf',
+				comName: 'lang=cf',
+				description: cell.coffeeText,
+				isSpecial: true
+			}]
             this.filter(this.unfilteredArray, this.text);
             this.showPanel();
-        }else
+        } else if ($q.eqName) { // style.eqName = '
+            this.unfilteredArray = Firebug.Ace.CSSAutocompleter.propValue({propName: $q.eqName})
+            this.filter(this.unfilteredArray, this.text);
+            this.showPanel();
+        } else
             this.eval(Firebug.largeCommandLineEditor.setThisValue($q.evalString));
     },
 
@@ -766,7 +776,7 @@ var backParse = (function() {
 
     return {
         js: function(editor){
-            init(editor)
+            init(editor);
             rx = jsRx;
             var ans = {evalString:'', nameFragment:'', functionName:'', eqName:''};
             ans.nameFragment = getToken(eatWord)
@@ -894,7 +904,18 @@ var backParse = (function() {
             } while(next());
 
             return  ans;
-        }
+        },
+		cell: function(editor){
+            init(editor);
+            rx = jsRx;
+            var ans = {evalString:'', nameFragment:'', functionName:'', eqName:''};
+            ans.nameFragment = getToken(eatWord)
+            ans.filterRange = range.clone();
+			ans.baseRange = range.clone();
+			
+			ans.cell = true
+			return ans
+		}
     }
 })()
 

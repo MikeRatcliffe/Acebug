@@ -124,7 +124,7 @@ body {
     background-image: url(chrome://firebug/skin/breakpointDisabledExe.png);
 }
 
-
+/************************* console mode ****************************/
 .ace_cellHead{
     background:rgba(120,50,100,0.1);
     color: darkred;
@@ -182,4 +182,48 @@ body {
 .ace_fold-widget:hover {
     background: none repeat scroll 0 0 white;
     border: 1px solid gold;
+}
+
+/************************* buttons ****************************/
+
+.mode_button_active, .buttonify:active{
+    background: -moz-linear-gradient(center top , #E3E3E3, #F9F9F9) repeat scroll 0 0 transparent;
+    border-color: #AAAAAA;
+}
+
+.capsule_left {
+    border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.capsule_right {
+    border-bottom-left-radius: 0;
+    border-top-left-radius: 0;
+}
+
+.buttonify {
+    padding: 2px 3px;
+}
+
+.buttonify {
+    color: #000000 !important;
+}
+
+.buttonify {
+    background: -moz-linear-gradient(center top , #FFFFFF, #DDDDDD) repeat scroll 0 0 transparent;
+    border-color: #CCCCCC #AAAAAA #888888;
+    border-left: 1px solid #AAAAAA;
+    border-radius: 3px 3px 3px 3px;
+    border-right: 1px solid #AAAAAA;
+    border-style: solid;
+    border-width: 1px;
+    cursor: pointer;
+    padding: 1px 3px;
+    text-decoration: none;
+    vertical-align: baseline;
+}
+
+.buttonify:hover {
+    border-color: #666666;
+    text-decoration: none !important;
 }

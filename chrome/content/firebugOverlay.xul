@@ -54,14 +54,16 @@
 
     <deck id="fbPanelBar1-deck" >
         <hbox id='fbAceBrowser1-parent'>
-            <tree id='fbAceFileListTree' position='1' hidden='true' persist='width' class='plain'
-                onselect="this.ownerPanel.onSelect()" hidecolumnpicker='true' treelines='true'
-                width='50'>
-                <treechildren id="domfly" flex='1' contextmenu="fbContextMenu"/>
-                <treecols>
-                   <treecol id="name" hideheader="true" primary="true" flex="2" crop="start" />
-                </treecols>
-            </tree>
+			<vbox hidden='true' id='fbAceFileListTree' persist='width' width='50' >
+				<tree  position='1' class='plain' flex='10' hidecolumnpicker='true'
+						onselect="this.ownerPanel.onSelect()"  treelines='true'>					
+					<treechildren id="domfly" flex='1' contextmenu="fbContextMenu"/>
+					<treecols>
+					   <treecol id="name" hideheader="true" primary="true" flex="2" crop="start" />
+					</treecols>
+				</tree>
+				<textbox/>
+			</vbox>
             <splitter position='2' hidden='true' collapse='before'><grippy/></splitter>
             <iframe id="fbAceBrowser1" type="content" flex="1"
                  tooltip="fbTooltip" contextmenu="fbContextMenu"

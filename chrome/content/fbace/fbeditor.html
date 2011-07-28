@@ -13,6 +13,10 @@
         <div id="toggleGutter" onclick="toggleGutter();"></div>
     </div>
 
+	<div id='source-buttons' style="right:0;bottom:0;position:fixed;z-index:10000;display:none">
+		<span class="buttonify mode_button_active capsule_left">view</span>
+		<span class="buttonify capsule_right">source</span>
+	</div>
     <script type="text/javascript">
 //add stub console since ace calls console.error
 if (!window.console) {

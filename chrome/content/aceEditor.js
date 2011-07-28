@@ -473,7 +473,7 @@ Firebug.largeCommandLineEditor = {
                 }).join('\n');
             Firebug.CommandLine.commandHistory.appendToHistory(cell.body.join('\n'));
         }
-        text = text.replace(/\.\s*$/, '')
+        text = text.replace(/\.\s*$/, '');
 
         Firebug.largeCommandLineEditor.runUserCode(text, cell);
     },
@@ -503,14 +503,14 @@ Firebug.largeCommandLineEditor = {
     },
 
     runUserCode: function(code, cell) {
-        var context = Firebug.currentContext
+        var context = Firebug.currentContext;
         if(!context.errorLocation)
-            this.setErrorLocation(context)
+            this.setErrorLocation(context);
 
-        var shortExpr = FBL.cropString(code.replace(/\s*/g, ''), 100);
+        var shortExpr = FBL.cropString(code.replace(/\s*/g, '\u2009'), 100);//\xAD
         Firebug.Console.log("in:" + (inputNumber++) + ">>> " + cell.sourceLang + shortExpr, context, "command", FirebugReps.Text);
 
-        code = this.setThisValue(code, this.cell)
+        code = this.setThisValue(code, this.cell);
         this.lastEvaledCode = code;
         Firebug.CommandLine.evaluate(code, context, context.thisValue, null,
             Firebug.largeCommandLineEditor.logSuccess,
@@ -524,19 +524,19 @@ Firebug.largeCommandLineEditor = {
     },
     logError: function(error) {
         var loc = Firebug.currentContext.errorLocation
-        var self = Firebug.largeCommandLineEditor
+        var self = Firebug.largeCommandLineEditor;
         var source = error.source.slice(loc.before, loc.after);
         if(loc.fileName == error.fileName && source == self.lastEvaledCode) {
             var cellStart = self.cell.bodyStart;
             var lineNumber = error.lineNumber - loc.lineNumber;
-            var lines = source.split('\n')
-            var line = lines[lineNumber]||lines[lineNumber-1]
-            Firebug.Console.log(error.message + ' `' + line + '` @'+(lineNumber+cellStart))
+            var lines = source.split('\n');
+            var line = lines[lineNumber]||lines[lineNumber-1];
+            Firebug.Console.log(error.message + ' `' + line + '` @'+(lineNumber+cellStart));
         } else
-            Firebug.Console.log(error)
+            Firebug.Console.log(error);
     },
     logCoffeeError: function(error) {
-        Firebug.Console.log(error.text + ' `' + error.source + '` @'+(error.row+this.cell.bodyStart))
+        Firebug.Console.log(error.text + ' `' + error.source + '` @'+(error.row+this.cell.bodyStart));
     }
 };
 
@@ -656,8 +656,7 @@ function readEntireFile(file) {
     const replacementChar = Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER;
     fstream.init(file, -1, 0, 0);
     converter.init(fstream, "UTF-8", 1024, replacementChar);
-    while (converter.readString(4096, str) != 0)
-    {
+    while (converter.readString(4096, str) != 0) {
         data += str.value;
     }
     converter.close();

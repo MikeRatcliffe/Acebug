@@ -76,8 +76,14 @@ var enumerateRequests = function(fn) {
     }
 };
 
-function fileIconURL(isDir, name, ext, spec) {
-    if (isDir)      return "chrome://global/skin/dirListing/folder.png";
+function fileIconURL(item) {
+	var ext = item.ext
+	if (!ext) {
+		var spec = item.name || item.href;
+		var m = spec.match(/\.(\w*)$/)
+		if (m)
+			ext = item.ext = m[1]
+	}
     if (!ext)       return "moz-icon://" + ".broken" + "?size=16";
     if (ext=='exe') return "moz-icon://" + spec + "?size=16";
     if (ext=='ico') return spec + "?size=16";
@@ -87,13 +93,14 @@ function fileIconURL(isDir, name, ext, spec) {
 var  getAllLocations = function() {
     var i, src;
     var document = Firebug.currentContext.window.document;
-    var baseURI = document.baseURI;
-    var locationList = [{href: document.documentURI, type: 'text'}];
+    var baseURI = document.baseURI.replace(/[\?#].*$/, '');
+    var locationList = [{href: document.documentURI, type: 'text', ext: 'html'}];
     var hrefs = [];
     function addLocation(href, type) {
         href = href.trim().replace(/#.*$/, '');
         if (!href || hrefs.indexOf(href)!=-1)
             return;
+		dump(href)
         hrefs.push(href);
         locationList.push({href: href, type: type});
     }
@@ -113,7 +120,7 @@ var  getAllLocations = function() {
     }
     //stylesheets
     list = document.styleSheets;
-    for(i = list.length; i--;) {
+    for (i = list.length; i--;) {
         src = list[i].href;
         if (src)
             addLocation(src, 'text');
@@ -128,23 +135,22 @@ var  getAllLocations = function() {
             while(href = match[k++]) {
                 href = href.slice(5,-2)
                 if (href.indexOf('://')==-1 && href.slice(0, 5) != 'data:')
-                    href = FBL.absoluteURL(href, baseURI)
+                    href = FBL.absoluteURL(href, src)
                 addLocation(href, 'image')
             }
         }
     }
 
-    //
-    for(i = locationList.length; i--;) {
+    // add icons
+    for (i = locationList.length; i--;) {
         var item = locationList[i];
         if (item.href.indexOf('://') === -1 && item.href.slice(0, 5) != 'data:')
             item.href = FBL.absoluteURL(item.href, baseURI);
        /* var match = item.href.match(/\/([^\?\/#]+)(?:\?|#|$)/);
         item.name = match?match[1]:'e  *'+item.href;*/
         item.name = item.href;
-        item.iconURL = "moz-icon://" + item.name + "?size=16";
-        //    if (ext=='ico')
-        //      return spec+"?size=16"
+		dump(item.iconURL,item.name ,item.ext )
+        item.iconURL = fileIconURL(item);
     }
     return locationList;
 };
@@ -187,7 +193,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         this.aceWindow = Firebug.Ace.win1;
         this.editor = this.aceWindow.editor;
 
-        this.tree = treePane;
+        this.tree = treePane.firstChild;
         this.tree.ownerPanel = this;
         this.data = getAllLocations();
         this.tree.view = new treeView(this.data);
@@ -224,6 +230,8 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 
         this.selectedIndex = index;
 
+		// location textbox
+		this.tree.nextSibling.value = (data && data.href)
 
         if (!data) {
             this.session = this.aceWindow.createSession('', '');
@@ -273,10 +281,10 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
     // context menu
     getContextMenuItems: function(nada, target) {
         if (target.tagName == 'treechildren') {
-            var view = target.parentNode.view
-            var url = view.getCellText(view.selection.currentIndex,{id:'name'})
+            
         }
-        var env = target.ownerDocument.defaultView.wrappedJSObject;
+		var view = this.tree.view
+        var url = view.getCellText(view.selection.currentIndex,{id:'name'})
 
         var items = []
 
@@ -285,6 +293,12 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
                 label: $ACESTR("acebug.copy"),
                 command: function() {
                     gClipboardHelper.copyString(url);
+                },
+                disabled: !url
+            },{
+                label: $ACESTR("acebug.save"),
+                command: function() {
+                    internalSave(url);
                 },
                 disabled: !url
             }
