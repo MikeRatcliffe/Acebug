@@ -18,14 +18,19 @@
         <toolbarbutton id="fbCmdLineRunButton" label="firebug.Run"
             class="toolbar-text-button fbInternational"
             tooltiptext="firebug.Run_the_entered_command"
-            onclick="Firebug.largeCommandLineEditor.enter(event.button, event.shiftKey|event.ctrlKey)"
+            onclick="Firebug.largeCommandLineEditor.enter(!event.button, event.shiftKey||event.ctrlKey)"
             oncommand=""/>
-        <toolbarbutton id="fbCmdLineClearButton" label="firebug.Clear"
+		<toolbarbutton id="fbCmdLineDirButton" label="firebug.Dir" insertafter='fbCmdLineRunButton'
+            class="toolbar-text-button fbInternational"
+            tooltiptext="&acebug.fbCmdToggleCommentButton.tooltip;"
+            onclick="Firebug.largeCommandLineEditor.enter(!event.button, !event.shiftKey||!event.ctrlKey)"
+            oncommand=""/>
+        <toolbarbutton id="fbCmdLineClearButton" label="firebug.Clear" removeelement='true'
             class="toolbar-text-button fbInternational"
             tooltiptext="firebug.Clear_the_Command_Editor"
             oncommand="Firebug.Ace.win2.editor.execCommand('clear')"/>
         <toolbarbutton id="fbCmdLineCopyButton" removeelement='true'/>
-        <toolbarbutton id="fbCmdLineToggleCommentButton" insertafter='fbCmdLineClearButton'
+        <toolbarbutton id="fbCmdLineToggleCommentButton" insertafter='fbCmdLineDirButton'
             label="//" oncommand="Firebug.Ace.win2.editor.execCommand('togglecomment')"
             tooltiptext="&acebug.fbCmdToggleCommentButton.tooltip;" />
         <toolbarbutton id="fbCmdLineToggleStreamCommentButton" insertafter='fbCmdLineToggleCommentButton'

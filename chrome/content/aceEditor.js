@@ -507,7 +507,7 @@ Firebug.largeCommandLineEditor = {
         if(!context.errorLocation)
             this.setErrorLocation(context);
 
-        var shortExpr = FBL.cropString(code.replace(/\s*/g, '\u2009'), 100);//\xAD
+        var shortExpr = FBL.cropString(code.replace(/\s*/g, ''), 100);//\xAD \u2009
         Firebug.Console.log("in:" + (inputNumber++) + ">>> " + cell.sourceLang + shortExpr, context, "command", FirebugReps.Text);
 
         code = this.setThisValue(code, this.cell);
