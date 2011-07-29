@@ -284,7 +284,7 @@ exports.launch = function(env, options) {
                 len = range.end.row - range.start.row;
                 firstRow = range.start.row;
             } else if (delta.action == "removeText") {
-                len = range.end.row - range.start.row;
+                len = range.start.row - range.end.row;
                 firstRow = range.start.row;
             } else if (delta.action == "removeLines") {
                 len = range.start.row - range.end.row
@@ -299,12 +299,16 @@ exports.launch = function(env, options) {
 
                 args[0] = range.start.row
                 this.foldWidgets.splice.apply(this.foldWidgets, args);
+
+                this.foldWidgets[range.end.row] = null;
             } else if (len < 0) {
                 var rem = this.$breakpoints.splice(firstRow + 1, -len);
                 if(!this.$breakpoints[firstRow] && rem.indexOf(true) != -1)
                     this.$breakpoints[firstRow] = true;
 
                 this.foldWidgets.splice(firstRow, -len);
+
+                this.foldWidgets[range.start.row] = null;
             } else if (len == 0) {
                 this.foldWidgets[range.start.row] = null;
             }
