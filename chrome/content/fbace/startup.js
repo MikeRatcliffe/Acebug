@@ -195,6 +195,7 @@ exports.Gutter = Gutter;
 define('fbace/startup', function(require, exports, module) {
 
 exports.launch = function(env, options) {
+	acebugOptions = options
     // requires
     event = require("pilot/event");
     Editor = require("ace/editor").Editor;

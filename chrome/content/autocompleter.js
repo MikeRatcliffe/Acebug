@@ -407,13 +407,19 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
         this.text = $q.nameFragment;
 
         if ($q.cell) {
+			$q.replaceWord = true;
 			this.unfilteredArray = [{
-				name:'lang=js',
-				comName:'lang=js',
+				name:'\u2555lang=js',
+				comName:'\u2555lang=js',
 				isSpecial: true
 			},{
-				name: 'lang=cf',
-				comName: 'lang=cf',
+				name: '\u2555lang=cf',
+				comName: '\u2555lang=cf',
+				description: cell.coffeeText,
+				isSpecial: true
+			},{
+				name: '\u2555this=',
+				comName: '\u2555this=',
 				description: cell.coffeeText,
 				isSpecial: true
 			}]
@@ -423,8 +429,13 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
             this.unfilteredArray = Firebug.Ace.CSSAutocompleter.propValue({propName: $q.eqName})
             this.filter(this.unfilteredArray, this.text);
             this.showPanel();
-        } else
-            this.eval(Firebug.largeCommandLineEditor.setThisValue($q.evalString));
+        } else {
+			var evalString = $q.evalString;
+			if (!$q.ignoreThisValue)
+				evalString = Firebug.largeCommandLineEditor.setThisValue(evalString);
+			
+			this.eval(evalString);
+		}
     },
 
     // *****************
@@ -473,7 +484,7 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
         }
 
         var curLine = this.editor.session.getLine(range.end.row)
-        if (replaceWord){
+        if (replaceWord || $q.replaceWord){
             var col = range.end.column;
             var rx = /[a-z$_0-9]/i;
             while((ch=curLine[col++]) && rx.test(ch)); //select word forward
@@ -488,7 +499,7 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
         // do not add first " if it is already there
         var firstChar = text[0];
         var cursorChar = curLine[range.start.column-1];
-        dump(firstChar,cursorChar)
+
         if (firstChar == '"' && (cursorChar == '"' || cursorChar == "'")) {
             range.start.column--
         }
@@ -907,13 +918,23 @@ var backParse = (function() {
         },
 		cell: function(editor){
             init(editor);
-            rx = jsRx;
+			rx = jsRx;
+
             var ans = {evalString:'', nameFragment:'', functionName:'', eqName:''};
             ans.nameFragment = getToken(eatWord)
             ans.filterRange = range.clone();
 			ans.baseRange = range.clone();
-			
 			ans.cell = true
+
+			col = curLine.lastIndexOf('=', col)-1;
+			ch = '='
+			if (col > 0){
+				var tok = getToken(eatWord);
+				if (tok == "this" || tok =="scope")
+					ans = this.js(editor)
+					ans.ignoreThisValue = true
+			}
+			
 			return ans
 		}
     }

@@ -40,7 +40,7 @@ var delimiter = '#>>'
 var dl = delimiter.length
 
 exports.ConsoleWorker = function(session) {
-    this.lintOptions = {undef: false, onevar: false, passfail: false, asi: true}
+    this.lintOptions = acebugOptions.lintOptions || {undef: false, onevar: false, passfail: false, asi: true}
 
     this.session = session;
     this.deferredUpdate = callWhenIdle(this.updateAnnotations.bind(this));
@@ -71,34 +71,33 @@ exports.ConsoleWorker = function(session) {
         var lines = this.session.doc.$lines;
         var errors = [];
 
-        var startTime = new Date();console.log("jslint")
+        var startTime = new Date();
         var n = lines.length
         for (var start = 0, end = 0; end < n; end++){
-            console.log(start, end)
             if (lines[end].slice(0, dl) != delimiter)
             //if (!this.session.getState(end).isHeader)
                 continue;
 
             if (start < end){
-                if (this.session.getState(end).lang == 'js')
-                    this.lintJS(errors, lines.slice(start, end).join('\n'), start)
+                if (this.session.getState(start).lang == 'js')
+                    this.lintJS(errors, lines.slice(start, end).join('\n'), start);
                 else
-                    this.lintCoffee(errors, lines.slice(start, end).join('\n'), start)
+                    this.lintCoffee(errors, lines.slice(start, end).join('\n'), start);
             }
 
             while (end < n && this.session.getState(end).isHeader)
                 end++;
-            start = end
+            start = end;
         }
-        console.log(start, end)
+
         if (start < end){
-            if (this.session.getState(end).lang == 'js')
+            if (this.session.getState(start).lang == 'js')
                 this.lintJS(errors, lines.slice(start, end).join('\n'), start)
             else
                 this.lintCoffee(errors, lines.slice(start, end).join('\n'), start)
         }
 
-        console.log("lint time: " + (new Date() - startTime));
+        // console.log("lint time: " + (new Date() - startTime));
 
         this.session.setAnnotations(errors)
     }
@@ -121,7 +120,7 @@ exports.ConsoleWorker = function(session) {
 
     this.lintCoffee = function(errors, value, startLineNumber){
         try {
-            cell.coffeeText = coffeeScriptCompiler.compile(value, {bare: true})
+            coffeeScriptCompiler.compile(value, {bare: true})
         } catch(e) {
             var m = e.message.match(/Parse error on line (\d+): (.*)/);
             if (m) {
