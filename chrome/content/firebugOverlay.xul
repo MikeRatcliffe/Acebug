@@ -67,7 +67,9 @@
 					   <treecol id="name" hideheader="true" primary="true" flex="2" crop="start" />
 					</treecols>
 				</tree>
-				<textbox/>
+				<textbox type='search' oninput="Firebug.chrome.getSelectedPanel().setFilter(this.value)"
+					oncommand="Firebug.chrome.getSelectedPanel().setFilter(this.value)"
+					onchange="Firebug.chrome.getSelectedPanel().setFilter(this.value)"/>
 			</vbox>
             <splitter position='2' hidden='true' collapse='before'><grippy/></splitter>
             <iframe id="fbAceBrowser1" type="content" flex="1"

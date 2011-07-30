@@ -90,43 +90,63 @@ function fileIconURL(item) {
     return "moz-icon://" + "." + ext + "?size=16";
 }
 
-var  getAllLocations = function() {
+var  getAllLocations = function(locationList) {
     var i, src;
     var document = Firebug.currentContext.window.document;
     var baseURI = document.baseURI.replace(/[\?#].*$/, '');
-    var locationList = [{href: document.documentURI, type: 'text', ext: 'html'}];
-    var hrefs = [];
-    function addLocation(href, type) {
+    
+	locationList = locationList || {};
+	var allItems = locationList.allItems = locationList.allItems || {};
+
+    function addLocation(baseURI, href, type, ext) {
         href = href.trim().replace(/#.*$/, '');
-        if (!href || hrefs.indexOf(href)!=-1)
+
+		if (!href || allItems[href])
             return;
-		dump(href)
-        hrefs.push(href);
-        locationList.push({href: href, type: type});
+		
+		if (href.indexOf('://') === -1 && href.slice(0, 5) != 'data:')
+            href = FBL.absoluteURL(href, baseURI);
+		
+		//absoluteURL fails for about:*
+		if (!href)
+			href = (baseURI + '/' + href).replace('//', '/');
+
+		if (!href || allItems[href])
+            return;
+
+		var item = allItems[href] = {href: href, type: type};
+		if(ext)
+			item.ext = ext;
+		item.name = item.href;
+        item.iconURL = fileIconURL(item);
     }
-    //scripts
+	// document
+    addLocation(baseURI, document.documentURI, 'text', 'html')
+
+    // scripts
     var list = document.documentElement.getElementsByTagName('script');
     for(i = list.length; i--;) {
         src = list[i].getAttribute('src');
         if (src)
-            addLocation(src, 'text');
+            addLocation(baseURI, src, 'text');
     }
-    //images
+    // images
     list = document.documentElement.getElementsByTagName('img');
     for(i = list.length; i--;) {
         src = list[i].getAttribute('src');
         if (src)
-            addLocation(src, 'image');
+            addLocation(baseURI, src, 'image');
     }
-    //stylesheets
+    // stylesheets
     list = document.styleSheets;
     for (i = list.length; i--;) {
         src = list[i].href;
         if (src)
-            addLocation(src, 'text');
+            addLocation(baseURI, src, 'text');
         else
-            src = baseURI
-        var cssRules = list[i].cssRules
+            src = baseURI;
+		// images referenced from stylesheet
+        var cssRules = list[i].cssRules;
         for(var j = cssRules.length; j--;) {
             var match = cssRules[j].cssText.match(/url\("[^"]*"\)/g)
             var k = 0, href
@@ -134,24 +154,11 @@ var  getAllLocations = function() {
                 continue;
             while(href = match[k++]) {
                 href = href.slice(5,-2)
-                if (href.indexOf('://')==-1 && href.slice(0, 5) != 'data:')
-                    href = FBL.absoluteURL(href, src)
-                addLocation(href, 'image')
+                addLocation(src, href, 'image')
             }
         }
     }
-
-    // add icons
-    for (i = locationList.length; i--;) {
-        var item = locationList[i];
-        if (item.href.indexOf('://') === -1 && item.href.slice(0, 5) != 'data:')
-            item.href = FBL.absoluteURL(item.href, baseURI);
-       /* var match = item.href.match(/\/([^\?\/#]+)(?:\?|#|$)/);
-        item.name = match?match[1]:'e  *'+item.href;*/
-        item.name = item.href;
-		dump(item.iconURL,item.name ,item.ext )
-        item.iconURL = fileIconURL(item);
-    }
+	
     return locationList;
 };
 
@@ -175,8 +182,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
     searchable: true,
     order: 190,
 
-    initialize: function()
-    {
+    initialize: function() {
         this.__defineGetter__('browser', function() {
             return Firebug.chrome.$("fbAceBrowser1-parent");
         });
@@ -185,8 +191,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         Firebug.Panel.initialize.apply(this, arguments);
     },
 
-    show: function()
-    {
+    show: function() {
         var treePane = this.browser.firstChild;
         treePane.hidden = false;
         treePane.nextSibling.hidden = false;
@@ -195,8 +200,10 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 
         this.tree = treePane.firstChild;
         this.tree.ownerPanel = this;
-        this.data = getAllLocations();
-        this.tree.view = new treeView(this.data);
+		this.searchbox = this.tree.nextSibling
+		this.searchbox.value = ''
+        this.updateLocationData();
+		this.setFilter('')
 
         this.tree.ownerPanel = this
 
@@ -218,20 +225,43 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         }
     },
 
-    setSession: function()
-    {
+    setSession: function() {
         this.onSelect();
     },
+	
+	setFilter: function(text) {
+		this.filterText = text || ''
+		var locationList = this.data;
+		locationList.visibleItems = [];
+		if (!text) {
+			for each(var item in locationList.allItems) {
+			   locationList.visibleItems.push(item)
+			}			
+		} else {
+			for each(var item in locationList.allItems) {
+				if(item.href.indexOf(text) != -1)
+					locationList.visibleItems.push(item);
+			}
+		}
+		this.tree.view = new treeView(this.data.visibleItems);
+	},
+	
+	updateLocationData: function() {
+		this.data = getAllLocations(this.data);
+	},
 
-    onSelect: function()
-    {
+    onSelect: function() {
         var index = this.tree.view.selection.currentIndex;
-        var data = this.data[index], content, href;
+        var data = this.data.visibleItems[index], content, href;
 
         this.selectedIndex = index;
 
 		// location textbox
-		this.tree.nextSibling.value = (data && data.href)
+		if (!this.filterText)
+			this.tree.nextSibling.value = (data && data.href);
+		
+		// reset session
+		this.session = null
 
         if (!data) {
             this.session = this.aceWindow.createSession('', '');
@@ -253,8 +283,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         this.editor.setSession(this.session);
     },
 
-    showImage: function(data)
-    {
+    showImage: function(data) {
         if (!this.aceWindow.imageViewer) {
             var self = this;
             this.aceWindow.require(['fbace/imageViewer'], function() {
@@ -265,8 +294,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         }
     },
 
-    hide: function()
-    {
+    hide: function() {
         var treePane = this.browser.firstChild;
         treePane.hidden = true;
         treePane.nextSibling.hidden = true;
@@ -284,30 +312,51 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
             
         }
 		var view = this.tree.view
-        var url = view.getCellText(view.selection.currentIndex,{id:'name'})
+        var url = view.getCellText(view.selection.currentIndex, {id:'name'})
 
         var items = []
 
         items.push(
             {
+                label: $ACESTR("acebug.save"),
+                command: function() {
+                    internalSave(url);
+                },
+                disabled: !url
+            },
+			'-',
+			{
                 label: $ACESTR("acebug.copy"),
                 command: function() {
                     gClipboardHelper.copyString(url);
                 },
                 disabled: !url
             },{
-                label: $ACESTR("acebug.save"),
+                label: $ACESTR("acebug.copy as data: uri"),
                 command: function() {
-                    internalSave(url);
+                    var t = generateDataURI(url);
+					gClipboardHelper.copyString(t);
                 },
                 disabled: !url
-            }
+            },
+			'-',
+			{
+				label: $ACESTR("acebug.refresh"),
+                command: function() {
+					var s = Firebug.chrome.getSelectedPanel().session;
+					if(!s)
+						return;
+                    var t = getImageFromURL(url);					
+					s.setValue(t);
+                },
+                disabled: !this.session
+			}
         );
 
         return items;
     },
     // for ace editor
-    addContextMenuItems: function(items, editor, editorText){
+    addContextMenuItems: function(items, editor, editorText) {
         return items;
     },
 
@@ -330,7 +379,57 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         return null;
     },
 
+	
 });
+// ************************************************************************************************
+function getImageFromURL(url) {
+	var ioserv = Components.classes["@mozilla.org/network/io-service;1"]
+			   .getService(Components.interfaces.nsIIOService);
+	var channel = ioserv.newChannel(url, 0, null);
+	var stream = channel.open();
+ 
+	if (channel instanceof Components.interfaces.nsIHttpChannel && channel.responseStatus != 200) {
+		return "";
+	}
+ 
+	var bstream = Components.classes["@mozilla.org/binaryinputstream;1"]
+				.createInstance(Components.interfaces.nsIBinaryInputStream);
+	bstream.setInputStream(stream);
+ 
+	var size = 0;
+	var file_data = "";
+	while(size = bstream.available()) {
+		file_data += bstream.readBytes(size);
+	}
+ 
+	return file_data;
+}
+function getFileData(file) {
+	var contentType = Components.classes["@mozilla.org/mime;1"]
+                              .getService(Components.interfaces.nsIMIMEService)
+                              .getTypeFromFile(file);
+	var inputStream = Components.classes["@mozilla.org/network/file-input-stream;1"]
+                              .createInstance(Components.interfaces.nsIFileInputStream);
+	inputStream.init(file, 0x01, 0600, 0);
+	var stream = Components.classes["@mozilla.org/binaryinputstream;1"]
+                         .createInstance(Components.interfaces.nsIBinaryInputStream);
+	stream.setInputStream(inputStream);
+	var encoded = btoa(stream.readBytes(stream.available()));
+	return "data:" + contentType + ";base64," + encoded;
+
+}
+function generateDataURI(href) {
+	try{
+		var contentType = Components.classes["@mozilla.org/mime;1"]
+                              .getService(Components.interfaces.nsIMIMEService)
+                              .getTypeFromURI(makeURI(href));
+	}catch(e){
+		contentType = 'text/plain'
+	}
+	
+	var encoded = btoa(getImageFromURL(href));
+	return "data:" + contentType + ";base64," + encoded;
+}
 
 var gClipboardHelper = Firebug.Ace.gClipboardHelper
 // ************************************************************************************************

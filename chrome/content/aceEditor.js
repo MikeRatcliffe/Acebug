@@ -286,7 +286,7 @@ Firebug.Ace = {
 
     loadPopupShowing: function(popup) {
         FBL.eraseNode(popup)
-        FBL.createMenuItem(popup, {label: 'save As', nol10n: true });
+        FBL.createMenuItem(popup, {label: 'ace auto save', nol10n: true });
     },
 
 
