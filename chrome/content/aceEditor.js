@@ -258,19 +258,19 @@ Firebug.Ace = {
             ios = Cc['@mozilla.org/network/io-service;1'].getService(Ci.nsIIOService),
             fp = this.initFilePicker(session, 'save');
 
-		if (doNotUseFilePicker && session.href) {
-			try {
-				file = ios.newURI(session.href, null, null)
-					.QueryInterface(Ci.nsIFileURL).file;
-				if (file.exists()) {
-					result = Ci.nsIFilePicker.returnOK;
-					fp = {file: file};
-				}
-			} catch(e){}
-		}
+        if (doNotUseFilePicker && session.href) {
+            try {
+                file = ios.newURI(session.href, null, null)
+                    .QueryInterface(Ci.nsIFileURL).file;
+                if (file.exists()) {
+                    result = Ci.nsIFilePicker.returnOK;
+                    fp = {file: file};
+                }
+            } catch(e){}
+        }
 
-		if (!fp.file)
-			result = fp.show();
+        if (!fp.file)
+            result = fp.show();
         if (result == Ci.nsIFilePicker.returnOK) {
             file = fp.file;
             name = file.leafName;
@@ -300,13 +300,13 @@ Firebug.Ace = {
         FBL.eraseNode(popup)
         FBL.createMenuItem(popup, {label: 'ace auto save', nol10n: true });
     },
-	
-	getUserFile: function(id){
-		var file = Services.dirsvc.get(dir||"ProfD", Ci.nsIFile);
-		file.append('acebug')
-		file.append('autosave-'+id)
-		return file
-	},
+
+    getUserFile: function(id){
+        var file = Services.dirsvc.get(dir||"ProfD", Ci.nsIFile);
+        file.append('acebug')
+        file.append('autosave-'+id)
+        return file
+    },
 
 
     // search

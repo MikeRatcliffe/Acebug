@@ -1,27 +1,27 @@
 define('fbace/imageViewer', function(require, exports, module) {
 
 if (window.imageViewer)
-	return
+    return
 
 window.imageViewer = exports;
 exports.showImage = function(data) {
     if (!this.iframe) {
         this.iframe = document.createElement('iframe');
-		this.iframe.style.position = 'absolute';
-		this.iframe.style.width = '100%';
-		this.iframe.style.height = '100%';
-		this.iframe.style.background = 'white';
-		this.iframe.style.zIndex = '1000';
+        this.iframe.style.position = 'absolute';
+        this.iframe.style.width = '100%';
+        this.iframe.style.height = '100%';
+        this.iframe.style.background = 'white';
+        this.iframe.style.zIndex = '1000';
         document.body.appendChild(this.iframe)
-		
-		this.buttons = document.getElementById('source-buttons')
+
+        this.buttons = document.getElementById('source-buttons')
     }
-	this.iframe.style.display = '';
-	// this.buttons.style.display = '';
-	
+    this.iframe.style.display = '';
+    // this.buttons.style.display = '';
+
     this.iframe.setAttribute('src', 'view-source:' + data.href);
     this.isOpen = true;
-	
+
 };
 
 exports.hide = function(data) {

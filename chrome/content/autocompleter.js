@@ -407,22 +407,22 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
         this.text = $q.nameFragment;
 
         if ($q.cell) {
-			$q.replaceWord = true;
-			this.unfilteredArray = [{
-				name:'\u2555lang=js',
-				comName:'\u2555lang=js',
-				isSpecial: true
-			},{
-				name: '\u2555lang=cf',
-				comName: '\u2555lang=cf',
-				description: cell.coffeeText,
-				isSpecial: true
-			},{
-				name: '\u2555this=',
-				comName: '\u2555this=',
-				description: cell.coffeeText,
-				isSpecial: true
-			}]
+            $q.replaceWord = true;
+            this.unfilteredArray = [{
+                name:'\u2555lang=js',
+                comName:'\u2555lang=js',
+                isSpecial: true
+            },{
+                name: '\u2555lang=cf',
+                comName: '\u2555lang=cf',
+                description: cell.coffeeText,
+                isSpecial: true
+            },{
+                name: '\u2555this=',
+                comName: '\u2555this=',
+                description: cell.coffeeText,
+                isSpecial: true
+            }]
             this.filter(this.unfilteredArray, this.text);
             this.showPanel();
         } else if ($q.eqName) { // style.eqName = '
@@ -430,12 +430,12 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
             this.filter(this.unfilteredArray, this.text);
             this.showPanel();
         } else {
-			var evalString = $q.evalString;
-			if (!$q.ignoreThisValue)
-				evalString = Firebug.largeCommandLineEditor.setThisValue(evalString);
-			
-			this.eval(evalString);
-		}
+            var evalString = $q.evalString;
+            if (!$q.ignoreThisValue)
+                evalString = Firebug.largeCommandLineEditor.setThisValue(evalString);
+
+            this.eval(evalString);
+        }
     },
 
     // *****************
@@ -916,27 +916,27 @@ var backParse = (function() {
 
             return  ans;
         },
-		cell: function(editor){
+        cell: function(editor){
             init(editor);
-			rx = jsRx;
+            rx = jsRx;
 
             var ans = {evalString:'', nameFragment:'', functionName:'', eqName:''};
             ans.nameFragment = getToken(eatWord)
             ans.filterRange = range.clone();
-			ans.baseRange = range.clone();
-			ans.cell = true
+            ans.baseRange = range.clone();
+            ans.cell = true
 
-			col = curLine.lastIndexOf('=', col)-1;
-			ch = '='
-			if (col > 0){
-				var tok = getToken(eatWord);
-				if (tok == "this" || tok =="scope")
-					ans = this.js(editor)
-					ans.ignoreThisValue = true
-			}
-			
-			return ans
-		}
+            col = curLine.lastIndexOf('=', col)-1;
+            ch = '='
+            if (col > 0){
+                var tok = getToken(eatWord);
+                if (tok == "this" || tok =="scope")
+                    ans = this.js(editor)
+                    ans.ignoreThisValue = true
+            }
+
+            return ans
+        }
     }
 })()
 

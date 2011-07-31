@@ -77,13 +77,13 @@ var enumerateRequests = function(fn) {
 };
 
 function fileIconURL(item) {
-	var ext = item.ext
-	if (!ext) {
-		var spec = item.name || item.href;
-		var m = spec.match(/\.(\w*)$/)
-		if (m)
-			ext = item.ext = m[1]
-	}
+    var ext = item.ext
+    if (!ext) {
+        var spec = item.name || item.href;
+        var m = spec.match(/\.(\w*)$/)
+        if (m)
+            ext = item.ext = m[1]
+    }
     if (!ext)       return "moz-icon://" + ".broken" + "?size=16";
     if (ext=='exe') return "moz-icon://" + spec + "?size=16";
     if (ext=='ico') return spec + "?size=16";
@@ -94,33 +94,33 @@ var  getAllLocations = function(locationList) {
     var i, src;
     var document = Firebug.currentContext.window.document;
     var baseURI = document.baseURI.replace(/[\?#].*$/, '');
-    
-	locationList = locationList || {};
-	var allItems = locationList.allItems = locationList.allItems || {};
+
+    locationList = locationList || {};
+    var allItems = locationList.allItems = locationList.allItems || {};
 
     function addLocation(baseURI, href, type, ext) {
         href = href.trim().replace(/#.*$/, '');
 
-		if (!href || allItems[href])
+        if (!href || allItems[href])
             return;
-		
-		if (href.indexOf('://') === -1 && href.slice(0, 5) != 'data:')
+
+        if (href.indexOf('://') === -1 && href.slice(0, 5) != 'data:')
             href = FBL.absoluteURL(href, baseURI);
-		
-		//absoluteURL fails for about:*
-		if (!href)
-			href = (baseURI + '/' + href).replace('//', '/');
 
-		if (!href || allItems[href])
+        //absoluteURL fails for about:*
+        if (!href)
+            href = (baseURI + '/' + href).replace('//', '/');
+
+        if (!href || allItems[href])
             return;
 
-		var item = allItems[href] = {href: href, type: type};
-		if(ext)
-			item.ext = ext;
-		item.name = item.href;
+        var item = allItems[href] = {href: href, type: type};
+        if(ext)
+            item.ext = ext;
+        item.name = item.href;
         item.iconURL = fileIconURL(item);
     }
-	// document
+    // document
     addLocation(baseURI, document.documentURI, 'text', 'html')
 
     // scripts
@@ -145,7 +145,7 @@ var  getAllLocations = function(locationList) {
             addLocation(baseURI, src, 'text');
         else
             src = baseURI;
-		// images referenced from stylesheet
+        // images referenced from stylesheet
         var cssRules = list[i].cssRules;
         for(var j = cssRules.length; j--;) {
             var match = cssRules[j].cssText.match(/url\("[^"]*"\)/g)
@@ -158,7 +158,7 @@ var  getAllLocations = function(locationList) {
             }
         }
     }
-	
+
     return locationList;
 };
 
@@ -200,10 +200,10 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 
         this.tree = treePane.firstChild;
         this.tree.ownerPanel = this;
-		this.searchbox = this.tree.nextSibling
-		this.searchbox.value = this.filterText || '';
+        this.searchbox = this.tree.nextSibling
+        this.searchbox.value = this.filterText || '';
         this.updateLocationData();
-		this.setFilter(this.filterText || '');
+        this.setFilter(this.filterText || '');
 
         this.tree.ownerPanel = this
 
@@ -228,27 +228,27 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
     setSession: function() {
         this.onSelect();
     },
-	
-	setFilter: function(text) {
-		this.filterText = text || ''
-		var locationList = this.data;
-		locationList.visibleItems = [];
-		if (!text) {
-			for each(var item in locationList.allItems) {
-			   locationList.visibleItems.push(item)
-			}			
-		} else {
-			for each(var item in locationList.allItems) {
-				if(item.href.indexOf(text) != -1)
-					locationList.visibleItems.push(item);
-			}
-		}
-		this.tree.view = new treeView(this.data.visibleItems);
-	},
-	
-	updateLocationData: function() {
-		this.data = getAllLocations(this.data);
-	},
+
+    setFilter: function(text) {
+        this.filterText = text || ''
+        var locationList = this.data;
+        locationList.visibleItems = [];
+        if (!text) {
+            for each(var item in locationList.allItems) {
+               locationList.visibleItems.push(item)
+            }
+        } else {
+            for each(var item in locationList.allItems) {
+                if(item.href.indexOf(text) != -1)
+                    locationList.visibleItems.push(item);
+            }
+        }
+        this.tree.view = new treeView(this.data.visibleItems);
+    },
+
+    updateLocationData: function() {
+        this.data = getAllLocations(this.data);
+    },
 
     onSelect: function() {
         var index = this.tree.view.selection.currentIndex;
@@ -256,12 +256,12 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 
         this.selectedIndex = index;
 
-		// location textbox
-		if (!this.filterText)
-			this.tree.nextSibling.value = (data && data.href);
-		
-		// reset session
-		this.session = null
+        // location textbox
+        if (!this.filterText)
+            this.tree.nextSibling.value = (data && data.href);
+
+        // reset session
+        this.session = null
 
         if (!data) {
             this.session = this.aceWindow.createSession('', '');
@@ -308,29 +308,29 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
     },
     // context menu
     getContextMenuItems: function(nada, target) {
-		var view = this.tree.view
+        var view = this.tree.view
         var url = view.getCellText(view.selection.currentIndex, {id:'name'})
 
         var items = [];
 
-		if (view.selection.count > 1) {
-			items.push({
+        if (view.selection.count > 1) {
+            items.push({
                 label: $ACESTR("acebug.save selected"),
                 command: function() {
-					var start = {};
-					var end = {};
-					var numRanges = view.selection.getRangeCount();
+                    var start = {};
+                    var end = {};
+                    var numRanges = view.selection.getRangeCount();
 
-					for (var t = 0; t < numRanges; t++){
-						view.selection.getRangeAt(t,start,end);
-						for (var v = start.value; v <= end.value; v++){
-							url = view.getCellText(v, {id:'name'})
-							internalSave(url);
-						}
-					}
+                    for (var t = 0; t < numRanges; t++){
+                        view.selection.getRangeAt(t,start,end);
+                        for (var v = start.value; v <= end.value; v++){
+                            url = view.getCellText(v, {id:'name'})
+                            internalSave(url);
+                        }
+                    }
                 }
             });
-		}
+        }
 
         items.push(
             {
@@ -340,8 +340,8 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
                 },
                 disabled: !url
             },
-			'-',
-			{
+            '-',
+            {
                 label: $ACESTR("acebug.copy"),
                 command: function() {
                     gClipboardHelper.copyString(url);
@@ -351,22 +351,22 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
                 label: $ACESTR("acebug.copy as data: uri"),
                 command: function() {
                     var t = generateDataURI(url);
-					gClipboardHelper.copyString(t);
+                    gClipboardHelper.copyString(t);
                 },
                 disabled: !url
             },
-			'-',
-			{
-				label: $ACESTR("acebug.refresh"),
+            '-',
+            {
+                label: $ACESTR("acebug.refresh"),
                 command: function() {
-					var s = Firebug.chrome.getSelectedPanel().session;
-					if(!s)
-						return;
-                    var t = getImageFromURL(url);					
-					s.setValue(t);
+                    var s = Firebug.chrome.getSelectedPanel().session;
+                    if(!s)
+                        return;
+                    var t = getImageFromURL(url);
+                    s.setValue(t);
                 },
                 disabled: !this.session
-			}
+            }
         );
 
         return items;
@@ -395,56 +395,56 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         return null;
     },
 
-	
+
 });
 // ************************************************************************************************
 function getImageFromURL(url) {
-	var ioserv = Components.classes["@mozilla.org/network/io-service;1"]
-			   .getService(Components.interfaces.nsIIOService);
-	var channel = ioserv.newChannel(url, 0, null);
-	var stream = channel.open();
- 
-	if (channel instanceof Components.interfaces.nsIHttpChannel && channel.responseStatus != 200) {
-		return "";
-	}
- 
-	var bstream = Components.classes["@mozilla.org/binaryinputstream;1"]
-				.createInstance(Components.interfaces.nsIBinaryInputStream);
-	bstream.setInputStream(stream);
- 
-	var size = 0;
-	var file_data = "";
-	while(size = bstream.available()) {
-		file_data += bstream.readBytes(size);
-	}
- 
-	return file_data;
+    var ioserv = Components.classes["@mozilla.org/network/io-service;1"]
+               .getService(Components.interfaces.nsIIOService);
+    var channel = ioserv.newChannel(url, 0, null);
+    var stream = channel.open();
+
+    if (channel instanceof Components.interfaces.nsIHttpChannel && channel.responseStatus != 200) {
+        return "";
+    }
+
+    var bstream = Components.classes["@mozilla.org/binaryinputstream;1"]
+                .createInstance(Components.interfaces.nsIBinaryInputStream);
+    bstream.setInputStream(stream);
+
+    var size = 0;
+    var file_data = "";
+    while(size = bstream.available()) {
+        file_data += bstream.readBytes(size);
+    }
+
+    return file_data;
 }
 function getFileData(file) {
-	var contentType = Components.classes["@mozilla.org/mime;1"]
+    var contentType = Components.classes["@mozilla.org/mime;1"]
                               .getService(Components.interfaces.nsIMIMEService)
                               .getTypeFromFile(file);
-	var inputStream = Components.classes["@mozilla.org/network/file-input-stream;1"]
+    var inputStream = Components.classes["@mozilla.org/network/file-input-stream;1"]
                               .createInstance(Components.interfaces.nsIFileInputStream);
-	inputStream.init(file, 0x01, 0600, 0);
-	var stream = Components.classes["@mozilla.org/binaryinputstream;1"]
+    inputStream.init(file, 0x01, 0600, 0);
+    var stream = Components.classes["@mozilla.org/binaryinputstream;1"]
                          .createInstance(Components.interfaces.nsIBinaryInputStream);
-	stream.setInputStream(inputStream);
-	var encoded = btoa(stream.readBytes(stream.available()));
-	return "data:" + contentType + ";base64," + encoded;
+    stream.setInputStream(inputStream);
+    var encoded = btoa(stream.readBytes(stream.available()));
+    return "data:" + contentType + ";base64," + encoded;
 
 }
 function generateDataURI(href) {
-	try{
-		var contentType = Components.classes["@mozilla.org/mime;1"]
+    try{
+        var contentType = Components.classes["@mozilla.org/mime;1"]
                               .getService(Components.interfaces.nsIMIMEService)
                               .getTypeFromURI(makeURI(href));
-	}catch(e){
-		contentType = 'text/plain'
-	}
-	
-	var encoded = btoa(getImageFromURL(href));
-	return "data:" + contentType + ";base64," + encoded;
+    }catch(e){
+        contentType = 'text/plain'
+    }
+
+    var encoded = btoa(getImageFromURL(href));
+    return "data:" + contentType + ";base64," + encoded;
 }
 
 var gClipboardHelper = Firebug.Ace.gClipboardHelper
