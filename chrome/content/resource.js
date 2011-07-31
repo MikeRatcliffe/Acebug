@@ -201,9 +201,9 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         this.tree = treePane.firstChild;
         this.tree.ownerPanel = this;
 		this.searchbox = this.tree.nextSibling
-		this.searchbox.value = ''
+		this.searchbox.value = this.filterText || '';
         this.updateLocationData();
-		this.setFilter('')
+		this.setFilter(this.filterText || '');
 
         this.tree.ownerPanel = this
 
@@ -308,13 +308,29 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
     },
     // context menu
     getContextMenuItems: function(nada, target) {
-        if (target.tagName == 'treechildren') {
-            
-        }
 		var view = this.tree.view
         var url = view.getCellText(view.selection.currentIndex, {id:'name'})
 
-        var items = []
+        var items = [];
+
+		if (view.selection.count > 1) {
+			items.push({
+                label: $ACESTR("acebug.save selected"),
+                command: function() {
+					var start = {};
+					var end = {};
+					var numRanges = view.selection.getRangeCount();
+
+					for (var t = 0; t < numRanges; t++){
+						view.selection.getRangeAt(t,start,end);
+						for (var v = start.value; v <= end.value; v++){
+							url = view.getCellText(v, {id:'name'})
+							internalSave(url);
+						}
+					}
+                }
+            });
+		}
 
         items.push(
             {
