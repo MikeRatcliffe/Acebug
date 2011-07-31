@@ -223,19 +223,24 @@ Firebug.Ace = {
         else
             fp.init(window, $ACESTR("acebug.selectafile"), Ci.nsIFilePicker.modeOpen);
 
-        if (ext)
-            fp.appendFilter(ext, "*." + ext);
-        fp.appendFilters(Ci.nsIFilePicker.filterAll);
-
         // try to set initial file
         if (session.filePath) {
             try{
                 file = ios.newURI(session.filePath, null, null);
                 file = file.QueryInterface(Ci.nsIFileURL).file;
                 fp.displayDirectory = file.parent;
+                var name = file.leafName;
                 fp.defaultString = file.leafName;
             } catch(e) {}
         }
+        // session.extension not always is the same as real extension; for now 
+        if (name && name.slice(-ext.length) != ext)
+            fp.appendFilters(Ci.nsIFilePicker.filterAll);
+
+        if (ext)
+            fp.appendFilter(ext, "*." + ext);
+        fp.appendFilters(Ci.nsIFilePicker.filterAll);
+
         return fp;
     },
 
