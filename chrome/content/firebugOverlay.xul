@@ -18,12 +18,12 @@
         <toolbarbutton id="fbCmdLineRunButton" label="firebug.Run"
             class="toolbar-text-button fbInternational"
             tooltiptext="firebug.Run_the_entered_command"
-            onclick="Firebug.largeCommandLineEditor.enter(!event.button, event.shiftKey||event.ctrlKey)"
+            onclick="Firebug.largeCommandLineEditor.enter(false, event.button||event.shiftKey||event.ctrlKey)"
             oncommand=""/>
-		<toolbarbutton id="fbCmdLineDirButton" label="firebug.Dir" insertafter='fbCmdLineRunButton'
+		<toolbarbutton id="fbCmdLineDirButton" label="firebug.Run selected" insertafter='fbCmdLineRunButton'
             class="toolbar-text-button fbInternational"
             tooltiptext="&acebug.fbCmdToggleCommentButton.tooltip;"
-            onclick="Firebug.largeCommandLineEditor.enter(!event.button, !event.shiftKey||!event.ctrlKey)"
+            onclick="Firebug.largeCommandLineEditor.enter(true, event.button||event.shiftKey||event.ctrlKey)"
             oncommand=""/>
         <toolbarbutton id="fbCmdLineClearButton" label="firebug.Clear" removeelement='true'
             class="toolbar-text-button fbInternational"
@@ -43,7 +43,7 @@
         </toolbarbutton>
         <toolbarbutton id="fbCmdSaveButton" label="&acebug.fbCmdSaveButton.label;" type='menu-button'
             tooltiptext="&acebug.fbCmdSaveButton.tooltip;"
-            oncommand="Firebug.Ace.saveFile(Firebug.Ace.win2.editor)" insertbefore="fbCommandToggleLarge">
+            oncommand="Firebug.Ace.saveFile(Firebug.Ace.win2.editor, event.target==this)" insertbefore="fbCommandToggleLarge">
             <menupopup onpopupshowing="Firebug.Ace.savePopupShowing(this)"/>
         </toolbarbutton>
     </hbox>
