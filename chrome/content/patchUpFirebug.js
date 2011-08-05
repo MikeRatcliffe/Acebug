@@ -110,7 +110,7 @@ FirebugReps.Func = domplate(Firebug.Rep,
 
     inspectObject: function(fn, context)
     {
-        var sourceLink = findSourceForFunction(fn, context);
+        var sourceLink = (FBL.findSourceForFunction||Firebug.SourceFile.findSourceForFunction)(fn, context);
         if (sourceLink)
             Firebug.chrome.select(sourceLink);
         if (FBTrace.DBG_FUNCTION_NAME)
