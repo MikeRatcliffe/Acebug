@@ -17,7 +17,7 @@ Firebug.Ace = {
         this.win2 = win2Wrapped.wrappedJSObject;
 
         var browser = FBL.$("fbAceBrowser1");
-        win1Wrapped = browser.contentWindow;
+        var win1Wrapped = browser.contentWindow;
         this.win1 = win1Wrapped.wrappedJSObject;
 
         this.win1.startAcebugAutocompleter =
@@ -226,7 +226,7 @@ Firebug.Ace = {
         // try to set initial file
         if (session.filePath) {
             try{
-                file = ios.newURI(session.filePath, null, null);
+                var file = ios.newURI(session.filePath, null, null);
                 file = file.QueryInterface(Ci.nsIFileURL).file;
                 fp.displayDirectory = file.parent;
                 var name = file.leafName;
@@ -245,7 +245,7 @@ Firebug.Ace = {
     },
 
     loadFile: function(editor) {
-        var result, file, name, result,
+        var result, name, result,
             session = editor.session, ext = session.extension,
             ios = Cc['@mozilla.org/network/io-service;1'].getService(Ci.nsIIOService);
         var fp = this.initFilePicker(session, 'open');
@@ -665,7 +665,7 @@ var gClipboardHelper = Firebug.Ace.gClipboardHelper = {
 };
 /***********************************************************/
 
-$ACESTR = function(name) {
+var $ACESTR = function(name) {
     return FBL.$STR(name, "strings_acebug");
 };
 
