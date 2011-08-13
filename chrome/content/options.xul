@@ -61,7 +61,7 @@
                 </vbox>
             </box>
         </groupbox>
-        <checkbox preference="acebug-instantApply" label="acebug-instantApply" />
+       <!--  <checkbox preference="acebug-instantApply" label="acebug-instantApply" /> -->
     </prefpane>
 
     <script type="application/x-javascript" src="chrome://acebug/content/options.js"/>
