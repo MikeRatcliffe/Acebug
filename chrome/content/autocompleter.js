@@ -485,8 +485,7 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 
         var curLine = this.editor.session.getLine(range.end.row)
         if (replaceWord || $q.replaceWord){
-            var col = range.end.column;
-            var rx = /[a-z$_0-9]/i;
+            var col = range.end.column, rx = /[a-z$_0-9]/i, ch;
             while((ch=curLine[col++]) && rx.test(ch)); //select word forward
             range.end.column = col-1;
         }
@@ -722,7 +721,7 @@ var backParse = (function() {
         range.start = clip({column:col, row: row})
         range.end = clip(cursor||captureCursor)
         var t = editor.session.getTextRange(range);
-        dump(ch, col, row, t)
+
         if (ch == '\n') {
             range.start.column = 0
             range.start.row++
@@ -1500,17 +1499,17 @@ jn.lookupSetter = function (object,prop) {
 };
 
 jn.compare = function(a, b) {
-    var ans = [];
+    var ans = [], ai, bi;
 
     for(let i in a) {
         try{
             try{
-                var ai = a[i];
+                ai = a[i];
             } catch(e) {
                 ai = null;
             }
             try{
-                var bi = b[i];
+                bi = b[i];
             } catch(e) {
                 bi = null;
             }
