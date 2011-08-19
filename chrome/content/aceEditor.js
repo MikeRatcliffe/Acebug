@@ -555,7 +555,7 @@ Firebug.largeCommandLineEditor = {
             var lineNumber = error.lineNumber - loc.lineNumber;
             var lines = source.split('\n');
             var line = lines[lineNumber]||lines[lineNumber-1];
-            Firebug.Console.log(error.message + ' `' + line + '` @'+(lineNumber+cellStart));
+            Firebug.Console.log(error.toString() + ' `' + line + '` @'+(lineNumber+cellStart));
         } else
             Firebug.Console.log(error);
     },
