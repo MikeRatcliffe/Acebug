@@ -1,7 +1,9 @@
 /* See license.txt for terms of usage */
 
 FBL.ns(function() { with (FBL) {
-
+var $ACESTR = function(name) {
+    return FBL.$STR(name, "strings_acebug");
+};
 
 /*Firebug.currentContext.getPanel('net')
 //Firebug.getp

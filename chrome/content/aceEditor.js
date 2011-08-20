@@ -8,6 +8,11 @@ FBL.ns(function() {
 const Cc = Components.classes;
 const Ci = Components.interfaces;
 
+/***********************************************************/
+var $ACESTR = function(name) {
+    return FBL.$STR(name, "strings_acebug");
+};
+
 Firebug.Ace = {
     dispatchName: "Ace",
 
@@ -663,12 +668,6 @@ var gClipboardHelper = Firebug.Ace.gClipboardHelper = {
         }
     }
 };
-/***********************************************************/
-
-var $ACESTR = function(name) {
-    return FBL.$STR(name, "strings_acebug");
-};
-
 /***********************************************************/
 
 function readEntireFile(file) {
