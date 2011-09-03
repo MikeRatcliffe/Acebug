@@ -116,11 +116,9 @@ Firebug.Ace = {
     },
 
     showPanel: function(browser, panel) {
-		// dump.trace(panel.name)
         this.win1.startAce(null, this.getOptions());
         this.showPanel = function(browser, panel) {
             if(panel.name=='console'){
-				dump.trace(panel.name)
                 this.win2.editor.renderer.onResize();
 				var id = document.activeElement.id
 				if(id == 'fbPanelBar1-browser' || id == 'fbPanelBar2-browser' || id == "fbAceBrowser1")
@@ -519,7 +517,6 @@ Firebug.largeCommandLineEditor = {
         if (thisValue&&code){
             code = '(function(){return eval(' + code.quote() + ')}).call(' + thisValue[1] + ')'
         }
-        dump(code)
         return code
     },
 
@@ -562,7 +559,6 @@ Firebug.largeCommandLineEditor = {
         Firebug.Console.log(e);
     },
     logError: function(error) {
-		dump(error)
         var loc = Firebug.currentContext.errorLocation
         var self = Firebug.largeCommandLineEditor;
         var source = (error.source||'').slice(loc.before, loc.after);
@@ -574,9 +570,6 @@ Firebug.largeCommandLineEditor = {
             Firebug.Console.log(error.toString() + ' `' + line + '` @'+(lineNumber+cellStart));
         } else
             Firebug.Console.log(error);
-		
-		dump(error)
-abrj=error
     },
     logCoffeeError: function(error) {
         Firebug.Console.log(error.text + ' `' + error.source + '` @'+(error.row+this.cell.bodyStart));

@@ -1192,21 +1192,7 @@ if (!modernfox) { //for old versions
                 o = "error";
             }
             data.push({name:i, comName: i.toLowerCase(), description: d, depth: depth, object: o});
-        } //dump('-----------------------------**',t-Date.now())
-        //special cases
-        try{
-            if ('QueryInterface' in targetObj) {
-                i = "QueryInterface";
-
-                try{
-                    d = jn.inspect(targetObj[i]);
-                } catch(e) {
-                    d = e.message;
-                }
-                data.push({name: i, comName: i.toLowerCase(), description: d, depth: 0});
-            }
-        } catch(e) {}
-
+        }
         return data;
     };
 }
