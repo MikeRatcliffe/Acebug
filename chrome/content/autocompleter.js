@@ -380,17 +380,37 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
 
         this.filter(this.unfilteredArray, this.text);
         this.showPanel();
+		this.tree.parentNode.className = ''
     },
 
     onEvalFail: function(result, context) {
-        alert(result);
+		var error = true
+		this.object = result;
+
+        if (this.$q.functionName) {
+            this.unfilteredArray = getProps(context.global);
+            this.appendSpecialEntries();
+            this.object = context.global;
+			error = false
+        } else {
+            this.unfilteredArray = getProps(result);
+        }
+
+        this.filter(this.unfilteredArray, this.text);
+        this.showPanel();
+		this.tree.parentNode.className = error?'acebug-error':''
     },
 
     eval: function(string, context) {
-        context=context || Firebug.currentContext;
+        context = context || Firebug.currentContext;
         if (!string)
             this.onEvalSuccess(context.global, context);
-        else
+        else if(this.$q.functionName)
+            Firebug.CommandLine.evaluate(string, context, context.thisValue, null,
+                FBL.bind(this.onEvalSuccess, this),
+                FBL.bind(this.onEvalSuccess, this)
+            );
+		else
             Firebug.CommandLine.evaluate(string, context, context.thisValue, null,
                 FBL.bind(this.onEvalSuccess, this),
                 FBL.bind(this.onEvalFail, this)
@@ -521,17 +541,7 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
             });
         };
         try {
-            if ('createInstance,getService,QueryInterface'.indexOf(fu) != -1) {
-                descr = "interface"
-                pre = '\u2555Ci.'
-                post = ')'
-                supportedInterfaces(this.object).forEach(createItem);
-            } else if (fu == "getInterface") {
-                descr = "interface"
-                pre = '\u2555Ci.'
-                post = ')'
-                supportedgetInterfaces(this.object).forEach(createItem);
-            } else if (fu == "getElementById") {
+            if (fu == "getElementById") {
                 descr = 'id'
                 getIDsInDoc(this.object).forEach(createItem)
             } else if (fu == "getElementsByClassName") {
@@ -819,6 +829,10 @@ var backParse = (function() {
                 var state='.'
                 outer: while (ch) {
                     switch (ch) {
+						case "'": case '"':
+							eatString(ch);
+							next()
+						break outer;
                         case '.':
                             eatWhile(/\s/)
                             state='.'
@@ -1172,7 +1186,7 @@ if (!modernfox) { //for old versions
 
             try{
                 o = targetObj[i];
-                d = jn.inspect(o);
+                //d = '---slacking---'//jn.inspect(o);
             } catch(e) {
                 d = e.message;
                 o = "error";
@@ -1195,7 +1209,8 @@ if (!modernfox) { //for old versions
 
         return data;
     };
-} else {//4.0b2+
+}
+else {//4.0b2+
     getProps = function(targetObj) {
         if (!targetObj)
             return [];
@@ -1213,7 +1228,6 @@ if (!modernfox) { //for old versions
             x = XPCNativeWrapper.unwrap(targetObj)
 
             if (targetObj != x) {
-                data.push({name:'wrappedJSObject', comName: 'wrappedjsobject',description:'', depth:-1})
                 targetObj = x
             }
         }
@@ -1227,7 +1241,7 @@ if (!modernfox) { //for old versions
 
                 try {
                     o = targetObj[i];
-                    d = jn.inspect(o);
+                    //d = '---slacking---'//jn.inspect(o);
                 } catch(e) {
                     o = "error";
                     d = e.message;
@@ -1244,7 +1258,6 @@ if (!modernfox) { //for old versions
         }
 
         return data;
-
     };
 }
 
@@ -1384,7 +1397,13 @@ jn.inspect = function(x, isLong) {
                 propList.push('..more..');
                 break;
             }
-            propList.push(i, ',\n    ');
+            try{
+				var s = x[i], t = typeof s
+				if(t != 'object' && t != 'function')
+					propList.push(i, ': ', s, ',\n    ');
+				else
+					propList.push(i, ',\n    ');
+			}catch(e){}
         }
         propList.push("\n}\n");
         nameList.push(propList.join(''));
@@ -1544,28 +1563,7 @@ var compareWithPrototype = {
     }
 };
 
-function supportedInterfaces(element) {
-    var ans = [];
-    for each(var i in Ci) {
-        try{
-            if (element instanceof i)
-                ans.push(i);
-        } catch(e) {
-            Components.utils.reportError(e);
-        }
-    }
-    return ans;
-}
-function supportedgetInterfaces(element) {
-    var ans = [];
-    var req = element.QueryInterface(Ci.nsIInterfaceRequestor);
-    for each(var i in Ci) {
-        try{if (req.getInterface(i))
-            ans.push(i);
-        } catch(e) {}
-    }
-    return ans;
-}
+
 
 // ************************************************************************************************
 function makeReq(href) {

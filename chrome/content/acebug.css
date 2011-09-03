@@ -45,3 +45,8 @@
 #domfly::-moz-tree-cell-text(d4) {
     color: #000;
 }
+
+
+.acebug-error{
+	box-shadow: 0pt 0pt 1.5px 1px red;
+}
