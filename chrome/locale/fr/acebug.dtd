@@ -19,3 +19,5 @@
 <!ENTITY acebug.fbCmdLoadButton.tooltip "Chargement d'un fichier">
 <!ENTITY acebug.fbCmdSaveButton.label "Enregistrer">
 <!ENTITY acebug.fbCmdSaveButton.tooltip "Enregistrement d'un fichier">
+<!ENTITY acebug.run.tooltip "evaluate selected text / right click for whole text">
+<!ENTITY acebug.dir.tooltip "evaluate selected text and dir result to console / right click for whole text">

@@ -19,3 +19,5 @@
 <!ENTITY acebug.fbCmdLoadButton.tooltip "Bestand laden">
 <!ENTITY acebug.fbCmdSaveButton.label "Opslaan">
 <!ENTITY acebug.fbCmdSaveButton.tooltip "Bestand opslaan">
+<!ENTITY acebug.run.tooltip "evaluate selected text / right click for whole text">
+<!ENTITY acebug.dir.tooltip "evaluate selected text and dir result to console / right click for whole text">

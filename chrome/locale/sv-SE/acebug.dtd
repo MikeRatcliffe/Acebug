@@ -19,3 +19,5 @@
 <!ENTITY acebug.fbCmdLoadButton.tooltip "Läs in fil">
 <!ENTITY acebug.fbCmdSaveButton.label "Spara">
 <!ENTITY acebug.fbCmdSaveButton.tooltip "Spara fil">
+<!ENTITY acebug.run.tooltip "evaluate selected text / right click for whole text">
+<!ENTITY acebug.dir.tooltip "evaluate selected text and dir result to console / right click for whole text">

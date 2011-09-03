@@ -7,7 +7,9 @@
     <script type="application/x-javascript" src="chrome://acebug/content/aceEditor.js"/>
     <script type="application/x-javascript" src="chrome://acebug/content/autocompleter.js"/>
     <script type="application/x-javascript" src="chrome://acebug/content/resource.js"/>
-    <script type="application/x-javascript" src="chrome://acebug/content/__devel__.js"/>
+    <!-- devel__(-->
+         <script type="application/x-javascript" src="chrome://acebug/content/__devel__.js"/>
+    <!-- devel__)-->
 
     <textbox id="fbLargeCommandLine" multiline="true" flex="1"
         newlines="pasteintact"

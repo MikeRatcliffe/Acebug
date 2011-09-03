@@ -19,3 +19,5 @@
 <!ENTITY acebug.fbCmdLoadButton.tooltip "载入文件">
 <!ENTITY acebug.fbCmdSaveButton.label "保存">
 <!ENTITY acebug.fbCmdSaveButton.tooltip "保存文件">
+<!ENTITY acebug.run.tooltip "evaluate selected text / right click for whole text">
+<!ENTITY acebug.dir.tooltip "evaluate selected text and dir result to console / right click for whole text">

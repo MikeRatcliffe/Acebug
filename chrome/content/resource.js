@@ -92,7 +92,7 @@ function fileIconURL(item) {
     return "moz-icon://" + "." + ext + "?size=16";
 }
 
-var  getAllLocations = function(locationList) {
+var getAllLocations = function(locationList) {
     var i, src;
     var document = Firebug.currentContext.window.document;
     var baseURI = document.baseURI.replace(/[\?#].*$/, '');
@@ -142,6 +142,10 @@ var  getAllLocations = function(locationList) {
     // stylesheets
     list = document.styleSheets;
     for (i = list.length; i--;) {
+		try{
+			if(list[i].ownerNode.wrappedJSObject.firebugIgnore)
+				continue
+		}catch(e){}
         src = list[i].href;
         if (src)
             addLocation(baseURI, src, 'text');

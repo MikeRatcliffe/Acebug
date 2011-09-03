@@ -1,6 +1,8 @@
 <!ENTITY acebug.options.title "Acebug - опције">
 <!ENTITY acebug.options.settings "Поставке">
 <!ENTITY acebug.options.highlightactiveline "Истакни активну линију">
+<!ENTITY acebug.options.highlightselectedword "Highlight selected word">
+<!ENTITY acebug.options.validateasyoutype "Validate as you type (requires restart)">
 <!ENTITY acebug.options.showinvisibles "Прикажи невидљиве знакове">
 <!ENTITY acebug.options.wraptext "Преламање текста">
 <!ENTITY acebug.options.spacesinsteadoftabs "Користи размаке уместо табулатора">
@@ -10,7 +12,11 @@
 <!ENTITY acebug.options.keybinding.ace "Ace">
 <!ENTITY acebug.options.keybinding.vim "Vim">
 <!ENTITY acebug.options.keybinding.emacs "Emacs">
+<!ENTITY acebug.fbCmdToggleCommentButton.tooltip "Toggle Comment">
+<!ENTITY acebug.fbCmdToggleStreamCommentButton.tooltip "Toggle Stream Comment">
 <!ENTITY acebug.fbCmdLoadButton.label "Учитај">
 <!ENTITY acebug.fbCmdLoadButton.tooltip "Учитај датотеку">
 <!ENTITY acebug.fbCmdSaveButton.label "Сачувај">
 <!ENTITY acebug.fbCmdSaveButton.tooltip "Сачувај датотеку">
+<!ENTITY acebug.run.tooltip "evaluate selected text / right click for whole text">
+<!ENTITY acebug.dir.tooltip "evaluate selected text and dir result to console / right click for whole text">
