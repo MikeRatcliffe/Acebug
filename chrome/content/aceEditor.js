@@ -116,10 +116,16 @@ Firebug.Ace = {
     },
 
     showPanel: function(browser, panel) {
+		// dump.trace(panel.name)
         this.win1.startAce(null, this.getOptions());
         this.showPanel = function(browser, panel) {
-            if(panel.name=='console')
+            if(panel.name=='console'){
+				dump.trace(panel.name)
                 this.win2.editor.renderer.onResize();
+				var id = document.activeElement.id
+				if(id == 'fbPanelBar1-browser' || id == 'fbPanelBar2-browser' || id == "fbAceBrowser1")
+					this.win2.editor.focus()
+			}
         }
     },
 
@@ -547,14 +553,19 @@ Firebug.largeCommandLineEditor = {
         );
     },
     logSuccess: function(e){
-        Firebug.largeCommandLineEditor.$useConsoleDir?
-            Firebug.Console.log(e,  Firebug.currentContext, "dir", Firebug.DOMPanel.DirTable):
-            Firebug.Console.log(e);
+        if(Firebug.largeCommandLineEditor.$useConsoleDir){
+			if (typeof e == 'function')
+				return Firebug.Console.log(e.toString())
+			if (typeof e == 'object')
+				return Firebug.Console.log(e, Firebug.currentContext, "dir", Firebug.DOMPanel.DirTable)
+		}
+        Firebug.Console.log(e);
     },
     logError: function(error) {
+		dump(error)
         var loc = Firebug.currentContext.errorLocation
         var self = Firebug.largeCommandLineEditor;
-        var source = error.source.slice(loc.before, loc.after);
+        var source = (error.source||'').slice(loc.before, loc.after);
         if(loc.fileName == error.fileName && source == self.lastEvaledCode) {
             var cellStart = self.cell.bodyStart;
             var lineNumber = error.lineNumber - loc.lineNumber;
@@ -563,6 +574,9 @@ Firebug.largeCommandLineEditor = {
             Firebug.Console.log(error.toString() + ' `' + line + '` @'+(lineNumber+cellStart));
         } else
             Firebug.Console.log(error);
+		
+		dump(error)
+abrj=error
     },
     logCoffeeError: function(error) {
         Firebug.Console.log(error.text + ' `' + error.source + '` @'+(error.row+this.cell.bodyStart));

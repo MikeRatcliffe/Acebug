@@ -29,7 +29,10 @@ Firebug.unregisterRep(FirebugReps.Func)
         st.insertRule(rule2, st.cssRules.length)
     })
 })()
-
+if(!FBL.findSourceForFunction){
+	FBL.findSourceForFunction = Firebug.SourceFile.findSourceForFunction
+	FBL.findScriptForFunctionInContext = Firebug.SourceFile.findScriptForFunctionInContext
+}
 with(FBL){
 FirebugReps.Func = domplate(Firebug.Rep,
 {
@@ -110,7 +113,7 @@ FirebugReps.Func = domplate(Firebug.Rep,
 
     inspectObject: function(fn, context)
     {
-        var sourceLink = (FBL.findSourceForFunction||Firebug.SourceFile.findSourceForFunction)(fn, context);
+        var sourceLink = FBL.findSourceForFunction(fn, context);
         if (sourceLink)
             Firebug.chrome.select(sourceLink);
         if (FBTrace.DBG_FUNCTION_NAME)

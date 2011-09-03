@@ -73,12 +73,3 @@ setTimeout(function() {
 }, 1000)
 
 
-function dump() {
-    var aMessage = "aMessage: ";
-    for (var i = 0; i < arguments.length; ++i) {
-        var a = arguments[i];
-        aMessage += (a && !a.toString ? "[object call]" : a) + " , ";
-    }
-    var consoleService = Components.classes['@mozilla.org/consoleservice;1'].getService(Components.interfaces.nsIConsoleService);
-    consoleService.logStringMessage("" + aMessage);
-}
