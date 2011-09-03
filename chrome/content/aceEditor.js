@@ -33,7 +33,7 @@ Firebug.Ace = {
         win2Wrapped.document.getElementById('editor').ownerPanel = this;
 
         this.win1.aceManager = this.win2.aceManager = this
-        this.win1.onclose = this.win2.onclose = this.shutdown.bind(this)
+        this.win1.onclose = this.win2.onclose = FBL.bind(this.shutdown, this)
 
         acebugPrefObserver.register();
 
@@ -119,6 +119,8 @@ Firebug.Ace = {
         this.win1.startAce(null, this.getOptions());
         this.showPanel = function(browser, panel) {
             if(panel.name=='console'){
+				if(!this.win2.editor)
+					Firebug.largeCommandLineEditor.value
                 this.win2.editor.renderer.onResize();
 				var id = document.activeElement.id
 				if(id == 'fbPanelBar1-browser' || id == 'fbPanelBar2-browser' || id == "fbAceBrowser1")
