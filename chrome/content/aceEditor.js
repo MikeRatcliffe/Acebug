@@ -199,7 +199,9 @@ Firebug.Ace = {
             case 'console': sessionOwner = Firebug.largeCommandLineEditor; break;
             case 'stylesheetEditor': sessionOwner = StyleSheetEditor.prototype; break;
             case 'htmlEditor': sessionOwner = null; break;
+            case 'resource': sessionOwner = Firebug.currentContext.getPanel("resource","true")||{}; break;
         }
+
         sessionOwner && sessionOwner.addContextMenuItems(items, editor, editorText);
 
         return items;
@@ -309,7 +311,7 @@ Firebug.Ace = {
 
     savePopupShowing: function(popup) {
         FBL.eraseNode(popup)
-        FBL.createMenuItem(popup, {label: 'save As', nol10n: true });
+        FBL.createMenuItem(popup, {label: 'save As', nol10n: true, option: 'saceAs' });
     },
 
     loadPopupShowing: function(popup) {
@@ -575,7 +577,10 @@ Firebug.largeCommandLineEditor = {
     },
     logCoffeeError: function(error) {
         Firebug.Console.log(error.text + ' `' + error.source + '` @'+(error.row+this.cell.bodyStart));
-    }
+    },
+	onSave: function(method) {
+		Firebug.Ace.saveFile(Firebug.Ace.win2.editor, method != "saveAs")
+	}
 };
 
 var inputNumber = 0;

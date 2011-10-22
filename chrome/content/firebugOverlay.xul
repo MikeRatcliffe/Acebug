@@ -42,9 +42,10 @@
             tooltiptext="&acebug.fbCmdLoadButton.tooltip;"
             oncommand="Firebug.Ace.loadFile(Firebug.Ace.win2.editor)" insertbefore="fbCommandToggleLarge">
         </toolbarbutton>
-        <toolbarbutton id="fbCmdSaveButton" label="&acebug.fbCmdSaveButton.label;" 
+        <toolbarbutton id="fbCmdSaveButton" label="&acebug.fbCmdSaveButton.label;" type="menu-button"
             tooltiptext="&acebug.fbCmdSaveButton.tooltip;"
-            oncommand="Firebug.Ace.saveFile(Firebug.Ace.win2.editor)" insertbefore="fbCommandToggleLarge">
+            oncommand="Firebug.largeCommandLineEditor.onSave(event.target.getAttribute('option'))" insertbefore="fbCommandToggleLarge">
+			<menupopup onpopupshowing="Firebug.Ace.savePopupShowing(this)"/>
         </toolbarbutton>
     </hbox>
 

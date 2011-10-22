@@ -403,7 +403,7 @@ exports.launch = function(env, options) {
 	};
 	createSession = function(value, name, mimeType) {
 		var s = new EditSession(value);
-		s.setFileInfo(name.toLowerCase(), mimeType);
+		s.setFileInfo(name, mimeType);
 		s.setMode(new (getMode(s.extension)));
 		s.setUndoManager(new UndoManager());
 
@@ -420,7 +420,7 @@ exports.launch = function(env, options) {
         return s;
     };
     EditSession.prototype.setFileInfo = function(path, mime) {
-        this.extension = getExtension(path, mime);
+        this.extension = getExtension(path, mime).toLowerCase();
         this.href = path;
         if (path.slice(0,5) == 'file:')
             this.filePath = path;
@@ -833,7 +833,7 @@ exports.launch = function(env, options) {
 		var editor = env.editor, s = editor.session, row = e.row;
 		var className =  e.htmlEvent.target.className
 		if (className.indexOf('ace_fold-widget') < 0) {
-			if(className.indexOf("ace_gutter-cell") > 0)
+			if(className.indexOf("ace_gutter-cell") != -1)
 				s[s.$breakpoints[e.row]?'clearBreakpoint':'setBreakpoint'](row);
 		} else {
 			var line = s.getLine(row)
