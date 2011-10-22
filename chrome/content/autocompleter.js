@@ -587,11 +587,6 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
     start: function(editor) {
         this.editor = editor || this.editor;
 
-        var cell = Firebug.Ace.win2.editor.session.getMode().getCurrentCell();
-        if(cell.cursor <= cell.headerEnd){
-            if (cell.coffeeText)
-                this.sayInBubble(cell.coffeeText)
-        }
 
         var $q = this.$q = backParse.css(this.editor);
         this.text = $q.nameFragment;

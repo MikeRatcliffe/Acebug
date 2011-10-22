@@ -2624,5 +2624,64 @@ array.splice(index, [howMany, [element1][, ..., elementN]]);  // SpiderMonkey ex
                 </method>
             </methods>
         </element>
+        <canvas>
+            <properties>
+                <property name="toDataURL">
+<summary>childElementCount returns the number of child elements of the given element.</summary>
+<syntax>var elCount = elementNodeReference.childElementCount;</syntax>
+<params>
+    <param name="elCount">elCount is the number of elements that are children of the current element. If the element has no children, then elCount is zero. This attribute is read only.</param>
+</params>
+<link>DOM/Element.childElementCount</link>
+                </property>
+            </properties>
+            <methods>
+                <method name="toDataURL">
+<summary></summary>
+<syntax></syntax>
+<params>
+    <param name="type">"image/png"|"image/jpeg"|</param>
+</params>
+<link></link>
+                </method>
+                <method name="getContext">
+<summary></summary>
+<syntax></syntax>
+<params>
+    <param name="type">"2d"|"experimental"</param>
+</params>
+<link></link>
+                </method>
+               
+			</methods>
+        </canvas>
+		<canvasContext>
+void fillText(string text, float x, float y,[Optional] float maxWidth)
+void strokeText(string text, float x, float y,[Optional] float maxWidth)
+TextMetrics measureText( string text)
+void clearRect(float x, float y, float w, float h)
+void fillRect(float x, float y, float w, float h)
+void strokeRect(float x, float y, float w, float h)
+ImageData createImageData( float sw, float sh)
+ImageData createImageData( ImageData imagedata)
+ImageData getImageData(float sx, float sy, float sw, float sh)
+void putImageData(ImageData imagedata, float dx, float dy,  [Optional] float dirtyX, float dirtyY,  float dirtyWidth, float dirtyHeight)
+font string "10px sans-serif"
+textAlign string "start" ` [start, end, left, right, center]
+textBaseline string alphabetic `[top, hanging, middle, alphabetic, ideographic, bottom]
+void beginPath( )
+void closePath( )
+void fill( )
+void stroke( )
+void clip( )
+void moveTo( float x, float y)
+void lineTo( float x, float y)
+void quadraticCurveTo(float cpx, float cpy,  float x, float y )
+void bezierCurveTo(float cp1x, float cp1y,  float cp2x, float cp2y,  float x, float y )
+void arcTo( float x1, float y1, float x2, float y2, float radius )
+void arc(float x, float y, float radius, float startAngle, float endAngle, boolean anticlockwise )
+void rect( float x, float y, float w, float h)
+boolean isPointInPath( float x, float y)
+        </canvasContext>
     </DOM>
 </js>

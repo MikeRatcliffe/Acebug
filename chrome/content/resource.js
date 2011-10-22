@@ -21,8 +21,6 @@ break
 }
 netPanel.prototype.setEnabled(true)
 //netPanel.prototype.setEnabled(false)
-
-
 Firebug.TabWatcher.reloadPageFromMemory(Firebug.currentContext)*/
 
 function treeView(table) {
@@ -287,6 +285,8 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
             im.hide();
 
         this.editor.setSession(this.session);
+		
+		this.session.owner = 'resource'
     },
 
     showImage: function(data) {
@@ -331,7 +331,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
                         view.selection.getRangeAt(t,start,end);
                         for (var v = start.value; v <= end.value; v++){
                             url = view.getCellText(v, {id:'name'})
-                            internalSave(url);
+                            Firebug.getPanelType("resource").prototype.save(url);
                         }
                     }
                 }
@@ -341,9 +341,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         items.push(
             {
                 label: $ACESTR("acebug.save"),
-                command: function() {
-                    internalSave(url);
-                },
+                command: FBL.bindFixed(this.save, this, url),
                 disabled: !url
             },
             '-',
@@ -377,9 +375,33 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 
         return items;
     },
+	save: function(url){
+		if(winow.internalSave)
+			internalSave(url)
+		else
+			Firebug.Firefox.getTabBrowser().ownerDocument.defaultView.internalSave(url)
+	},
     // for ace editor
     addContextMenuItems: function(items, editor, editorText) {
-        return items;
+		var url = editor.session.href
+		
+		items.unshift(
+			{
+				label: $ACESTR("acebug.executeselection"),
+				command: function() {
+					Firebug.CommandLine.enter(Firebug.currentContext, editorText);
+				},
+				disabled: !editorText
+			},
+			"-"
+		)
+        url && items.unshift(
+			{
+				label: $ACESTR("acebug.save"),
+				command: FBL.bindFixed(this.save, this, url),
+				disabled: !url
+			}
+		)
     },
 
     getSourceLink: function(target, object) {
