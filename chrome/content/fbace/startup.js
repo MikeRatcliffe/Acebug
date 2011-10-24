@@ -685,7 +685,7 @@ exports.launch = function(env, options) {
             sender: "editor"
         },
         exec: function(env) {
-
+			aceManager.saveFile(env.editor, true)
         }
     });
     canon.addCommand({
@@ -696,7 +696,7 @@ exports.launch = function(env, options) {
             sender: "editor"
         },
         exec: function(env) {
-
+			aceManager.saveFile(env.editor, false)
         }
     });
 
