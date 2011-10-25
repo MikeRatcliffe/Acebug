@@ -24,29 +24,27 @@ if (!window.console) {
     console.log = console.error = function() {};
 }
 
+var aceRoot = './res/ace/';
+var PATHS = {
+	'ace/theme/'              :  aceRoot + 'theme-',
+	'ace/keyboard/keybinding/':  aceRoot + 'keybinding-',
+	'ace/mode/'               :  aceRoot + 'mode-',
+	'fbace/'                  :  '',
+	'res/'                    :  'res/',
+	'shadia/'                 :  '../'
+}
+
 function transformPath(path) {
-    var aceRoot = '../ace/build/src/';
-    var sub = 'ace/theme/';
-    if (path.indexOf(sub) === 0) {
-        return aceRoot + 'theme-' + path.substr(sub.length) + '.js';
+	console.log(path, '******')
+	for (var sub in PATHS){
+	console.log(sub)
+        if(path.indexOf(sub) === 0) {
+	console.log(PATHS[sub] + path.substr(sub.length) + '.js')
+			return PATHS[sub] + path.substr(sub.length) + '.js';
+        }
     }
-    sub = 'ace/keyboard/keybinding/';
-    if (path.indexOf(sub) === 0) {
-        return aceRoot + 'keybinding-' + path.substr(sub.length) + '.js';
-    }
-    sub = 'ace/mode/';
-    if (path.indexOf(sub) === 0) {
-        return aceRoot + 'mode-' + path.substr(sub.length) + '.js';
-    }
-    sub = 'fbace/';
-    if (path.indexOf(sub) === 0) {
-        return path.substr(sub.length) + '.js';
-    }
-    sub = 'res/';
-    if (path.indexOf(sub) === 0) {
-        return '../' + path + '.js';
-    }
-    return aceRoot + path + '.js'
+
+    return aceRoot + path
 }
 
 loadScripts = function(deps, callback, lastUrl) {
@@ -58,7 +56,7 @@ loadScripts = function(deps, callback, lastUrl) {
     if (!url)
         return callback && callback(_require(lastUrl));
 
-    var script = document.createElement("script");
+    var script = document.createElementNS('http://www.w3.org/1999/xhtml', "script")
     script.type = "text/javascript;version=1.8";
     script.onload = function() {
         this.onload = null;
@@ -141,17 +139,25 @@ var lookup = function(moduleName) {
 };
 //*********************************************************************************************
 
-var onLaunch;
+var onLaunch, launched;
 var startAce = function(callback, options, deps) {
     if (onLaunch) {
         onLaunch = callback || onLaunch;
+		if(launched)
+			onLaunch(window)
         return;
     }
-    onLaunch = callback || function() {};
+    onLaunch = callback || true;
     // "ace/mode/javascript", "ace/mode/css", are loaded with html  // "ace-uncompressed" for debugging
-    var rootDeps = ["fbace/scrollbar", "fbace/startup", "ace-uncompressed", "ace/mode/xml", "ace/mode/html"];
+    var rootDeps = ["fbace/scrollbar", "fbace/startup", "res/ace-uncompressed", "ace/mode/xml", "ace/mode/html"];
     if (!options)
-        options = {};
+        options = {
+			softtabs: true,
+			wordwrap: false,
+			highlightactiveline: true,
+			highlightselectedword: true,
+			validateasyoutype: false
+		};
     //"ace/theme/textmate" is built into ace.js so there's no need to load that
     if (!options.theme)
         options.theme = "ace/theme/textmate";
@@ -162,13 +168,11 @@ var startAce = function(callback, options, deps) {
 		rootDeps.unshift.apply(rootDeps, deps)
 
 	require(rootDeps, function() {
-        var catalog = require("pilot/plugin_manager").catalog;
-        catalog.registerPlugins([ "pilot/index" ]).then(function() {
-            var env = require("pilot/environment").create();
-            catalog.startupPlugins({ env: env }).then(function() {
-                require("fbace/startup").launch(env, options);
-            }).then(onLaunch);
-        });
+        require("fbace/startup").launch({}, options);
+		launched = true
+		
+		onLaunch.call && onLaunch(window)
+		onLaunch = true
     });
 };
     </script>

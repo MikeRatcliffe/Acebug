@@ -142,13 +142,13 @@ var Gutter = function(parentEl) {
         var html = [];
         var i = config.firstRow;
         var lastRow = config.lastRow;
-        var fold = this.session.getNextFold(i);
+        var fold = this.session.getNextFoldLine(i);
         var foldStart = fold ? fold.start.row : Infinity;
 
         while (true) {
             if(i > foldStart) {
                 i = fold.end.row + 1;
-                fold = this.session.getNextFold(i);
+                fold = this.session.getNextFoldLine(i);
                 foldStart = fold ?fold.start.row :Infinity;
             }
             if(i > lastRow)
@@ -205,13 +205,6 @@ exports.launch = function(env, options) {
 
     EditSession = require("ace/edit_session").EditSession;
     UndoManager = require("ace/undomanager").UndoManager;
-
-    CSSMode = require("ace/mode/css").Mode;
-    HTMLMode = require("ace/mode/html").Mode;
-    XMLMode = require("ace/mode/xml").Mode;
-	JSMode = require("ace/mode/javascript").Mode;
-
-    [CSSMode, HTMLMode, XMLMode, JSMode].forEach(function(x){delete x.prototype.createWorker})
 
 	HashHandler = require("ace/keyboard/hash_handler").HashHandler;
 	Search = require("ace/search").Search;	
@@ -394,17 +387,30 @@ exports.launch = function(env, options) {
 		if(mime) return (mime.toLowerCase().match(/(xml|html?|css|jsm?|xul|rdf)/i)||[,'js'])[1]
 		return (name.match(/.(xml|html?|css|jsm?|xul|rdf)($|\?|\#)/i)||[,'js'])[1]
 	};
-	getMode = function(ext) {
-		if("xml|html|xul|rdf".indexOf(ext)!=-1)return HTMLMode
-		if("css".indexOf(ext)!=-1)return CSSMode
-		if("jsm".indexOf(ext)!=-1)return JSMode
-		// default
-		return JSMode
+	modeCache = {
+		_get: function(name){
+			name = "ace/mode/"+name
+			if(!this[name])
+				try{
+					var Mode = require(name).Mode
+					delete Mode.prototype.createWorker
+					this[name] = new Mode()
+				}catch(e){}
+			
+			return this[name]
+		},
+		get: function(ext){
+			if("xml|html|xul|rdf".indexOf(ext)!=-1)
+				ext = "html"
+			else if("jsm".indexOf(ext)!=-1 || "css".indexOf(ext)==-1)
+				ext = "javascript"
+			return this._get(ext)
+		}
 	};
 	createSession = function(value, name, mimeType) {
-		var s = new EditSession(value);
-		s.setFileInfo(name, mimeType);
-		s.setMode(new (getMode(s.extension)));
+		var s = new EditSession(value||'');
+		s.setFileInfo(name.toLowerCase(), mimeType);
+		s.setMode(modeCache.get(s.extension));
 		s.setUndoManager(new UndoManager());
 
 		s.setUseSoftTabs(options.softtabs);
@@ -420,7 +426,7 @@ exports.launch = function(env, options) {
         return s;
     };
     EditSession.prototype.setFileInfo = function(path, mime) {
-        this.extension = getExtension(path, mime).toLowerCase();
+        this.extension = getExtension(path, mime);
         this.href = path;
         if (path.slice(0,5) == 'file:')
             this.filePath = path;
@@ -454,6 +460,24 @@ exports.launch = function(env, options) {
 		this.container.style.fontSize = size
 		this.renderer.$textLayer.checkForSizeChanges()
 	}
+	// selection on first/last lines
+	Renderer.prototype.screenToTextCoordinates = function(pageX, pageY) {
+        var canvasPos = this.scroller.getBoundingClientRect();
+
+        var col = Math.round((pageX + this.scroller.scrollLeft - canvasPos.left - this.$padding - window.pageYOffset)
+                / this.characterWidth);
+        var row = Math.floor((pageY + this.scrollTop - canvasPos.top - window.pageYOffset)
+                / this.lineHeight);
+		if(row<0)
+			row=0
+		else {
+			var maxRow = this.layerConfig.maxHeight/this.layerConfig.lineHeight-1
+			if(row> maxRow)
+				row = maxRow
+		}
+		
+        return this.session.screenToDocumentPosition(row, Math.max(col, 0));
+    };
 
     var container = document.getElementById("editor");
     editor = env.editor = new Editor(new Renderer(container, options.theme));
@@ -726,115 +750,13 @@ exports.launch = function(env, options) {
         }
     });
 	
-	canon.addCommand({
-        name: "fold",
-        bindKey: {
-            win: "Alt-L",
-            mac: "Alt-L",
-            sender: "editor"
-        },
-        exec: function(env) {
-            toggleFold(env, false)
-        }
-    });
-
-    canon.addCommand({
-        name: "unfold",
-        bindKey: {
-            win: "Alt-Shift-L",
-            mac: "Alt-Shift-L",
-            sender: "editor"
-        },
-        exec: function(env) {
-            toggleFold(env, true)
-        }
-    });
-
-    function isCommentRow(row) {
-        var session = env.editor.session;
-        var token;
-        var tokens = session.getTokens(row, row)[0].tokens;
-        var c = 0;
-        for (var i = 0; i < tokens.length; i++) {
-            token = tokens[i];
-            if (/^comment/.test(token.type)) {
-                return c;
-            } else if (!/^text/.test(token.type)) {
-                return false;
-            }
-            c += token.value.length;
-        }
-        return false;
-    };
-
-    function toggleFold(env, tryToUnfold) {
-        var session = env.editor.session;
-        var selection = env.editor.selection;
-        var range = selection.getRange();
-        var addFold;
-
-        if(range.isEmpty()) {
-            var br = session.findMatchingBracket(range.start);
-            var fold = session.getFoldAt(range.start.row, range.start.column);
-            var column;
-
-            if(fold) {
-                session.expandFold(fold);
-                selection.setSelectionRange(fold.range)
-            } else if(br) {
-                if(range.compare(br.row,br.column) == 1)
-                    range.end = br;
-                else
-                    range.start = br;
-                addFold = true;
-            } else if ((column = isCommentRow(range.start.row)) !== false) {
-                var firstCommentRow = range.start.row;
-                var lastCommentRow = range.start.row;
-                var t;
-                while ((t = isCommentRow(firstCommentRow - 1)) !== false) {
-                    firstCommentRow --;
-                    column = t;
-                }
-                while (isCommentRow(lastCommentRow + 1) !== false) {
-                    lastCommentRow ++;
-                }
-                range.start.row = firstCommentRow;
-                range.start.column = column + 2;
-                range.end.row = lastCommentRow;
-                range.end.column = session.getLine(lastCommentRow).length - 1;
-                addFold = true;
-            }
-        } else {
-            var folds = session.getFoldsInRange(range);
-            if(tryToUnfold && folds.length)
-                session.expandFolds(folds);
-            else if(folds.length == 1 ) {
-                var r1 = folds[0].range
-                if (r1.start.row == range.start.row &&
-                      r1.end.row ==  range.end.row &&
-                      r1.start.column == range.start.column &&
-                      r1.end.column == range.end.column)
-                    session.expandFold(folds[0]);
-                else
-                    addFold = true;
-            } else
-                addFold = true;
-        }
-        if(addFold) {
-            var placeHolder = session.getTextRange(range);
-            if(placeHolder.length < 3)
-                return;
-            placeHolder = "...";
-            session.addFold(placeHolder, range);
-        }
-    }
 
 	function onGutterClick(e) {
 		var editor = env.editor, s = editor.session, row = e.row;
 		var className =  e.htmlEvent.target.className
 		if (className.indexOf('ace_fold-widget') < 0) {
-			if(className.indexOf("ace_gutter-cell") != -1)
-				s[s.$breakpoints[e.row]?'clearBreakpoint':'setBreakpoint'](row);
+			if(className.indexOf("ace_gutter-cell") != -1 && editor.isFocused())
+				s[s.$breakpoints[row]?'clearBreakpoint':'setBreakpoint'](row);
 		} else {
 			var line = s.getLine(row)
 			var match = line.match(/(\{|\[)\s*(\/\/.*)?$/)

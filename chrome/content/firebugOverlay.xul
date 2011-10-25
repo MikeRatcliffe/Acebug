@@ -53,7 +53,7 @@
         <vbox id="fbLargeCommandBox">
             <iframe id="fbAceBrowser" type="content" flex="1"
                      tooltip="fbTooltip" contextmenu="fbContextMenu"
-                     src="chrome://acebug/content/fbace/fbeditor.html"
+                     src="chrome://acebug/content/ace++/fbeditor.html"
                      position="1"/>
         </vbox>
     </deck>
@@ -75,7 +75,7 @@
             <splitter position='2' hidden='true' collapse='before'><grippy/></splitter>
             <iframe id="fbAceBrowser1" type="content" flex="1"
                  tooltip="fbTooltip" contextmenu="fbContextMenu"
-                 src="chrome://acebug/content/fbace/fbeditor.html" position="1"/>
+                 src="chrome://acebug/content/ace++/fbeditor.html" position="1"/>
         </hbox>
     </deck>
 
