@@ -257,57 +257,56 @@ Firebug.Ace = {
         return fp;
     },
 
-    loadFile: function(editor) {
-        var result, name, result,
-            session = editor.session, ext = session.extension,
-            ios = Cc['@mozilla.org/network/io-service;1'].getService(Ci.nsIIOService);
-        var fp = this.initFilePicker(session, 'open');
+    loadFile: function(editor, doNotUpdateFilePath) {
+		var result, name, result,
+			session = editor.session, ext = session.extension,
+			ios = Cc['@mozilla.org/network/io-service;1'].getService(Ci.nsIIOService);
+		var fp = this.initFilePicker(session, 'open');
 
-        result = fp.show();
+		result = fp.show();
 
-        if (result == Ci.nsIFilePicker.returnOK) {
-            session.setValue(readEntireFile(fp.file));
-            session.setFileInfo(ios.newFileURI(fp.file).spec);
-        }
-    },
+		if (result == Ci.nsIFilePicker.returnOK) {
+			session.setValue(readEntireFile(fp.file));
+			doNotUpdateFilePath || session.setFileInfo(ios.newFileURI(fp.file).spec);
+		}
+	},
 
-    saveFile: function(editor, doNotUseFilePicker) {
-        var file, name, result, session = editor.session,
-            ios = Cc['@mozilla.org/network/io-service;1'].getService(Ci.nsIIOService),
-            fp = this.initFilePicker(session, 'save');
+	saveFile: function(editor, doNotUseFilePicker, doNotUpdateFilePath) {
+		var file, name, result, session = editor.session,
+			ios = Cc['@mozilla.org/network/io-service;1'].getService(Ci.nsIIOService),
+			fp = this.initFilePicker(session, 'save');
 
-        if (doNotUseFilePicker && session.href) {
-            try {
-                file = ios.newURI(session.href, null, null)
-                    .QueryInterface(Ci.nsIFileURL).file;
-                if (file.exists()) {
-                    result = Ci.nsIFilePicker.returnOK;
-                    fp = {file: file};
-                }
-            } catch(e){}
-        }
+		if (doNotUseFilePicker && session.href) {
+			try {
+				file = ios.newURI(session.href, null, null)
+					.QueryInterface(Ci.nsIFileURL).file;
+				if (file.exists()) {
+					result = Ci.nsIFilePicker.returnOK;
+					fp = {file: file};
+				}
+			} catch(e){}
+		}
 
-        if (!fp.file)
-            result = fp.show();
-        if (result == Ci.nsIFilePicker.returnOK) {
-            file = fp.file;
-            name = file.leafName;
+		if (!fp.file){
+			result = fp.show();
+			file = fp.file;
+		}
+		if (result == Ci.nsIFilePicker.returnOK) {
+			name = file.leafName;
 
-            if (name.indexOf('.')<0) {
-                file = file.parent;
-                file.append(name + '.' + session.extension);
-            }
+			if (name.indexOf('.')<0) {
+				file = file.parent;
+				file.append(name + '.' + session.extension);
+			}
 
-            writeFile(file, session.getValue());
-            if (!session.filePath)
-                session.setFileInfo(ios.newFileURI(file).spec);
-        }
-        else if (result == Ci.nsIFilePicker.returnReplace) {
-            writeFile(fp.file, session.getValue());
-            if (!session.filePath)
-                session.setFileInfo(ios.newFileURI(file).spec);
-        }
-    },
+			writeToFile(file, session.getValue());
+		}
+		else if (result == Ci.nsIFilePicker.returnReplace) {
+			writeToFile(file, session.getValue());
+		}
+		if (file)
+			doNotUpdateFilePath || session.setFileInfo(ios.newFileURI(file).spec);
+	},
 
     savePopupShowing: function(popup) {
         FBL.eraseNode(popup)
@@ -701,7 +700,7 @@ function readEntireFile(file) {
     return data;
 }
 
-function writeFile(file, text) {
+function writeToFile(file, text) {
     var fostream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(Ci.nsIFileOutputStream),
         converter = Cc["@mozilla.org/intl/converter-output-stream;1"].createInstance(Ci.nsIConverterOutputStream);
 

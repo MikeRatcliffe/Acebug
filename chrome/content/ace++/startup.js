@@ -705,7 +705,7 @@ exports.launch = function(env, options) {
         name: "save",
         bindKey: {
             win: "Ctrl-S",
-            mac: "Ctrl-S",
+            mac: "Command-S",
             sender: "editor"
         },
         exec: function(env) {
@@ -716,11 +716,22 @@ exports.launch = function(env, options) {
         name: "save",
         bindKey: {
             win: "Ctrl-Shift-S",
-            mac: "Ctrl-Shift-S",
+            mac: "Command-Shift-S",
             sender: "editor"
         },
         exec: function(env) {
 			aceManager.saveFile(env.editor, false)
+        }
+    });
+	canon.addCommand({
+        name: "load",
+        bindKey: {
+            win: "Ctrl-O",
+            mac: "Command-O",
+            sender: "editor"
+        },
+        exec: function(env) {
+			aceManager.loadFile(env.editor)
         }
     });
 
