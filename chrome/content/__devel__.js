@@ -1,5 +1,7 @@
 // this is for reloading ace files without reloading window
-
+try{
+	dump = Components.utils.import("resource://shadia/main.js").dump
+}catch(e){}
 // not needed in release
 var __AceBugDevel__ = {
     loadScript: function(href, index) {
