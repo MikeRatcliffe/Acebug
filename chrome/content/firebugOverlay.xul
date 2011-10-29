@@ -18,33 +18,34 @@
 
     <hbox id="fbCommandToolbar">
         <toolbarbutton id="fbCmdLineRunButton" label="firebug.Run"
-            class="toolbar-text-button fbInternational"
-            tooltiptext="&acebug.run.tooltip;"
-            onclick="Firebug.largeCommandLineEditor.enter(!(event.button||event.shiftKey||event.ctrlKey), false)"
-            oncommand=""/>
+				class="toolbar-text-button fbInternational"
+				tooltiptext="&acebug.run.tooltip;"
+				onclick="Firebug.largeCommandLineEditor.enter(!(event.button||event.shiftKey||event.ctrlKey), false)"
+				oncommand=""/>
         <toolbarbutton id="fbCmdLineDirButton" label="firebug.Dir" insertafter='fbCmdLineRunButton'
-            class="toolbar-text-button fbInternational"
-            tooltiptext="&acebug.dir.tooltip;"
-            onclick="Firebug.largeCommandLineEditor.enter(!(event.button||event.shiftKey||event.ctrlKey), true)"
-            oncommand=""/>
+				class="toolbar-text-button fbInternational"
+				tooltiptext="&acebug.dir.tooltip;"
+				onclick="Firebug.largeCommandLineEditor.enter(!(event.button||event.shiftKey||event.ctrlKey), true)"
+				oncommand=""/>
         <toolbarbutton id="fbCmdLineClearButton" label="firebug.Clear" removeelement='true'
-            class="toolbar-text-button fbInternational"
-            tooltiptext="firebug.Clear_the_Command_Editor"
-            oncommand="Firebug.Ace.win2.editor.execCommand('clear')"/>
+				class="toolbar-text-button fbInternational"
+				tooltiptext="firebug.Clear_the_Command_Editor"
+				oncommand="Firebug.Ace.win2.editor.execCommand('clear')"/>
         <toolbarbutton id="fbCmdLineCopyButton" removeelement='true'/>
         <toolbarbutton id="fbCmdLineToggleCommentButton" insertafter='fbCmdLineDirButton'
-            label="//" oncommand="Firebug.Ace.win2.editor.execCommand('togglecomment')"
-            tooltiptext="&acebug.fbCmdToggleCommentButton.tooltip;" />
+				label="//" oncommand="Firebug.Ace.win2.editor.execCommand('togglecomment')"
+				tooltiptext="&acebug.fbCmdToggleCommentButton.tooltip;" />
         <toolbarbutton id="fbCmdLineToggleStreamCommentButton" insertafter='fbCmdLineToggleCommentButton'
-            label="/*" oncommand="Firebug.Ace.win2.editor.execCommand('toggleStreamComment')"
-            tooltiptext="&acebug.fbCmdToggleStreamCommentButton.tooltip;" />
-        <toolbarbutton id="fbCmdLoadButton" label="&acebug.fbCmdLoadButton.label;"
-            tooltiptext="&acebug.fbCmdLoadButton.tooltip;"
-            oncommand="Firebug.Ace.loadFile(Firebug.Ace.win2.editor)" insertbefore="fbCommandToggleLarge">
+				label="/*" oncommand="Firebug.Ace.win2.editor.execCommand('toggleStreamComment')"
+				tooltiptext="&acebug.fbCmdToggleStreamCommentButton.tooltip;" />
+        <toolbarbutton id="fbCmdLoadButton" label="&acebug.fbCmdLoadButton.label;" type="menu-button"
+				tooltiptext="&acebug.fbCmdLoadButton.tooltip;" insertbefore="fbCommandToggleLarge"
+				oncommand="Firebug.largeCommandLineEditor.onLoadCommand(event.target.getAttribute('option'))">
+			<menupopup onpopupshowing="Firebug.Ace.loadPopupShowing(this)"/>
         </toolbarbutton>
         <toolbarbutton id="fbCmdSaveButton" label="&acebug.fbCmdSaveButton.label;" type="menu-button"
-            tooltiptext="&acebug.fbCmdSaveButton.tooltip;"
-            oncommand="Firebug.largeCommandLineEditor.onSave(event.target.getAttribute('option'))" insertbefore="fbCommandToggleLarge">
+				tooltiptext="&acebug.fbCmdSaveButton.tooltip;" insertbefore="fbCommandToggleLarge"
+				oncommand="Firebug.largeCommandLineEditor.onSaveCommand(event.target.getAttribute('option'))">
 			<menupopup onpopupshowing="Firebug.Ace.savePopupShowing(this)"/>
         </toolbarbutton>
     </hbox>
@@ -94,22 +95,21 @@
                 <toolbarbutton class='tab-close-button' oncommand='this.parentNode.parentNode.hidePopup()'/>
             </hbox>
             <hbox flex="1">
-                <tree   seltype="single" treelines="false" flex="1" tabindex='-1'
+                <tree seltype="single" treelines="false" flex="1" tabindex='-1'
                         hidecolumnpicker='true' style='-moz-user-focus:none' >
                     <treechildren id="domfly"/>
                     <treecols>
                         <treecol id="name" hideheader="true" primary="true" flex="2" />
                     </treecols>
-                </tree>
-                <!-- <splitter/>
-                <textbox multiline='true' id='autocomplate-bubble' flex='1' wrap='off' width='1' /> -->
+                </tree>                
             </hbox>
         </panel>
-        <panel id='autocomplate-info-bubble' noautofocus="true"  ignorekeys='true'><textbox  multiline="true" wrap='off' flex="1"/></panel>
+        <panel id='autocomplate-info-bubble' noautofocus="true"  ignorekeys='true'>
+			<textbox  multiline="true" wrap='off' flex="1"/>
+		</panel>
     </popupset>
 
     <stringbundleset id="stringbundleset">
-        <stringbundle id="strings_acebug"
-            src="chrome://acebug/locale/acebug.properties"/>
+        <stringbundle id="strings_acebug" src="chrome://acebug/locale/acebug.properties"/>
     </stringbundleset>
 </overlay>

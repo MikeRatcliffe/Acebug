@@ -807,7 +807,7 @@ exports.launch = function(env, options) {
 					var cell = mode.getCellBounds(row)
 					var start = {row: row, column: 0};
 					var end = {row: cell.bodyEnd, column: s.getLine(cell.bodyEnd).length};
-					var placeholder = s.getLine(cell.headerStart).slice(0,10) + "_______";
+					var placeholder = s.getLine(cell.headerStart).slice(0,10) + "=====================";
 					s.addFold(placeholder, Range.fromPoints(start, end));
 				}
 				return

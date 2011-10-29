@@ -44,8 +44,8 @@ Firebug.Ace = {
         if(!this.win1)
             return
 		
-        // if(this.win2.editor)
-			// Firebug.largeCommandLineEditor.shutdown()
+        if(this.win2.editor)
+			Firebug.largeCommandLineEditor.shutdown()
 		
         this.win1.aceManager = this.win2.aceManager = null
         this.win1 = this.win2 = null		
@@ -332,13 +332,13 @@ Firebug.Ace = {
 
     loadPopupShowing: function(popup) {
         FBL.eraseNode(popup)
-        FBL.createMenuItem(popup, {label: 'ace auto save', nol10n: true });
+        FBL.createMenuItem(popup, {label: 'aceAutoSave', nol10n: true, option: 1});
     },
 
-    getUserFile: function(id){
+    getUserFile: function(name, dir){
         var file = Services.dirsvc.get(dir || "ProfD", Ci.nsIFile);
         file.append('acebug')
-        file.append('autosave-'+id)
+        file.append(name)
         return file
     },
 
@@ -594,15 +594,34 @@ Firebug.largeCommandLineEditor = {
     logCoffeeError: function(error) {
         Firebug.Console.log(error.text + ' `' + error.source + '` @'+(error.row+this.cell.bodyStart));
     },
-	onSave: function(method) {
+	onSaveCommand: function(option) {
 		var usePath, keepOldPath
-		if (method == "saveAs") {
+		if (option == "saveAs") {
 			usePath = true
-		} else if (method == "saveACopyAs") {
+		} else if (option == "saveACopyAs") {
 			usePath = keepOldPath = true
 		}
 		Firebug.Ace.saveFile(Firebug.Ace.win2.editor, usePath, keepOldPath)
+	},
+	onLoadCommand: function(option) {
+		if (option == "1" || option == "2") {
+			var file = Firebug.Ace.getUserFile('autosave');
+			if (file.exists())
+				var val = readEntireFile(file);
+			this.setValue(
+				val || "#>>\n\n#>>lang=cf\ncoffee=()->\n\tconsole.log('''sweet coffee''')\ncoffee()\n" +
+				'/*** shift+enter for new cell ***/ \n#>>lang=js this=document\nthis.getElementById()' +
+				"**press ctrl+space inside ()**/\n#>>\n"
+			);
+		} else
+			Firebug.Ace.loadFile(Firebug.Ace.win2.editor);
+	},
+	shutdown: function() {
+		var val = this.getValue();
+		if (val)
+			writeToFile(Firebug.Ace.getUserFile('autosave'), val);
 	}
+
 };
 
 var inputNumber = 0;
@@ -726,7 +745,9 @@ function readEntireFile(file) {
 function writeToFile(file, text) {
     var fostream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(Ci.nsIFileOutputStream),
         converter = Cc["@mozilla.org/intl/converter-output-stream;1"].createInstance(Ci.nsIConverterOutputStream);
-
+	if (!file.exists()) {
+        file.create(Ci.nsIFile.NORMAL_FILE_TYPE, 0664);
+    }
     fostream.init(file, 0x02 | 0x08 | 0x20, 0664, 0); // write, create, truncate
     converter.init(fostream, "UTF-8", 4096, 0x0000);
     converter.writeString(text);

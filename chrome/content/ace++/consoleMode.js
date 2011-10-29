@@ -8,7 +8,7 @@ var jsMode = require("ace/mode/javascript").Mode
 
 modes = {
 	js: new jsMode,
-	get coffee(){
+	get coffee() {
 		var req  = window.require, def = window.define
 		require(["ace/mode/coffee", "res/coffee-script"], function(){
 			var cf = require("ace/mode/coffee").Mode
@@ -17,6 +17,7 @@ modes = {
 		})
 		delete this.coffee
 		this.coffee = new TextMode
+		return this.coffee
 	}
 }
 jsMode = modes.js
