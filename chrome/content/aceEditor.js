@@ -37,7 +37,7 @@ Firebug.Ace = {
 
         acebugPrefObserver.register();
 
-        this.hookIntoFirebug()
+        this.hookIntoFirebug(Firebug.chrome)
     },
 
     shutdown: function() {
@@ -74,24 +74,28 @@ Firebug.Ace = {
     },
 
     // firebug hook
-    hookIntoFirebug: function() {
+    hookIntoFirebug: function(chrome, ondetach) {
+			dump(124, chrome.getCommandEditorPatched)
         var fName = "getCommandLineLarge"
         if (Firebug.CommandLine.getCommandEditor &&
-            !Firebug.CommandLine.getCommandEditorPatched
+            !chrome.getCommandEditorPatched
             ) {
-            Firebug.CommandLine.getCommandEditorPatched = true
+			dump(12, chrome.getCommandEditorPatched)
+           chrome.getCommandEditorPatched = true
 
             // required for 1.8 compatibility
             // see http://code.google.com/p/fbug/source/detail?r=11301
             fName = "getCommandEditor"
 
-            let oldEl = Firebug.chrome.$("fbLargeCommandBox")
-            let newEl = Firebug.chrome.$("fbCommandEditorBox")
-            let toolbar = Firebug.chrome.$("fbCommandToolbar")
+            let oldEl = chrome.$("fbLargeCommandBox")
+            let newEl = chrome.$("fbCommandEditorBox")
+            let toolbar = chrome.$("fbCommandToolbar")
             newEl.parentNode.removeChild(newEl)
             oldEl.appendChild(toolbar)
             oldEl.id = "fbCommandEditorBox"
         }
+		if (ondetach)
+			return
 
         Firebug.CommandLine[fName] = function() {
             return Firebug.largeCommandLineEditor;
@@ -101,13 +105,16 @@ Firebug.Ace = {
     },
 
     detach: function(oldChrome, newChrome) {
+		Firebug.Ace.hookIntoFirebug(newChrome, true)
         var oldFrame = oldChrome.$("fbAceBrowser");
         var newFrame = newChrome.$("fbAceBrowser");
-        if (oldFrame.contentWindow == Firebug.Ace.win2Wrapped) {
+		oldFrame.contentDocument == newFrame.contentDocument
+        if (oldFrame.contentWindow.wrappedJSObject==Firebug.Ace.win2) {
             oldFrame.QueryInterface(Ci.nsIFrameLoaderOwner).swapFrameLoaders(newFrame);
             // swap other window too
             oldFrame = oldChrome.$("fbAceBrowser1");
             newFrame = newChrome.$("fbAceBrowser1");
+			oldFrame.contentDocument == newFrame.contentDocument
             oldFrame.QueryInterface(Ci.nsIFrameLoaderOwner).swapFrameLoaders(newFrame);
         }
     },
@@ -336,6 +343,7 @@ Firebug.Ace = {
     loadPopupShowing: function(popup) {
         FBL.eraseNode(popup)
         FBL.createMenuItem(popup, {label: 'aceAutoSave', nol10n: true, option: 1});
+        FBL.createMenuItem(popup, {label: 'help', nol10n: true, option: 2});
     },
 
     getUserFile: function(name, dir){
@@ -607,15 +615,16 @@ Firebug.largeCommandLineEditor = {
 		Firebug.Ace.saveFile(Firebug.Ace.win2.editor, usePath, keepOldPath)
 	},
 	onLoadCommand: function(option) {
-		if (option == "1" || option == "2") {
+		var help = "#>>\n\n#>>lang=cf\ncoffee=()->\n\tconsole.log('''sweet coffee''')\ncoffee()\n" +
+			'/*** shift+enter for new cell ***/ \n#>>lang=js this=document\nthis.getElementById()' +
+			"**press ctrl+space inside ()**/\n#>>\n";
+		if (option == "2")
+			this.setValue(help);
+		else if (option == "1") {			
 			var file = Firebug.Ace.getUserFile('autosave');
 			if (file.exists())
 				var val = readEntireFile(file);
-			this.setValue(
-				val || "#>>\n\n#>>lang=cf\ncoffee=()->\n\tconsole.log('''sweet coffee''')\ncoffee()\n" +
-				'/*** shift+enter for new cell ***/ \n#>>lang=js this=document\nthis.getElementById()' +
-				"**press ctrl+space inside ()**/\n#>>\n"
-			);
+			this.setValue(val || help);
 		} else
 			Firebug.Ace.loadFile(Firebug.Ace.win2.editor);
 	},

@@ -54,12 +54,12 @@ var __AceBugDevel__ = {
 };
 
 setTimeout(function() {
-	function appendXML(element, xml) {
+	function insertXML(element, xml, before) {
 		var range = document.createRange()
 		range.selectNode(element)
 		range.collapse(true)
 		var fragment = range.createContextualFragment(xml)
-		return element.appendChild(fragment)
+		return element.insertBefore(fragment, before)
 	}
 	var sb = document.getElementById("fbPanelBar1-tabBox") 
 	var tb = document.createElement('toolbarbutton')
@@ -68,10 +68,13 @@ setTimeout(function() {
 	tb.label='ace\u27F3'
 	tb.setAttribute('oncommand', '__AceBugDevel__.doReload(event.target.getAttribute("action"))')
 	
-	appendXML(tb,
-			<menupopup>
-				<menuitem label='fullreload&#10227;' action='full'/>
-			</menupopup>.toXMLString().replace(/>\s*</,'><'))
+	insertXML(
+		tb,
+		<menupopup>
+			<menuitem label='fullreload&#10227;' action='full'/>
+		</menupopup>.toXMLString().replace(/>\s*</,'><'),
+		tb.lastChild
+	)
 }, 1000)
 
 
