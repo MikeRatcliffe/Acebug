@@ -14,6 +14,9 @@ modes = {
 			var cf = require("ace/mode/coffee").Mode
 			modes.coffee = new cf
 			coffeeScriptCompiler = this.CoffeeScript
+			// now that we have real coffee, highlight session
+			// relies on global editor
+			editor.session.bgTokenizer.start()
 		})
 		delete this.coffee
 		this.coffee = new TextMode

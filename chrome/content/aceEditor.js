@@ -275,17 +275,15 @@ Firebug.Ace = {
     $pickFile: function(session, mode, path) {
 		var ios = Cc['@mozilla.org/network/io-service;1'].getService(Ci.nsIIOService);
 		var file, result;
-		if (mode == 'save' && (path == undefined || path == true))
+		if (path == "session")
 			path = session.filePath;
-		if (mode == 'open' && path == false)
-			path = session.filePath;
-		if (typeof path != "string")
-			path = ''
+		else if (path = "picker" || typeof path != "string")
+			path = ""
 		
 		if (path) {
 			try {
 				file = ios.newURI(path, null, null).QueryInterface(Ci.nsIFileURL).file;
-				if (file.exists())
+				if (mode == "save" || file.exists())
 					result = {status: Ci.nsIFilePicker.returnOK, file: file};
 			} catch(e){}
 		}
@@ -302,19 +300,19 @@ Firebug.Ace = {
 		return result
 	},
 	
-	loadFile: function(editor, usePath, keepOldPath) {
+	loadFile: function(editor, usePath, keepCurrentPath) {
 		var session = editor.session, ext = session.extension			
 		var fpResult = this.$pickFile(session, 'open', usePath);
 
 		if (fpResult.status == Ci.nsIFilePicker.returnOK) {
 			session.doc.setValue(readEntireFile(fpResult.file));
-			keepOldPath || session.setFileInfo(fpResult.path);
+			keepCurrentPath || session.setFileInfo(fpResult.path);
 		}
 	},
 
-	saveFile: function(editor, usePath, keepOldPath) {
+	saveFile: function(editor, path, keepCurrentPath) {
 		var session = editor.session, ext = session.extension;
-		var fpResult = this.$pickFile(session, 'save', usePath);
+		var fpResult = this.$pickFile(session, 'save', path);
 		
 		var file = fpResult.file;
 		if (fpResult.status == Ci.nsIFilePicker.returnOK) {
@@ -326,11 +324,11 @@ Firebug.Ace = {
 			}
 
 			writeToFile(file, session.getValue());
-			keepOldPath || session.setFileInfo(fpResult.path);
+			keepCurrentPath || session.setFileInfo(fpResult.path);
 		}
 		else if (fpResult.status == Ci.nsIFilePicker.returnReplace) {
 			writeToFile(file, session.getValue());
-			keepOldPath || session.setFileInfo(fpResult.path);
+			keepCurrentPath || session.setFileInfo(fpResult.path);
 		}
 	},
 
@@ -606,18 +604,21 @@ Firebug.largeCommandLineEditor = {
         Firebug.Console.log(error.text + ' `' + error.source + '` @'+(error.row+this.cell.bodyStart));
     },
 	onSaveCommand: function(option) {
-		var usePath, keepOldPath
+		var path, keepCurrentPath
 		if (option == "saveAs") {
-			usePath = true
+			path = "picker"
 		} else if (option == "saveACopyAs") {
-			usePath = keepOldPath = true
+			path = "picker"
+			keepCurrentPath = true
+		} else {
+			path = "session"
 		}
-		Firebug.Ace.saveFile(Firebug.Ace.win2.editor, usePath, keepOldPath)
+		Firebug.Ace.saveFile(Firebug.Ace.win2.editor, path, keepCurrentPath)
 	},
 	onLoadCommand: function(option) {
 		var help = "#>>\n\n#>>lang=cf\ncoffee=()->\n\tconsole.log('''sweet coffee''')\ncoffee()\n" +
 			'/*** shift+enter for new cell ***/ \n#>>lang=js this=document\nthis.getElementById()' +
-			"**press ctrl+space inside ()**/\n#>>\n";
+			"/**press ctrl+space inside ()**/\n#>>\n";
 		if (option == "2")
 			this.setValue(help);
 		else if (option == "1") {			
