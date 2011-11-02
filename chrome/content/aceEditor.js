@@ -268,9 +268,12 @@ Firebug.Ace = {
     $pickFile: function(session, mode, path) {
 		var ios = Cc['@mozilla.org/network/io-service;1'].getService(Ci.nsIIOService);
 		var file, result;
-		if ((path == undefined && mode == 'save') ||
-		    (path == false && mode == 'open'))
+		if (mode == 'save' && (path == undefined || path == true))
 			path = session.filePath;
+		if (mode == 'open' && path == false)
+			path = session.filePath;
+		if (typeof path != "string")
+			path = ''
 		
 		if (path) {
 			try {
@@ -618,7 +621,7 @@ Firebug.largeCommandLineEditor = {
 	},
 	shutdown: function() {
 		var val = this.getValue();
-		if (val)
+		if (val && val.length > 5)
 			writeToFile(Firebug.Ace.getUserFile('autosave'), val);
 	}
 
