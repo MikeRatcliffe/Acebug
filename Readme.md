@@ -13,7 +13,8 @@ Getting the Source
 ==================
 
     git clone git://github.com/MikeRatcliffe/Acebug.git
-    git submodule update --init --recursive
+
+follow instructions from [MDN](https://developer.mozilla.org/en/Setting_up_extension_development_environment#Custom_code_location) to install unpacked addon.
 
 Webpage
 =======
