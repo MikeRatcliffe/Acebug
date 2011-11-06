@@ -2442,6 +2442,16 @@ var Keys = (function() {
             44 : "Print",
             45 : "Insert",
             46 : "Delete",
+			96 : "Numpad0",
+			97 : "Numpad1",
+			98 : "Numpad2",
+			99 : "Numpad3",
+			100: "Numpad4",
+			101: "Numpad5",
+			102: "Numpad6",
+			103: "Numpad7",
+			104: "Numpad8",
+			105: "Numpad9",
             112: "F1",
             113: "F2",
             114: "F3",
@@ -4567,7 +4577,7 @@ var Editor =function(renderer, session) {
                 indentString = lang.stringRepeat(" ", count);
             } else
                 indentString = "\t";
-            return this.onTextInput(indentString);
+            return this.onTextInput(indentString, true);
         }
     };
 
@@ -4594,7 +4604,7 @@ var Editor =function(renderer, session) {
 
         var rows = this.$getSelectedRows();
         var range;
-        if (rows.last == 0 || rows.last+1 < this.session.getLength())
+        if (rows.first == 0 || rows.last+1 < this.session.getLength())
             range = new Range(rows.first, 0, rows.last+1, 0);
         else
             range = new Range(
@@ -4652,14 +4662,21 @@ var Editor =function(renderer, session) {
 
     this.$moveLines = function(mover) {
         var rows = this.$getSelectedRows();
+        var selection = this.selection;
+		if (selection.isEmpty()) {
+			var cursor = selection.getCursor()
+		}
 
         var linesMoved = mover.call(this, rows.first, rows.last);
 
-        var selection = this.selection;
-        selection.setSelectionAnchor(rows.last+linesMoved+1, 0);
-        selection.$moveSelection(function() {
-            selection.moveCursorTo(rows.first+linesMoved, 0);
-        });
+		if (cursor) {
+			selection.moveCursorTo(rows.last+linesMoved, cursor.column)
+		} else {
+			selection.setSelectionAnchor(rows.last+linesMoved+1, 0);
+			selection.$moveSelection(function() {
+				selection.moveCursorTo(rows.first+linesMoved, 0);
+			});
+		}
     };
 
     this.$getSelectedRows = function() {
@@ -5783,15 +5800,62 @@ canon.addCommand({
     bindKey: bindKey("Ctrl-7", "Command-7"),
     exec: function(env, args, request) { env.editor.toggleCommentLines(); }
 });
+
+function rehighlightAll(editor, needle){
+	var session = editor.session
+	
+	if (!session.$selectionOccurrences)
+		session.$selectionOccurrences = [];
+
+	if (session.$selectionOccurrences.length)
+		return
+	
+	if (needle)
+		editor.$search.set({wrap: true, needle: needle});
+	var ranges = editor.$search.findAll(session);
+
+	var cursor = editor.getCursorPosition();
+	ranges.forEach(function(range) {
+		if (!range.contains(cursor.row, cursor.column)) {
+			var marker = session.addMarker(range, "ace_selected_word", "text");
+			session.$selectionOccurrences.push(marker);
+		}
+	});	
+}
 canon.addCommand({
     name: "findnext",
-    bindKey: bindKey("Ctrl-K", "Command-G"),
-    exec: function(env, args, request) { env.editor.findNext(); }
+    bindKey: bindKey("Ctrl-K|Ctrl-3|Ctrl-Numpad3", "Command-G|Command-Numpad3"),
+    exec: function(env, args, request) { env.editor.findNext();rehighlightAll(env.editor) }
 });
 canon.addCommand({
     name: "findprevious",
-    bindKey: bindKey("Ctrl-Shift-K", "Command-Shift-G"),
-    exec: function(env, args, request) { env.editor.findPrevious(); }
+    bindKey: bindKey("Ctrl-Shift-K|Ctrl-1|Ctrl-Numpad1", "Command-Shift-G|Command-Numpad1"),
+    exec: function(env, args, request) { env.editor.findPrevious();rehighlightAll(env.editor) }
+});
+canon.addCommand({
+    name: "highlightall",
+    bindKey: bindKey("Ctrl-2|Ctrl-Numpad2", "Command-Numpad2"),
+    exec: function(env, args, request) { 
+		var editor = env.editor;
+		var session = editor.session;
+		
+		var r = editor.getSelectionRange();
+		if (r.isEmpty()){
+			var c = r.start
+			var line = session.getLine(c.row)
+			var col = c.column
+			
+			var needle = session.getTokenAt(r.start.row, r.start.column).value
+			if(/\s+/.test(needle))
+			   needle=session.getTokenAt(r.start.row, r.start.column-needle.length).value
+		}else
+			needle = session.getTextRange(r)
+
+		if(!needle)
+			return
+		editor.findNext({needle:needle})
+		rehighlightAll(editor)
+	}
 });
 canon.addCommand({
     name: "find",
@@ -6095,6 +6159,35 @@ canon.addCommand({
         env.editor.session.unFoldAll();
     }
 });
+
+
+canon.addCommand({
+    name: "char--",
+    bindKey: bindKey("Ctrl-Down", "Command-Down"),
+    exec: function(env, args, request) { rollChar(env.editor, -1); }
+});
+canon.addCommand({
+    name: "char++",
+    bindKey: bindKey("Ctrl-Up", "Command-Up"),
+    exec: function(env, args, request) { rollChar(env.editor, 1); }
+});
+
+function rollChar(editor, amount){
+	//editor = env.editor
+	var session = editor.session
+	var selection = session.selection
+	var cursor = selection.selectionLead
+	var range = selection.getRange()
+	var line = session.getLine(cursor.row)
+	if (selection.isEmpty){
+		var c = line.charCodeAt(cursor.column) 
+		var s = String.fromCharCode(c+amount)
+		range.end.column++
+		session.doc.replace(range , s)
+		range.end.column--
+		selection.setSelectionRange(range)
+	}
+}
 
 });
 
@@ -6765,7 +6858,7 @@ var EditSession = function(text, mode) {
         return null;
     };
 
-    this.insert = function(position, text) {
+	this.insert = function(position, text) {
         return this.doc.insert(position, text);
     };
 
@@ -7362,8 +7455,9 @@ var EditSession = function(text, mode) {
             while (split > minSplit && tokens[split] < PLACEHOLDER_START) {
                 split --;
             }
-			while (split > minSplit && tokens[split] == PUNCTUATION)
-				split --;
+            while (split > minSplit && tokens[split] == PUNCTUATION) {
+                split --;
+            }
             // If we found one, then add the split.
             if (split > minSplit) {
                 addSplit(++split);
@@ -7887,7 +7981,7 @@ var Selection = function(session) {
         };
 
         var anchor = this.getSelectionAnchor();
-        var lead = this.getSelectionLead();
+        var lead = this.getSelectionLead(); 
 
         var isBackwards = this.isBackwards();
 
@@ -8204,9 +8298,26 @@ var Selection = function(session) {
             this.selectionLead.row,
             this.selectionLead.column
         );
-        var screenCol = (chars == 0 && this.$desiredColumn) || screenPos.column;
+        
+        var screenCol = (chars === 0 && this.$desiredColumn) || screenPos.column;
+        
+        // so here is the deal. First checkout what the content of ur current and ur target line is
+        var currentLine = (this.session.getLines(screenPos.row, screenPos.row) || [""])[0],
+            targetLine = (this.session.getLines(screenPos.row + rows, screenPos.row + rows) || [""])[0];
+        
+        // if you are at the EOL of your current line, and your targetline is all whitespace
+        if (currentLine && targetLine && 
+                currentLine.length === screenPos.column && targetLine.match(/^\s*$/)) {
+            // set the new column to the EOL of the target line
+            screenCol = this.session.getTabString(targetLine).length;
+            // update the chars so we are sure that the desired column will be updated
+            chars = 1;
+        };
+                
         var docPos = this.session.screenToDocumentPosition(screenPos.row + rows, screenCol);
-        this.moveCursorTo(docPos.row, docPos.column + chars, chars == 0);
+        
+        // move the cursor and update the desired column
+        this.moveCursorTo(docPos.row, docPos.column + chars, chars === 0);
     };
 
     this.moveCursorToPosition = function(position) {
@@ -8576,7 +8687,7 @@ var Mode = function() {
     this.createWorker = function(session) {
         return null;
     };
-
+    
     this.highlightSelection = function(editor) {
         var session = editor.session;
         if (!session.$selectionOccurrences)
@@ -10750,7 +10861,7 @@ Search.SELECTION = 2;
         var searchSelection = this.$options.scope == Search.SELECTION;
 
         var range = this.$options.range || session.getSelection().getRange();
-        var start = this.$options.start || session.getSelection().getCursor();
+        var start = this.$options.start || range[searchSelection ? "start" : "end"];
 
         var firstRow = searchSelection ? range.start.row : 0;
         var firstColumn = searchSelection ? range.start.column : 0;
@@ -10812,7 +10923,7 @@ Search.SELECTION = 2;
         var searchSelection = this.$options.scope == Search.SELECTION;
 
         var range = this.$options.range || session.getSelection().getRange();
-        var start = this.$options.start || session.getSelection().getCursor();
+        var start = this.$options.start || range[searchSelection ? "end" : "start"];
 
         var firstRow = searchSelection ? range.start.row : 0;
         var firstColumn = searchSelection ? range.start.column : 0;
