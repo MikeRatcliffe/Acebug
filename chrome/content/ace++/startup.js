@@ -1,6 +1,6 @@
 define('ace/keyboard/hash_handler', function(require, exports, module) {
 
-var keyUtil  = require("pilot/keys");
+var keyUtil  = require("ace/lib/keys");
 
 function HashHandler(config) {
     this.setConfig(config);
@@ -78,7 +78,7 @@ exports.HashHandler = HashHandler;
 
 /************************************************************************************/
 define('ace/layer/gutter', function(require, exports, module) {
-var dom = require("pilot/dom");
+var dom = require("ace/lib/dom");
 
 var Gutter = function(parentEl) {
     this.element = dom.createElement("div");
@@ -157,7 +157,7 @@ var Gutter = function(parentEl) {
             var annotation = this.$annotations[i] || emptyAnno;
             html.push("<div class='ace_gutter-cell",
                 this.$decorations[i] || "",
-                breakpoints[i] ? " ace_breakpoint " : " ",
+                breakpoints[i] ? " ace_breakpoint " + breakpoints[i] : " ",
                 annotation.className,
                 "' title='", annotation.text.join("\n"),
                 "' style='height:", config.lineHeight, "px;'>" 
@@ -197,7 +197,7 @@ define('fbace/startup', function(require, exports, module) {
 exports.launch = function(env, options) {
     acebugOptions = options
     // requires
-    event = require("pilot/event");
+    event = require("ace/lib/event");
     Editor = require("ace/editor").Editor;
     Renderer = require("ace/virtual_renderer").VirtualRenderer;
 
@@ -222,30 +222,29 @@ exports.launch = function(env, options) {
 			}
 		}
 
-		this.setBreakpoints = function(rows) {
+		this.setBreakpointsAtRows = function(rows) {
 			this.$breakpoints = [];
 			for (var i=0; i<rows.length; i++) {
 				this.$breakpoints[rows[i]] = true;
 			}
-			this.$lastBreakpoint = this.$breakpoints.lastIndexOf(true);
 			this._dispatchEvent("changeBreakpoint", {});
 		};
-
+		this.setBreakpoints = function(bp) {
+			this.$breakpoints = bp;
+			this._dispatchEvent("changeBreakpoint", {});
+		};
 		this.clearBreakpoints = function() {
 			this.$breakpoints = [];
-			this.$breakpoints.last = 0;
 			this._dispatchEvent("changeBreakpoint", {});
 		};
 
-		this.setBreakpoint = function(row) {
-			this.$breakpoints[row] = true;
-			this.$breakpoints.last = this.$breakpoints.lastIndexOf(true);
+		this.setBreakpoint = function(row, val) {
+			this.$breakpoints[row] = val ||true;
 			this._dispatchEvent("changeBreakpoint", {});
 		};
 
 		this.clearBreakpoint = function(row) {
 			delete this.$breakpoints[row];
-			this.$breakpoints.last = this.$breakpoints.lastIndexOf(true);
 			this._dispatchEvent("changeBreakpoint", {});
 		};
 
@@ -287,7 +286,6 @@ exports.launch = function(env, options) {
 
 			if (len > 0) {
 				args = Array(len);
-				this.$breakpoints.last += len;
 				args.unshift(firstRow, 0)
 				this.$breakpoints.splice.apply(this.$breakpoints, args);
 				
@@ -297,9 +295,15 @@ exports.launch = function(env, options) {
                 this.foldWidgets[range.end.row] = null;
             } else if (len < 0) {
                 var rem = this.$breakpoints.splice(firstRow + 1, -len);
-                if(!this.$breakpoints[firstRow] && rem.indexOf(true) != -1)
-                    this.$breakpoints[firstRow] = true;
-
+				
+                if(!this.$breakpoints[firstRow]){
+					for each(var oldBP in rem)
+						if (oldBP){
+							this.$breakpoints[firstRow] = oldBP
+							break
+						}
+				}
+				
                 this.foldWidgets.splice(firstRow, -len);
 
                 this.foldWidgets[range.start.row] = null;
@@ -318,7 +322,7 @@ exports.launch = function(env, options) {
 	/**************************** initialize ****************************************************/
     // fix event addCommandKeyListener
     event.addCommandKeyListener = function(el, callback) {
-        var keys = require("pilot/keys");
+        var keys = require("ace/lib/keys");
         var lastKeyDownKeyCode = null;
         el.addEventListener("keydown", function(e) {
             lastKeyDownKeyCode = e.keyCode in keys.MODIFIER_KEYS? 0: e.keyCode;
@@ -538,7 +542,8 @@ exports.launch = function(env, options) {
         });
     };
     /**********  handle keyboard *****/
-    env.canon = canon = require("pilot/canon");
+    env.canon = canon = env.editor.commands;
+	canon.getCommand = function(name){return this.commands[name]}
 
     env.setKeybinding(options.keybinding);
 
@@ -698,7 +703,7 @@ exports.launch = function(env, options) {
 
     var com = canon.getCommand('removeline')
     com.bindKey.win = com.bindKey.mac = 'Alt-D'
-    canon.removeCommand('removeline')
+    //canon.removeCommand('removeline')
     canon.addCommand(com)
 
     canon.addCommand({

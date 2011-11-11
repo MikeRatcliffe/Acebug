@@ -217,7 +217,13 @@ separator{
 .ace_gutter-cell.ace_breakpoint{
     border-radius: 20px 0 0 20px;
     box-shadow: 0 0 1px 1px red inset;
+    -moz-box-shadow: 0 0 1px 1px gold inset;
+}
+.ace_gutter-cell.ace_breakpoint.invalid{
     -moz-box-shadow: 0 0 1px 1px red inset;
+}
+.ace_gutter-cell.ace_breakpoint.valid{
+    -moz-box-shadow: 0 0 1px 1px lime inset;
 }
 
 
