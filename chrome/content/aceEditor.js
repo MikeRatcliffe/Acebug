@@ -334,14 +334,14 @@ Firebug.Ace = {
 
     savePopupShowing: function(popup) {
         FBL.eraseNode(popup)
-        FBL.createMenuItem(popup, {label: 'save As', nol10n: true, option: 'saveAs' });
-        FBL.createMenuItem(popup, {label: 'save a Copy As', nol10n: true, option: "saveACopyAs" });
+        FBL.createMenuItem(popup, {label: $ACESTR('save As'), nol10n: true, option: 'saveAs' });
+        FBL.createMenuItem(popup, {label: $ACESTR('save a Copy As'), nol10n: true, option: "saveACopyAs" });
     },
 
     loadPopupShowing: function(popup) {
         FBL.eraseNode(popup)
-        FBL.createMenuItem(popup, {label: 'aceAutoSave', nol10n: true, option: 1});
-        FBL.createMenuItem(popup, {label: 'help', nol10n: true, option: 2});
+        FBL.createMenuItem(popup, {label: $ACESTR('lastAutoSave'), nol10n: true, option: 1});
+        FBL.createMenuItem(popup, {label: $ACESTR('help'), nol10n: true, option: 2});
     },
 
     getUserFile: function(name, dir){
@@ -521,18 +521,27 @@ Firebug.largeCommandLineEditor = {
                 return;
             } else if (cell.coffeeText) {
                 text = cell.coffeeText
-            } else
+            } else {
                 text = cell.body.map(function(x, i) {
-                    if (bp[i + cell.bodyStart]) {
+                    var index = i + cell.bodyStart
+					if (bp[index]) {
                         // strip comments and ;
                         x = x.replace(/\/\/.*$/, '')
                              .replace(/;\s*$/, '')
                              .replace(/^\s*var\s+/g, '')
-                        if(x)
-                            x = 'console.log(' + x + ')'
+						if(x)
+							try {
+								Function('console.log(' + x + ')')
+								x = 'console.log(' + x + ')'
+								bp[index] = 'valid'
+							}catch(e){
+								bp[index] = 'invalid'
+							}
                     }
                     return x;
                 }).join('\n');
+				editor.session.setBreakpoints(bp)
+			}
             Firebug.CommandLine.commandHistory.appendToHistory(cell.body.join('\n'));
         }
         text = text.replace(/\.\s*$/, '');

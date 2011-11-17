@@ -87,25 +87,33 @@
     </hbox>
 
     <popupset id='mainPopupSet'>
-        <panel id="aceAutocompletePanel" noautofocus="true"  ignorekeys='true'>
+        <panel id="aceAutocompletePanel" noautofocus="true" ignorekeys='true' backdrag='true'>
             <hbox>
                 <toolbarbutton label=''  onclick='jsExplore.qi()'/>
                 <spacer flex='1'/>
                 <label/>
                 <toolbarbutton class='tab-close-button' oncommand='this.parentNode.parentNode.hidePopup()'/>
             </hbox>
-            <hbox flex="1">
-                <tree seltype="single" treelines="false" flex="1" tabindex='-1'
-                        hidecolumnpicker='true' style='-moz-user-focus:none' >
-                    <treechildren id="domfly"/>
-                    <treecols>
-                        <treecol id="name" hideheader="true" primary="true" flex="2" />
-                    </treecols>
-                </tree>                
-            </hbox>
+			<stack flex='1'>
+				<hbox flex="1">
+					<tree seltype="single" treelines="false" flex="1" tabindex='-1'
+							hidecolumnpicker='true' style='-moz-user-focus:none' >
+						<treechildren id="domfly"/>
+						<treecols>
+							<treecol id="name" hideheader="true" primary="true" flex="2" />
+						</treecols>
+					</tree>                
+				</hbox>
+				<resizer element='aceAutocompletePanel' dir="bottomleft" left="0" bottom="0" width="16" height="16"/>
+				<resizer element='aceAutocompletePanel' dir="bottomright" right="0" bottom="0" width="16" height="16"/>
+			</stack>
         </panel>
-        <panel id='autocomplate-info-bubble' noautofocus="true"  ignorekeys='true'>
-			<textbox  multiline="true" wrap='off' flex="1"/>
+        <panel id='ace-autocomplate-info-bubble' noautofocus="true" ignorekeys='true' backdrag='true'>
+			<stack flex='1'>
+				<textbox  multiline="true" wrap='off' flex="1"/>
+				<resizer element='ace-autocomplate-info-bubble' dir="bottomleft" left="0" bottom="0" width="16" height="16"/>
+				<resizer element='ace-autocomplate-info-bubble' dir="bottomright" right="0" bottom="0" width="16" height="16"/>
+			</stack>
 		</panel>
     </popupset>
 

@@ -67,7 +67,7 @@ Firebug.Ace.BaseAutocompleter = {
         this.tree = this.panel.getElementsByTagName('tree')[0];
         this.number = this.panel.getElementsByTagName('label')[0];
 
-        this.bubble = document.getElementById("autocomplate-info-bubble");
+        this.bubble = document.getElementById("ace-autocomplate-info-bubble");
         //set handlers
         this.panel.setAttribute('onpopupshown', 'Firebug.Ace.autocompleter.setView(0)');
         this.panel.setAttribute('onpopuphidden', 'Firebug.Ace.autocompleter.finish()');
@@ -217,7 +217,7 @@ Firebug.Ace.BaseAutocompleter = {
         }
         //if (this.hidden)
         //    return;
-        var item = this.bubble.firstChild;
+        var item = this.bubble.querySelector("textbox");
         item.value = text;
         if (this.bubble.state!='open')
             this.bubble.showPopup(null, this.bubblePos.l, this.bubblePos.t, "popup");
@@ -567,12 +567,14 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
                 descr = "ns";
                 namespaces.forEach(createItem);
             } else if (fu == 'require') {
-                descr = "module";
-                if(require && require.modules)
-                    require.modules.forEach(createItem);
+                descr = "loaded module";
+				var req = FBL.unwrapObject(this.object).require
+				var modules = req.modules || req.s.contexts._.loaded
+                for (var i in modules)
+                    createItem(i);
             }
         } catch(e) {
-            Cu.reportError(e);
+            Components.utils.reportError(e);
         }
         this.unfilteredArray = ans.concat(this.unfilteredArray);
     },
