@@ -120,6 +120,7 @@ Firebug.Ace = {
     },
 
     loadFBugPatch: function() {
+		return
         var script = document.createElementNS("http://www.w3.org/1999/xhtml", "script");
         script.type = "text/javascript;version=1.8";
         script.src ='chrome://acebug/content/patchUpFirebug.js'
@@ -442,7 +443,7 @@ Firebug.largeCommandLineEditor = {
 
     //* * * * * * * * * * * * * * * * * * * * * * * * *
     get value() {
-        return this.getValue();
+        return "";
     },
 
     set value(val) {
