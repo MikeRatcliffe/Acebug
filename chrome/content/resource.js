@@ -376,7 +376,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         return items;
     },
 	save: function(url){
-		if(winow.internalSave)
+		if(window.internalSave)
 			internalSave(url)
 		else
 			Firebug.Firefox.getTabBrowser().ownerDocument.defaultView.internalSave(url)

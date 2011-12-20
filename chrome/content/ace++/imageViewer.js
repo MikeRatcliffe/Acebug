@@ -20,6 +20,8 @@ exports.showImage = function(data) {
     // this.buttons.style.display = '';
 
     this.iframe.setAttribute('src', 'view-source:' + data.href);
+	this.iframe.className=""
+	this.iframe.parentNode.appendChild(this.iframe)
     this.isOpen = true;
 
 };

@@ -208,9 +208,7 @@ separator{
     background: -webkit-radial-gradient(8px 50% 45deg, circle closest-corner, rgb(148,10,0) 0%, rgb(148,10,10) 50%, transparent 60%) no-repeat!important;
     background: -o-radial-gradient(8px 50% 45deg, circle closest-corner, rgb(148,10,10) 0%, rgb(148,10,10) 50%, transparent 60%) no-repeat!important;
 } */
-.ace_gutter{
-	cursor: default !important;
-}
+
 .ace_gutter-cell:hover{
     background: #BACADF
 }
@@ -226,33 +224,6 @@ separator{
     -moz-box-shadow: 0 0 1px 1px lime inset;
 }
 
-
-.ace_fold-widget {
-    background: none repeat scroll 0 0 white;
-    border-radius: 4px 4px 4px 4px;
-    cursor: pointer;
-    margin: -2px -2px -2px 0;
-    padding: 2px 2px 2px 0;
-}
-
-.ace_fold-widget {
-    background: none repeat scroll 0 0 white;
-    border: 1px solid white;
-    border-radius: 4px 4px 4px 4px;
-    cursor: pointer;
-    margin: -1px -2px;
-    padding: 0 1px;
-}
-
-.ace_fold-widget.closed {
-    background: none repeat scroll 0 0 white;
-    border: 1px solid gray;
-}
-
-.ace_fold-widget:hover {
-    background: none repeat scroll 0 0 white;
-    border: 1px solid gold;
-}
 
 /************************* buttons ****************************/
 

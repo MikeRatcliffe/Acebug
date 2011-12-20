@@ -149,7 +149,7 @@ var startAce = function(callback, options, deps) {
     }
     onLaunch = callback || true;
     // "ace/mode/javascript", "ace/mode/css", are loaded with html  // "ace-uncompressed" for debugging
-    var rootDeps = ["fbace/scrollbar", "fbace/startup", "res/ace-uncompressed", "ace/mode/xml", "ace/mode/html"];
+    var rootDeps = ["fbace/startup", "res/ace/ace-uncompressed", "ace/mode/xml", "ace/mode/html"];
     if (!options)
         options = {
 			softtabs: true,

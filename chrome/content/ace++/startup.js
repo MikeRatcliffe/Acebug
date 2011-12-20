@@ -76,120 +76,6 @@ exports.HashHandler = HashHandler;
 });
 
 
-/************************************************************************************/
-define('ace/layer/gutter', function(require, exports, module) {
-var dom = require("ace/lib/dom");
-
-var Gutter = function(parentEl) {
-    this.element = dom.createElement("div");
-    this.element.className = "ace_layer ace_gutter-layer";
-    parentEl.appendChild(this.element);
-
-    this.$breakpoints = [];
-    this.$annotations = [];
-    this.$decorations = [];
-};
-
-(function() {
-
-    this.setSession = function(session) {
-        this.session = session;
-    };
-
-    this.addGutterDecoration = function(row, className){
-        if (!this.$decorations[row])
-            this.$decorations[row] = "";
-        this.$decorations[row] += " ace_" + className;
-    }
-
-    this.removeGutterDecoration = function(row, className){
-        this.$decorations[row] = this.$decorations[row].replace(" ace_" + className, "");
-    };
-
-    this.setBreakpoints = function(rows) {
-    };
-
-    this.setAnnotations = function(annotations) {
-        // iterate over sparse array
-        this.$annotations = [];
-        for (var row in annotations) if (annotations.hasOwnProperty(row)) {
-            var rowAnnotations = annotations[row];
-            if (!rowAnnotations)
-                continue;
-
-            var rowInfo = this.$annotations[row] = {
-                text: []
-            };
-            for (var i=0; i<rowAnnotations.length; i++) {
-                var annotation = rowAnnotations[i];
-                rowInfo.text.push(annotation.text.replace(/"/g, "&quot;").replace(/'/g, "&#8217;").replace(/</, "&lt;"));
-                var type = annotation.type;
-                if (type == "error")
-                    rowInfo.className = "ace_error";
-                else if (type == "warning" && rowInfo.className != "ace_error")
-                    rowInfo.className = "ace_warning";
-                else if (type == "info" && (!rowInfo.className))
-                    rowInfo.className = "ace_info";
-            }
-        }
-    };
-
-    this.update = function(config) {
-        this.$config = config;
-
-        var emptyAnno = {className: "", text: []};
-        var breakpoints = this.session.$breakpoints;
-        var html = [];
-        var i = config.firstRow;
-        var lastRow = config.lastRow;
-        var fold = this.session.getNextFoldLine(i);
-        var foldStart = fold ? fold.start.row : Infinity;
-
-        while (true) {
-            if(i > foldStart) {
-                i = fold.end.row + 1;
-                fold = this.session.getNextFoldLine(i);
-                foldStart = fold ?fold.start.row :Infinity;
-            }
-            if(i > lastRow)
-                break;
-
-            var annotation = this.$annotations[i] || emptyAnno;
-            html.push("<div class='ace_gutter-cell",
-                this.$decorations[i] || "",
-                breakpoints[i] ? " ace_breakpoint " + breakpoints[i] : " ",
-                annotation.className,
-                "' title='", annotation.text.join("\n"),
-                "' style='height:", config.lineHeight, "px;'>" 
-				);
-			if (this.session.isLineFoldable(i)){
-				html.push(
-					"<span class='ace_fold-widget ",
-					i == foldStart?"closed":"open",
-					"'>", i, "</span>"
-				)
-			} else
-				html.push(i)
-
-            var wrappedRowLength = this.session.getRowLength(i) - 1;
-            while (wrappedRowLength--) {
-                html.push("</div><div class='ace_gutter-cell' style='height:", config.lineHeight, "px'>&#166;");
-            }
-
-            html.push("</div>");
-
-            i++;
-        }
-        this.element = dom.setInnerHtml(this.element, html.join(""));
-        this.element.style.height = config.minHeight + "px";
-    };
-
-}).call(Gutter.prototype);
-
-exports.Gutter = Gutter;
-
-});
-
 
 /************************************************************************************/
 define('fbace/startup', function(require, exports, module) {
@@ -213,15 +99,6 @@ exports.launch = function(env, options) {
 	/**************************** breakpoint handler *********************************************/
 
 	function CStyleFolding() {
-		this.isLineFoldable = function(row) {
-			if (this.foldWidgets[row] != null)
-				return this.foldWidgets[row]
-			else {
-				return this.foldWidgets[row] = this.getLine(row).search(/(\{|\[)\s*(\/\/.*)?$/) != -1 ||
-					(this.getState(row).isHeader == 1 && row + 1 < env.editor.session.getLength())
-			}
-		}
-
 		this.setBreakpointsAtRows = function(rows) {
 			this.$breakpoints = [];
 			for (var i=0; i<rows.length; i++) {
@@ -288,11 +165,6 @@ exports.launch = function(env, options) {
 				args = Array(len);
 				args.unshift(firstRow, 0)
 				this.$breakpoints.splice.apply(this.$breakpoints, args);
-				
-				args[0] = range.start.row
-				this.foldWidgets.splice.apply(this.foldWidgets, args);
-
-                this.foldWidgets[range.end.row] = null;
             } else if (len < 0) {
                 var rem = this.$breakpoints.splice(firstRow + 1, -len);
 				
@@ -303,17 +175,10 @@ exports.launch = function(env, options) {
 							break
 						}
 				}
-				
-                this.foldWidgets.splice(firstRow, -len);
-
-                this.foldWidgets[range.start.row] = null;
-			} else if (len == 0) {
-				this.foldWidgets[range.start.row] = null;
 			}
 		}
 		
 		this.$init = function() {
-			this.foldWidgets = [];
 			this.doc.on('change', this.updateDataOnDocChange.bind(this));
 		}
 	};
@@ -373,7 +238,7 @@ exports.launch = function(env, options) {
 
 	// global functions
     toggleGutter = function() {
-        editor.renderer.setShowGutter(!env.editor.renderer.showGutter);
+        editor.renderer.setShowGutter(!editor.renderer.showGutter);
     };
 	toggleWrapMode = function(useWrap, session) {
 		session = session || editor.session
@@ -583,8 +448,7 @@ exports.launch = function(env, options) {
 
     // add commands
     editor.addCommands({
-        duplicate: function(env, args, request) {
-            var editor = env.editor;
+        duplicate: function(editor, args, request) {
             var sel = editor.selection;
             var doc = editor.session;
             var range = sel.getRange();
@@ -596,8 +460,7 @@ exports.launch = function(env, options) {
                 doc.insert(sel.selectionLead, doc.getTextRange(range), false);
             }
         },
-        startAutocompleter: function(env, args, request) {
-            var editor = env.editor;
+        startAutocompleter: function(editor, args, request) {
             startAcebugAutocompleter(editor);
         },
         toggleStreamComment: function() {
@@ -713,8 +576,8 @@ exports.launch = function(env, options) {
             mac: "Command-S",
             sender: "editor"
         },
-        exec: function(env) {
-			aceManager.saveFile(env.editor, "session")
+        exec: function(editor) {
+			aceManager.saveFile(editor, "session")
         }
     });
     canon.addCommand({
@@ -724,8 +587,8 @@ exports.launch = function(env, options) {
             mac: "Command-Shift-S",
             sender: "editor"
         },
-        exec: function(env) {
-			aceManager.saveFile(env.editor, "picker")
+        exec: function(editor) {
+			aceManager.saveFile(editor, "picker")
         }
     });
 	canon.addCommand({
@@ -735,8 +598,8 @@ exports.launch = function(env, options) {
             mac: "Command-O",
             sender: "editor"
         },
-        exec: function(env) {
-			aceManager.loadFile(env.editor)
+        exec: function(editor) {
+			aceManager.loadFile(editor)
         }
     });
 
@@ -748,8 +611,8 @@ exports.launch = function(env, options) {
             mac: "Shift-Return",
             sender: "editor"
         },
-        exec: function(env) {
-			var editor = env.editor, session = editor.session
+        exec: function(editor) {
+			var editor = editor, session = editor.session
             var c = editor.getCursorPosition()
 			if((c.column!=0 || c.row==0) && c.column != session.getLine(c.row).length)
 				var addNewLine = true
@@ -768,58 +631,14 @@ exports.launch = function(env, options) {
 	
 
 	function onGutterClick(e) {
-		var editor = env.editor, s = editor.session, row = e.row;
+		s = editor.session, row = e.row;
 		var className =  e.htmlEvent.target.className
 		if (className.indexOf('ace_fold-widget') < 0) {
 			if(className.indexOf("ace_gutter-cell") != -1 && editor.isFocused())
 				s[s.$breakpoints[row]?'clearBreakpoint':'setBreakpoint'](row);
-		} else {
-			var line = s.getLine(row)
-			var match = line.match(/(\{|\[)\s*(\/\/.*)?$/)
-			if (match) {
-				var i = match.index
-				var fold = s.getFoldAt(row, i+1, 1)
-				if (fold) {
-					s.expandFold(fold)
-					//editor.renderer.scrollCursorIntoView()
-					//editor.renderer.scrollToRow(row)
-				} else {
-					var start = {row:row,column:i+1}
-					var end = s.$findClosingBracket(match[1], start)
-					if (end)
-						s.addFold("...", Range.fromPoints(start, end));
-				}
-				return
-			}
-			var mode = s.$mode
-			if (!mode.delimiter)
-				return
-
-			if (line.substr(0, mode.dl) == mode.delimiter) {
-				var fold = s.getFoldAt(row, 0, 1)
-				if (!fold){
-					var foldLine = s.getFoldLine(row);
-					if(foldLine && foldLine.start.row != foldLine.end.row) {
-						s.expandFolds(foldLine.folds)
-						return
-					}
-				}
-				
-				if (fold) {
-					s.expandFold(fold)
-					//editor.renderer.scrollCursorIntoView()
-				} else {
-					var cell = mode.getCellBounds(row)
-					var start = {row: row, column: 0};
-					var end = {row: cell.bodyEnd, column: s.getLine(cell.bodyEnd).length};
-					var placeholder = s.getLine(cell.headerStart).slice(0,10) + "=====================";
-					s.addFold(placeholder, Range.fromPoints(start, end));
-				}
-				return
-			}
 		}
 	}
-	env.editor.renderer.on('gutterclick', onGutterClick)
+	editor.renderer.on('gutterclick', onGutterClick)
 
 };
 });

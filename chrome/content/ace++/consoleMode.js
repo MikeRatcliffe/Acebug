@@ -6,6 +6,73 @@ var TextMode = require("ace/mode/text").Mode;
 var Range = require("ace/range").Range;
 var jsMode = require("ace/mode/javascript").Mode
 
+var foldMode = new (require("ace/mode/folding/cstyle").FoldMode);
+foldMode.foldingStartMarker = /(^#>>)|(\{|\[)[^\}\]]*$|^\s*(\/\*)/;
+foldMode.getFoldWidgetRange = function(session, foldStyle, row) {
+	var line = session.getLine(row);
+	var match = line.match(this.foldingStartMarker);
+	if (match) {
+		var i = match.index;
+
+		if (match[1]) {
+			var cell = session.$mode.getCellBounds(row)
+			var start = {row: row, column: session.$mode.dl};
+			var end = {row: cell.bodyEnd, column: session.getLine(cell.bodyEnd).length};
+			var placeholder = session.getLine(cell.headerStart).slice(0,10) + "=====================";
+			range = Range.fromPoints(start, end)
+			range.placeholder = placeholder
+			return range
+		}
+		
+		if (match[3]) {
+			var range = session.getCommentFoldRange(row, i + match[0].length);
+			range.end.column -= 2;
+			return range;
+		}
+
+		var start = {row: row, column: i+1};
+		var end = session.$findClosingBracket(match[2], start);
+		if (!end)
+			return;
+
+		var fw = session.foldWidgets[end.row];
+		if (fw == null)
+			fw = this.getFoldWidget(session, end.row);
+
+		if (fw == "start") {
+			end.row --;
+			end.column = session.getLine(end.row).length;
+		}
+		return Range.fromPoints(start, end);
+	}
+
+	if (foldStyle !== "markbeginend")
+		return;
+		
+	var match = line.match(this.foldingStopMarker);
+	if (match) {
+		var i = match.index + match[0].length;
+
+		if (match[2]) {
+			var range = session.getCommentFoldRange(row, i);
+			range.end.column -= 2;
+			return range;
+		}
+
+		var end = {row: row, column: i};
+		var start = session.$findOpeningBracket(match[1], end);
+		
+		if (!start)
+			return;
+
+		start.column++;
+		end.column--;
+
+		return  Range.fromPoints(start, end);
+	}
+};
+
+
 modes = {
 	js: new jsMode,
 	get coffee() {
@@ -24,6 +91,8 @@ modes = {
 	}
 }
 jsMode = modes.js
+
+
 
 var tk = {}
 var delimiter = '#>>'
@@ -83,6 +152,7 @@ tk.getLineTokens = function(line, startState) {
 
 var Mode = function() {
     this.$tokenizer = tk;
+	this.foldingRules = foldMode
 };
 oop.inherits(Mode, TextMode);
 
