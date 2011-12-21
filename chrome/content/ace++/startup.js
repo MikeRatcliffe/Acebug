@@ -185,57 +185,6 @@ exports.launch = function(env, options) {
 	CStyleFolding.call(EditSession.prototype);
 	
 	/**************************** initialize ****************************************************/
-    // fix event addCommandKeyListener
-    event.addCommandKeyListener = function(el, callback) {
-        var keys = require("ace/lib/keys");
-        var lastKeyDownKeyCode = null;
-        el.addEventListener("keydown", function(e) {
-            lastKeyDownKeyCode = e.keyCode in keys.MODIFIER_KEYS? 0: e.keyCode;
-        }, true);
-        el.addEventListener("keypress", function(e) {
-            return normalizeCommandKeys(callback, e, lastKeyDownKeyCode);
-        }, true);
-        function normalizeCommandKeys(callback, e, keyCode) {
-            var hashId = 0 | (e.ctrlKey ? 1 : 0) | (e.altKey ? 2 : 0)
-                    | (e.shiftKey ? 4 : 0) | (e.metaKey ? 8 : 0);
-
-            // workaround for windows right alt bug
-            if (keyCode==0 && e.type == "keypress")
-                return callback(e, hashId, e.charCode);
-
-            if (keyCode in keys.MODIFIER_KEYS) {
-                switch (keys.MODIFIER_KEYS[keyCode]) {
-                    case "Alt":
-                        hashId = 2;
-                        break;
-                    case "Shift":
-                        hashId = 4;
-                        break
-                    case "Ctrl":
-                        hashId = 1;
-                        break;
-                    default:
-                        hashId = 8;
-                        break;
-                }
-                keyCode = 0;
-            }
-
-            if (hashId & 8 && (keyCode == 91 || keyCode == 93)) {
-                keyCode = 0;
-            }
-
-            // If there is no hashID and the keyCode is not a function key, then
-            // we don't call the callback as we don't handle a command key here
-            // (it's a normal key/character input).
-            if (hashId == 0 && !(keyCode in keys.FUNCTION_KEYS)) {
-                return false;
-            }
-
-            return callback(e, hashId, keyCode);
-        }
-    };
-
 	// global functions
     toggleGutter = function() {
         editor.renderer.setShowGutter(!editor.renderer.showGutter);
@@ -324,8 +273,8 @@ exports.launch = function(env, options) {
 	
 	// not needed in acebug
     Renderer.prototype.moveTextAreaToCursor =
-	require("ace/layer/text").Text.prototype.$pollSizeChanges=function(){}
-	Editor.prototype.setFontSize= function(size){
+	require("ace/layer/text").Text.prototype.$pollSizeChanges = function(){}
+	Editor.prototype.setFontSize = function(size){
 		this.container.style.fontSize = size
 		this.renderer.$textLayer.checkForSizeChanges()
 	}
@@ -337,11 +286,11 @@ exports.launch = function(env, options) {
                 / this.characterWidth);
         var row = Math.floor((pageY + this.scrollTop - canvasPos.top - window.pageYOffset)
                 / this.lineHeight);
-		if(row<0)
-			row=0
-		else {
+		if (row < 0) {
+			row = 0
+		} else {
 			var maxRow = this.layerConfig.maxHeight/this.layerConfig.lineHeight-1
-			if(row> maxRow)
+			if(row > maxRow)
 				row = maxRow
 		}
 		
@@ -370,7 +319,8 @@ exports.launch = function(env, options) {
     }
     window.onresize = onResize;
     onResize();
-
+	
+	/**************************** drag&drop *****************************************************/
     event.addListener(container, "dragover", function(e) {
         return event.preventDefault(e);
     });
@@ -424,7 +374,7 @@ exports.launch = function(env, options) {
     };
 
     editor.execCommand = function(name) {
-        canon.getCommand(name).exec(env);
+        canon.getCommand(name).exec(editor);
     };
 
     // add key bindings
@@ -525,7 +475,7 @@ exports.launch = function(env, options) {
             editor.session.doc.setValue("");
         },
 
-		beautify: function(){
+		beautify: function(editor){
 			function a(){
 				var session = editor.session
 				var sel = session.selection
@@ -631,14 +581,17 @@ exports.launch = function(env, options) {
 	
 
 	function onGutterClick(e) {
-		s = editor.session, row = e.row;
-		var className =  e.htmlEvent.target.className
+		var s = editor.session;
+		var className =  e.domEvent.target.className
 		if (className.indexOf('ace_fold-widget') < 0) {
-			if(className.indexOf("ace_gutter-cell") != -1 && editor.isFocused())
+			if (className.indexOf("ace_gutter-cell") != -1 && editor.isFocused()) {
+				var row = e.getDocumentPosition().row;
 				s[s.$breakpoints[row]?'clearBreakpoint':'setBreakpoint'](row);
+				e.stop()
+			}
 		}
 	}
-	editor.renderer.on('gutterclick', onGutterClick)
+	editor.on('gutterclick', onGutterClick)
 
 };
 });
