@@ -800,6 +800,11 @@ HTMLPanelEditor.prototype = {
     arrowCompletion: false,
 
     //
+	getInitialValue: function(target, value)
+    {
+        return value;
+    },
+	
     getValue: function() {
         return this.editor.session.getValue()
     },

@@ -202,9 +202,9 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         this.aceWindow = Firebug.Ace.win1;
         this.editor = this.aceWindow.editor;
 
-        this.tree = treePane.firstChild;
+        this.tree = treePane.querySelector("tree");
         this.tree.ownerPanel = this;
-        this.searchbox = this.tree.nextSibling
+        this.searchbox = treePane.querySelector("textbox")
         this.searchbox.value = this.filterText || '';
         this.updateLocationData();
         this.setFilter(this.filterText || '');
@@ -262,7 +262,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
 
         // location textbox
         if (!this.filterText)
-            this.tree.nextSibling.value = (data && data.href);
+            this.searchbox.value = (data && data.href) || "";
 
         // reset session
         this.session = null
@@ -476,6 +476,69 @@ function generateDataURI(href) {
 }
 
 var gClipboardHelper = Firebug.Ace.gClipboardHelper
+
+
+var loadSource = function(url, onSourceLoaded, onError) {
+    let url = aEvent.detail;
+    let scheme = Services.io.extractScheme(url);
+    switch (scheme) {
+    case "file":
+    case "chrome":
+    case "resource":
+        NetUtil.asyncFetch(url, function onAsyncFetch(stream, status) {
+            if (!Components.isSuccessCode(status)) {
+                Components.utils.reportError("loadingError" + [url, status]);
+				onError && onError(url, status)
+                return;
+            }
+            let source = NetUtil.readInputStreamToString(stream, stream.available());
+            stream.close();
+            onSourceLoaded(url, source);
+        }.bind(this));
+        break;
+
+    default:
+        let cacheService = Cc["@mozilla.org/network/cache-service;1"].getService(Ci.nsICacheService);
+        let session = cacheService.createSession("HTTP", Ci.nsICache.STORE_ANYWHERE, true);
+        session.doomEntriesIfExpired = false;
+        session.asyncOpenCacheEntry(url, Ci.nsICache.ACCESS_READ, {
+            onCacheEntryAvailable: function onCacheEntryAvailable(entry, mode, status) {
+                if (!Components.isSuccessCode(status)) {
+                    Components.utils.reportError("loadingError" + [url, status]);
+					onError && onError(url, status)
+                    return;
+                }
+
+                let source = "";
+                let stream = entry.openInputStream(0);
+                let head = entry.getMetaDataElement("response-head");
+
+                if (/Content-Encoding:\s*gzip/i.test(head)) {
+                    let converter = Cc["@mozilla.org/streamconv;1?from=gzip&to=uncompressed"].createInstance(Ci.nsIStreamConverter);
+                    converter.asyncConvertData("gzip", "uncompressed", {
+                        onDataAvailable: function onDataAvailable(aRequest, aContext, uncompressedStream, aOffset, aCount) {
+                            source += NetUtil.readInputStreamToString(uncompressedStream, aCount);
+                        }
+                    }, this);
+                    while (stream.available()) {
+                        converter.onDataAvailable(null, this, stream, 0, stream.available());
+                    }
+                } else {
+                    // uncompressed data
+                    while (stream.available()) {
+                        source += NetUtil.readInputStreamToString(stream, stream.available());
+                    }
+                }
+
+                stream.close();
+                entry.close();
+                onSourceLoaded(url, source);
+            }.bind(this)
+        });
+        break;
+    }
+}
+
 // ************************************************************************************************
 
 Firebug.registerPanel(Firebug.ResourcePanel);
