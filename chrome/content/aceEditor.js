@@ -75,7 +75,6 @@ Firebug.Ace = {
 
     // firebug hook
     hookIntoFirebug: function(chrome, ondetach) {
-			dump(124, chrome.getCommandEditorPatched)
         var fName = "getCommandLineLarge"
         if (Firebug.CommandLine.getCommandEditor &&
             !chrome.getCommandEditorPatched
@@ -120,7 +119,6 @@ Firebug.Ace = {
     },
 
     loadFBugPatch: function() {
-		return
         var script = document.createElementNS("http://www.w3.org/1999/xhtml", "script");
         script.type = "text/javascript;version=1.8";
         script.src ='chrome://acebug/content/patchUpFirebug.js'
@@ -601,18 +599,32 @@ Firebug.largeCommandLineEditor = {
         var loc = Firebug.currentContext.errorLocation
         var self = Firebug.largeCommandLineEditor;
         var source = (error.source||'').slice(loc.before, loc.after);
-        if(loc.fileName == error.fileName && source == self.lastEvaledCode) {
+        if (loc.fileName == error.fileName || source == self.lastEvaledCode) {
             var cellStart = self.cell.bodyStart;
             var lineNumber = error.lineNumber - loc.lineNumber;
             var lines = source.split('\n');
             var line = lines[lineNumber]||lines[lineNumber-1];
-            Firebug.Console.log(error.toString() + ' `' + line + '` @'+(lineNumber+cellStart));
+            Firebug.Console.log(
+				error.toString() + ' `' + line + '` @'+(lineNumber+cellStart)
+				, null, "errorMessage", null, null
+				, self.getConsoleSourceLink(lineNumber, lineNumber+cellStart, error.fileName)
+			);
         } else
-            Firebug.Console.log(error);
+            Firebug.Console.log(error, null, "errorMessage");
     },
     logCoffeeError: function(error) {
-        Firebug.Console.log(error.text + ' `' + error.source + '` @'+(error.row+this.cell.bodyStart));
+		var lineNumber = error.row+this.cell.bodyStart
+		
+        Firebug.Console.log(
+			error.text + ' `' + error.source + '` @'+ lineNumber,
+			null, "errorMessage", null, null,
+			Firebug.largeCommandLineEditor.getConsoleSourceLink(lineNumber, error.source)
+		);
     },
+	getConsoleSourceLink: function(line, content, href) {
+		var SourceLink = require("firebug/js/sourceLink").SourceLink
+		return new SourceLink(href || "file:///", line + 1, "ace", content)
+	},
 	onSaveCommand: function(option) {
 		var path, keepCurrentPath
 		if (option == "saveAs") {
