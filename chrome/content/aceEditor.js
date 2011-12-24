@@ -100,7 +100,6 @@ Firebug.Ace = {
             return Firebug.largeCommandLineEditor;
         };
         Firebug.ConsolePanel.prototype.detach = this.detach
-        this.loadFBugPatch()
     },
 
     detach: function(oldChrome, newChrome) {
@@ -116,13 +115,6 @@ Firebug.Ace = {
 			oldFrame.contentDocument == newFrame.contentDocument
             oldFrame.QueryInterface(Ci.nsIFrameLoaderOwner).swapFrameLoaders(newFrame);
         }
-    },
-
-    loadFBugPatch: function() {
-        var script = document.createElementNS("http://www.w3.org/1999/xhtml", "script");
-        script.type = "text/javascript;version=1.8";
-        script.src ='chrome://acebug/content/patchUpFirebug.js'
-        document.documentElement.appendChild(script)
     },
 
     showPanel: function(browser, panel) {
@@ -604,10 +596,9 @@ Firebug.largeCommandLineEditor = {
             var lineNumber = error.lineNumber - loc.lineNumber;
             var lines = source.split('\n');
             var line = lines[lineNumber]||lines[lineNumber-1];
+			error.source = source
             Firebug.Console.log(
-				error.toString() + ' `' + line + '` @'+(lineNumber+cellStart)
-				, null, "errorMessage", null, null
-				, self.getConsoleSourceLink(lineNumber, lineNumber+cellStart, error.fileName)
+				error.toString() + ' `' + line + '` @'+(lineNumber+cellStart), null, "errorMessage"
 			);
         } else
             Firebug.Console.log(error, null, "errorMessage");
@@ -616,15 +607,9 @@ Firebug.largeCommandLineEditor = {
 		var lineNumber = error.row+this.cell.bodyStart
 		
         Firebug.Console.log(
-			error.text + ' `' + error.source + '` @'+ lineNumber,
-			null, "errorMessage", null, null,
-			Firebug.largeCommandLineEditor.getConsoleSourceLink(lineNumber, error.source)
+			error.text + ' `' + error.source + '` @'+ lineNumber, null, "errorMessage"
 		);
     },
-	getConsoleSourceLink: function(line, content, href) {
-		var SourceLink = require("firebug/js/sourceLink").SourceLink
-		return new SourceLink(href || "file:///", line + 1, "ace", content)
-	},
 	onSaveCommand: function(option) {
 		var path, keepCurrentPath
 		if (option == "saveAs") {
