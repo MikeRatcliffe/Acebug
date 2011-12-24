@@ -207,15 +207,16 @@ exports.launch = function(env, options) {
 	};
 	modeCache = {
 		_get: function(name){
-			name = "ace/mode/"+name
-			if(!this[name])
+			var path = "ace/mode/"+name
+			if(!this[path])
 				try{
-					var Mode = require(name).Mode
+					var Mode = require(path).Mode
 					delete Mode.prototype.createWorker
-					this[name] = new Mode()
+					this[name] = this[path] = new Mode()
+					this[name].type = name
 				}catch(e){}
 			
-			return this[name]
+			return this[path]
 		},
 		get: function(ext){
 			if("xml|html|xul|rdf".indexOf(ext)!=-1)
@@ -491,12 +492,24 @@ exports.launch = function(env, options) {
 				
 				var line = session.getLine(range.start.row)
 				var indent = line.match(/^\s*/)[0]
-				if(range.start.column<indent.length){
+				if (range.start.column < indent.length) {
 					var doNotTrim = true;
 					range.start.column = 0
 				}
+				
 				var value = session.getTextRange(range)
-				value = (/^\s*<!?\w/.test(value)? style_html :js_beautify)(value, options)
+				var type = session.$mode.type
+				if (/^\s*<!?\w/.test(value)) {
+					var beautyfier = style_html
+				} else if (
+					type == "css" || (type == "html" && /{[\s-\w]+:[^}]+;/.test(value))
+				) {
+					var beautyfier = css_beautify
+				} else {
+					var beautyfier = js_beautify
+				}
+				
+				value = beautyfier(value, options)
 				value = value.replace(/^/gm, indent)
 				if(!doNotTrim)
 					value = value.trim()
@@ -507,7 +520,7 @@ exports.launch = function(env, options) {
 			if (window.js_beautify)
                 a();
             else
-                require(["res/beautify","res/beautify-html"], a);
+                require(["res/beautify"], a);
         },
         uglify: function() {
 

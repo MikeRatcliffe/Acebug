@@ -113,7 +113,7 @@ exports.cssText = "\
     text-decoration:underline;\
 }";
 
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText);
+var dom = require("ace/lib/dom");
+dom.importCssString(exports.cssText, exports.cssClass);
 });
 

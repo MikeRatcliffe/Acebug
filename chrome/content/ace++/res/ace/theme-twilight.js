@@ -137,7 +137,7 @@ color:#5F5A60;\
   color:#F9EE98;\
 }";
 
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText);
+var dom = require("ace/lib/dom");
+dom.importCssString(exports.cssText, exports.cssClass);
 });
 

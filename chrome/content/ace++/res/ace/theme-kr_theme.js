@@ -119,7 +119,7 @@ color:#706D5B;\
   background-color:#0F0040;\
 }";
 
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText);
+var dom = require("ace/lib/dom");
+dom.importCssString(exports.cssText, exports.cssClass);
 });
 

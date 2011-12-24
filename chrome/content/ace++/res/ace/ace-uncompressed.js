@@ -21,9 +21,6 @@ var Editor = function(renderer, session) {
     this.container = container;
     this.renderer = renderer;
     
-    renderer.on("scrollX", this._emit.bind(this, "scrollX"));
-    renderer.on("scrollY", this._emit.bind(this, "scrollY"));
-
     this.textInput  = new TextInput(renderer.getTextAreaContainer(), this);
     this.keyBinding = new KeyBinding(this);
 
@@ -74,12 +71,12 @@ var Editor = function(renderer, session) {
             this.session.removeEventListener("changeBreakpoint", this.$onChangeBreakpoint);
             this.session.removeEventListener("changeAnnotation", this.$onChangeAnnotation);
             this.session.removeEventListener("changeOverwrite", this.$onCursorChange);
+            this.session.removeEventListener("changeScrollTop", this.$onScrollTopChange);
+            this.session.removeEventListener("changeLeftTop", this.$onScrollLeftChange);
 
             var selection = this.session.getSelection();
             selection.removeEventListener("changeCursor", this.$onCursorChange);
             selection.removeEventListener("changeSelection", this.$onSelectionChange);
-
-            this.session.setScrollTopRow(this.renderer.getScrollTopRow());
         }
 
         this.session = session;
@@ -121,6 +118,12 @@ var Editor = function(renderer, session) {
         this.$onCursorChange = this.onCursorChange.bind(this);
         this.session.addEventListener("changeOverwrite", this.$onCursorChange);
 
+        this.$onScrollTopChange = this.onScrollTopChange.bind(this);
+        this.session.addEventListener("changeScrollTop", this.$onScrollTopChange);
+
+        this.$onScrollLeftChange = this.onScrollLeftChange.bind(this);
+        this.session.addEventListener("changeScrollLeft", this.$onScrollLeftChange);
+
         this.selection = session.getSelection();
         this.selection.addEventListener("changeCursor", this.$onCursorChange);
 
@@ -130,13 +133,14 @@ var Editor = function(renderer, session) {
         this.onChangeMode();
 
         this.onCursorChange();
+        this.onScrollTopChange();
+        this.onScrollLeftChange();
         this.onSelectionChange();
         this.onChangeFrontMarker();
         this.onChangeBackMarker();
         this.onChangeBreakpoint();
         this.onChangeAnnotation();
         this.session.getUseWrapMode() && this.renderer.adjustWrapLimit();
-        this.renderer.scrollToRow(session.getScrollTopRow());
         this.renderer.updateFull();
 
         this._emit("changeSession", {
@@ -252,6 +256,14 @@ var Editor = function(renderer, session) {
     this.onTokenizerUpdate = function(e) {
         var rows = e.data;
         this.renderer.updateLines(rows.first, rows.last);
+    };
+
+    this.onScrollTopChange = function() {
+        this.renderer.scrollToY(this.session.getScrollTop());
+    };
+
+    this.onScrollLeftChange = function() {
+        this.renderer.scrollToX(this.session.getScrollLeft());
     };
 
     this.onCursorChange = function() {
@@ -1182,6 +1194,7 @@ define("ace/virtual_renderer",[], function(require, exports, module) {
 
 var oop = require("ace/lib/oop");
 var dom = require("ace/lib/dom");
+var event = require("ace/lib/event");
 var useragent = require("ace/lib/useragent");
 var GutterLayer = require("ace/layer/gutter").Gutter;
 var MarkerLayer = require("ace/layer/marker").Marker;
@@ -1195,14 +1208,15 @@ var editorCss = require("ace/css/editor.css");
 dom.importCssString(editorCss, "ace_editor");
 
 var VirtualRenderer = function(container, theme) {
+    var _self = this;
+    
     this.container = container;
 
     // TODO: this breaks rendering in Cloud9 with multiple ace instances
 //    // Imports CSS once per DOM document ('ace_editor' serves as an identifier).
 //    dom.importCssString(editorCss, "ace_editor", container.ownerDocument);
     
-    // Chrome has some strange rendering issues if this is not done async
-        dom.addCssClass(container, "ace_editor");
+    dom.addCssClass(container, "ace_editor");
 
     this.setTheme(theme);
 
@@ -1239,17 +1253,23 @@ var VirtualRenderer = function(container, theme) {
     this.$horizScrollAlwaysVisible = false;
 
     this.scrollBar = new ScrollBar(container);
-    this.scrollBar.addEventListener("scroll", this.onScroll.bind(this));
+    this.scrollBar.addEventListener("scroll", function(e) {
+        _self.session.setScrollTop(e.data);
+    });
 
     this.scrollTop = 0;
+    this.scrollLeft = 0;
+
+    event.addListener(this.scroller, "scroll", function() {
+        _self.session.setScrollLeft(_self.scroller.scrollLeft);
+    });
 
     this.cursorPos = {
         row : 0,
         column : 0
     };
 
-    var _self = this;
-    this.$textLayer.addEventListener("changeCharaterSize", function() {
+    this.$textLayer.addEventListener("changeCharacterSize", function() {
         _self.characterWidth = textLayer.getCharacterWidth();
         _self.lineHeight = textLayer.getLineHeight();
         _self.$updatePrintMargin();
@@ -1302,6 +1322,7 @@ var VirtualRenderer = function(container, theme) {
     this.CHANGE_MARKER_BACK = 128;
     this.CHANGE_MARKER_FRONT = 256;
     this.CHANGE_FULL = 512;
+    this.CHANGE_H_SCROLL = 1024;
 
     oop.implement(this, EventEmitter);
 
@@ -1373,7 +1394,7 @@ var VirtualRenderer = function(container, theme) {
             this.scrollBar.setHeight(size.scrollerHeight);
 
             if (this.session) {
-                this.scrollToY(this.getScrollTop());
+                this.session.setScrollTop(this.getScrollTop());
                 changes = changes | this.CHANGE_FULL;
             }
         }
@@ -1474,9 +1495,7 @@ var VirtualRenderer = function(container, theme) {
     };
 
     this.moveTextAreaToCursor = function(textarea) {
-        // in IE the native cursor always shines through
-        // this persists in IE9
-        if (useragent.isIE)
+        if (this.layerConfig.lastRow === 0)
             return;
 
         var pos = this.$cursorLayer.getPixelPosition();
@@ -1528,10 +1547,6 @@ var VirtualRenderer = function(container, theme) {
             if (!this.$horizScrollAlwaysVisible || !this.$horizScroll)
                 this.$loop.schedule(this.CHANGE_SCROLL);
         }
-    };
-
-    this.onScroll = function(e) {
-        this.scrollToY(e.data);
     };
 
     this.$updateScrollBar = function() {
@@ -1609,6 +1624,11 @@ var VirtualRenderer = function(container, theme) {
 
         if (changes & this.CHANGE_SIZE)
             this.$updateScrollBar();
+
+        if (changes & this.CHANGE_H_SCROLL) {
+            //this.content.style.left = -this.scrollLeft + "px";
+            this.scroller.scrollLeft = this.scrollLeft
+        }
     };
 
     this.$computeLayerConfig = function() {
@@ -1626,7 +1646,7 @@ var VirtualRenderer = function(container, theme) {
             this.scroller.style.overflowX = horizScroll ? "scroll" : "hidden";
 
         var maxHeight = this.session.getScreenLength() * this.lineHeight;
-        this.scrollTop = Math.max(0, Math.min(this.scrollTop, maxHeight - this.$size.scrollerHeight));
+        this.session.setScrollTop(Math.max(0, Math.min(this.scrollTop, maxHeight - this.$size.scrollerHeight)));
 
         var lineCount = Math.ceil(minHeight / this.lineHeight) - 1;
         var firstRow = Math.max(0, Math.round((this.scrollTop - offset) / this.lineHeight));
@@ -1675,18 +1695,12 @@ var VirtualRenderer = function(container, theme) {
         this.content.style.width = longestLine + 2 * this.$padding + "px";
         this.content.style.height = minHeight + "px";
 
-        // scroller.scrollWidth was smaller than scrollLeft we needed
-        if (this.$desiredScrollLeft) {
-            this.scrollToX(this.$desiredScrollLeft);
-            this.$desiredScrollLeft = 0;
-        }
-
         // Horizontal scrollbar visibility may have changed, which changes
         // the client height of the scroller
         if (horizScrollChanged) {
             this.onResize(true);
-			this.scrollCursorIntoView()
-		}
+            this.scrollCursorIntoView()
+        }
     };
 
     this.$updateLines = function() {
@@ -1777,35 +1791,32 @@ var VirtualRenderer = function(container, theme) {
         var top = pos.top;
 
         if (this.scrollTop > top) {
-            this.scrollToY(top);
+            this.session.setScrollTop(top);
         }
 
         if (this.scrollTop + this.$size.scrollerHeight < top + this.lineHeight) {
-            this.scrollToY(top + this.lineHeight - this.$size.scrollerHeight);
+            this.session.setScrollTop(top + this.lineHeight - this.$size.scrollerHeight);
         }
 
-        var scrollLeft = this.scroller.scrollLeft;
+        var scrollLeft = this.scrollLeft;
 
         if (scrollLeft > left) {
             if (left < this.$padding + 2 * this.layerConfig.characterWidth)
                 left = 0;
-            this.scrollToX(left);
+            this.session.setScrollLeft(left);
         }
 
         if (scrollLeft + this.$size.scrollerWidth < left + this.characterWidth) {
-            if (left > this.layerConfig.width + 2 * this.$padding)
-                this.$desiredScrollLeft = left;
-            else
-                this.scrollToX(Math.round(left + this.characterWidth - this.$size.scrollerWidth));
+            this.session.setScrollLeft(Math.round(left + this.characterWidth - this.$size.scrollerWidth));
         }
     };
 
     this.getScrollTop = function() {
-        return this.scrollTop;
+        return this.session.getScrollTop();
     };
 
     this.getScrollLeft = function() {
-        return this.scroller.scrollLeft;
+        return this.session.getScrollTop();
     };
 
     this.getScrollTopRow = function() {
@@ -1817,7 +1828,7 @@ var VirtualRenderer = function(container, theme) {
     };
 
     this.scrollToRow = function(row) {
-        this.scrollToY(row * this.lineHeight);
+        this.session.setScrollTop(row * this.lineHeight);
     };
 
     this.scrollToLine = function(line, center) {
@@ -1830,17 +1841,15 @@ var VirtualRenderer = function(container, theme) {
         if (center) {
             offset -= this.$size.scrollerHeight / 2;
         }
-        this.scrollToY(offset);
+        this.session.setScrollTop(offset);
     };
 
     this.scrollToY = function(scrollTop) {
         // after calling scrollBar.setScrollTop
         // scrollbar sends us event with same scrollTop. ignore it
-        scrollTop = Math.max(0, scrollTop);
         if (this.scrollTop !== scrollTop) {
             this.$loop.schedule(this.CHANGE_SCROLL);
             this.scrollTop = scrollTop;
-            this._emit("scrollY", scrollTop);
         }
     };
 
@@ -1848,19 +1857,21 @@ var VirtualRenderer = function(container, theme) {
         if (scrollLeft <= this.$padding)
             scrollLeft = 0;
 
-        this.scroller.scrollLeft = scrollLeft;
-        this._emit("scrollX", this.scroller.scrollLeft);
+        if (this.scrollLeft !== scrollLeft) {
+            this.$loop.schedule(this.CHANGE_H_SCROLL);
+            this.scrollLeft = scrollLeft;
+        }
     };
 
     this.scrollBy = function(deltaX, deltaY) {
-        deltaY && this.scrollToY(this.scrollTop + deltaY);
-        deltaX && this.scrollToX(this.scroller.scrollLeft + deltaX);
+        deltaY && this.session.setScrollTop(this.session.getScrollTop() + deltaY);
+        deltaX && this.session.setScrollLeft(this.session.getScrollLeft() + deltaX);
     };
 
     this.isScrollableBy = function(deltaX, deltaY) {
-        if (deltaY < 0 && this.scrollTop > 0)
+        if (deltaY < 0 && this.session.getScrollTop() > 0)
            return true;
-        if (deltaY > 0 && this.scrollTop + this.$size.scrollerHeight < this.layerConfig.maxHeight)
+        if (deltaY > 0 && this.session.getScrollTop() + this.$size.scrollerHeight < this.layerConfig.maxHeight)
            return true;
         // todo: handle horizontal scrolling
     };
@@ -1868,10 +1879,14 @@ var VirtualRenderer = function(container, theme) {
     this.screenToTextCoordinates = function(pageX, pageY) {
         var canvasPos = this.scroller.getBoundingClientRect();
 
-        var col = Math.round((pageX + this.scroller.scrollLeft - canvasPos.left - this.$padding - dom.getPageScrollLeft())
-                / this.characterWidth);
-        var row = Math.floor((pageY + this.scrollTop - canvasPos.top - dom.getPageScrollTop())
-                / this.lineHeight);
+        var col = Math.round(
+            (pageX + this.scrollLeft - canvasPos.left - this.$padding - dom.getPageScrollLeft())
+            / this.characterWidth
+        );
+        var row = Math.floor(
+            (pageY + this.scrollTop - canvasPos.top - dom.getPageScrollTop())
+            / this.lineHeight
+        );
 
         return this.session.screenToDocumentPosition(row, Math.max(col, 0));
     };
@@ -1884,8 +1899,8 @@ var VirtualRenderer = function(container, theme) {
         var y = pos.row * this.lineHeight;
 
         return {
-            pageX: canvasPos.left + x - this.getScrollLeft(),
-            pageY: canvasPos.top + y - this.getScrollTop()
+            pageX: canvasPos.left + x - this.scrollLeft,
+            pageY: canvasPos.top + y - this.scrollTop
         };
     };
 
@@ -2053,6 +2068,7 @@ exports.UndoManager = UndoManager;
 });
 
 define("ace/theme/textmate",[], function(require, exports, module) {
+
 exports.isDark = false;
 exports.cssClass = "ace-tm";
 exports.cssText = ".ace-tm .ace_editor {\
@@ -2216,8 +2232,8 @@ exports.cssText = ".ace-tm .ace_editor {\
   color: rgb(255, 0, 0)\
 }";
 
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText);
+var dom = require("ace/lib/dom");
+dom.importCssString(exports.cssText, exports.cssClass);
 });
 
 define("ace/lib/oop",[], function(require, exports, module) {
@@ -3348,17 +3364,33 @@ var EditSession = function(text, mode) {
     this.getMode = function() {
         return this.$mode;
     };
-
+    
     this.$scrollTop = 0;
-    this.setScrollTopRow = function(scrollTopRow) {
-        if (this.$scrollTop === scrollTopRow) return;
+    this.setScrollTop = function(scrollTop) {
+        scrollTop = Math.round(Math.max(0, scrollTop));
+        if (this.$scrollTop === scrollTop)
+            return;
 
-        this.$scrollTop = scrollTopRow;
-        this._emit("changeScrollTop");
+        this.$scrollTop = scrollTop;
+        this._emit("changeScrollTop", {data: scrollTop});
     };
 
-    this.getScrollTopRow = function() {
+    this.getScrollTop = function() {
         return this.$scrollTop;
+    };
+    
+    this.$scrollLeft = 0;
+    this.setScrollLeft = function(scrollLeft) {
+        scrollLeft = Math.round(Math.max(0, scrollLeft));
+        if (this.$scrollLeft === scrollLeft)
+            return;
+
+        this.$scrollLeft = scrollLeft;
+        this._emit("changeScrollLeft", {data: scrollLeft});
+    };
+
+    this.getScrollLeft = function() {
+        return this.$scrollLeft;
     };
 
     this.getWidth = function() {
@@ -5779,9 +5811,9 @@ exports.importCssString = function importCssString(cssText, id, doc) {
         if (id)
             style.title = id;
     } else {
-        style = doc.createElementNS ?
-                    doc.createElementNS(XHTML_NS, "style") :
-                    doc.createElement("style");
+        style = doc.createElementNS
+            ? doc.createElementNS(XHTML_NS, "style")
+            : doc.createElement("style");
 
         style.appendChild(doc.createTextNode(cssText));
         if (id)
@@ -6043,6 +6075,12 @@ var Gutter = function(parentEl) {
 
             i++;
         }
+        
+		html.push(
+			"</div><div class='ace_gutter-cell' style='pointer-events:none;opacity:0'>",
+			this.session.getLength() - 1,
+			"</div>"
+		);
         this.element = dom.setInnerHtml(this.element, html.join(""));
         this.element.style.height = config.minHeight + "px";
         
@@ -6297,7 +6335,7 @@ var Text = function(parentEl) {
         var size = this.$measureSizes();
         if (size && (this.$characterSize.width !== size.width || this.$characterSize.height !== size.height)) {
             this.$characterSize = size;
-            this._emit("changeCharaterSize", {data: size});
+            this._emit("changeCharacterSize", {data: size});
         }
     };
 
@@ -7180,7 +7218,7 @@ define("ace/css/editor.css",[], "\
 }\
 \
 .ace_gutter-cell {\
-    padding-left: 1px;\
+    padding-left: 10px;\
     padding-right: 6px;\
 }\
 \
@@ -7196,14 +7234,20 @@ define("ace/css/editor.css",[], "\
     background-position: 0px center;\
 }\
 \
-.ace_editor .ace_sb {\
+.ace_gutter-cell.ace_info {\
+    background-image: url(\"data:image/gif;base64,R0lGODlhEAAQAMQAAAAAAEFBQVJSUl5eXmRkZGtra39/f4WFhYmJiZGRkaampry8vMPDw8zMzNXV1dzc3OTk5Orq6vDw8P///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAkAABQALAAAAAAQABAAAAUuICWOZGmeaBml5XGwFCQSBGyXRSAwtqQIiRuiwIM5BoYVbEFIyGCQoeJGrVptIQA7\");\
+    background-repeat: no-repeat;\
+    background-position: 2px center;\
+}\
+\
+.ace_sb {\
     position: absolute;\
     overflow-x: hidden;\
     overflow-y: scroll;\
     right: 0;\
 }\
 \
-.ace_editor .ace_sb div {\
+.ace_sb div {\
     position: absolute;\
     width: 1px;\
     left: 0;\
@@ -7253,11 +7297,6 @@ define("ace/css/editor.css",[], "\
 \
 .ace_text-layer {\
     color: black;\
-}\
-\
-.ace_cjk {\
-    display: inline-block;\
-    text-align: center;\
 }\
 \
 .ace_cursor-layer {\
@@ -10237,17 +10276,28 @@ var Tokenizer = function(rules, flag) {
         var state = this.rules[currentState];
         var mapping = this.matchMappings[currentState];
         var re = this.regExps[currentState];
-        re.lastIndex = 0;
         
-        var match, tokens = [];
-        
-        var lastIndex = 0;
-        
+                
         var token = {
             type: null,
             value: ""
         };
-        
+   		var n = line.length;
+        if (n > 1500 || !re) {
+			token.type = 'text'
+			if (n > 10080)
+				token.value = line.slice(0, 10000) + '):-----------------unable-to-display-line-is-too-long-----------------:(' + n;
+			else
+				token.value = line;
+			return {
+				tokens: [token],
+				state: currentState
+			};
+        }
+		
+        var match, tokens = [];
+        var lastIndex = re.lastIndex = 0;
+		       
         while (match = re.exec(line)) {
             var type = "text";
             var rule = null;

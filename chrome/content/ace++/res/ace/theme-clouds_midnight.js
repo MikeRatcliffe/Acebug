@@ -110,7 +110,8 @@ background-color:#E92E2E;\
     text-decoration:underline;\
 }";
 
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText);
+var dom = require("ace/lib/dom");
+dom.importCssString(exports.cssText, exports.cssClass);
+
 });
 
