@@ -1,6 +1,6 @@
 <!ENTITY acebug.options.title "Acebug Preferences">
 <!ENTITY acebug.options.settings "Settings">
-<!ENTITY acebug.options.showautocompletionhints "Show auto completion hints">
+<!ENTITY acebug.options.showautocompletionhints "show auto completion hints">
 <!ENTITY acebug.options.highlightactiveline "Highlight active line">
 <!ENTITY acebug.options.highlightselectedword "Highlight selected word">
 <!ENTITY acebug.options.validateasyoutype "Validate as you type (requires restart)">

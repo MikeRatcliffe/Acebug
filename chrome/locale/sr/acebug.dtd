@@ -1,5 +1,6 @@
 <!ENTITY acebug.options.title "Acebug - опције">
 <!ENTITY acebug.options.settings "Поставке">
+<!ENTITY acebug.options.showautocompletionhints "Show auto completion hints">
 <!ENTITY acebug.options.highlightactiveline "Истакни активну линију">
 <!ENTITY acebug.options.highlightselectedword "Highlight selected word">
 <!ENTITY acebug.options.validateasyoutype "Validate as you type (requires restart)">

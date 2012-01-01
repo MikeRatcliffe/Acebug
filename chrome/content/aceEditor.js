@@ -364,7 +364,6 @@ Firebug.Ace = {
         }
 
         if (range) {
-            e.gotoLine(range.end.row + 1, range.end.column);
             e.selection.setSelectionRange(range);
         }
         return range&&!range.isEmpty();
