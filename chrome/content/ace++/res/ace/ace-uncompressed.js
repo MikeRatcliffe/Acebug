@@ -177,8 +177,17 @@ var Editor = function(renderer, session) {
         this.renderer.unsetStyle(style);
     };
 
-    this.setFontSize = function(size) {
+    this.setFontSize = function(size, delta) {
+		if (delta && !size)
+			size = (parseInt(this.container.style.fontSize) || 12) + delta;
+		else if (!size)
+			size = 12;
+
+		if (typeof size == "number")
+			size = size + "px";
+	
         this.container.style.fontSize = size;
+		this.renderer.updateFontSize();
     };
 
     this.$highlightBrackets = function() {
@@ -1167,8 +1176,7 @@ var Editor = function(renderer, session) {
         var range = this.$search.find(this.session);
         if (range) {
             this.session.unfold(range);
-            this.gotoLine(range.end.row+1, range.end.column);
-            this.selection.setSelectionRange(range);
+            this.selection.setSelectionRange(range); // this scrolls selection into view
         }
     };
 
@@ -1832,12 +1840,8 @@ var VirtualRenderer = function(container, theme) {
     };
 
     this.scrollToLine = function(line, center) {
-        var lineHeight = { lineHeight: this.lineHeight };
-        var offset = 0;
-        for (var l = 1; l < line; l++) {
-            offset += this.session.getRowHeight(lineHeight, l-1);
-        }
-
+        var pos = this.$cursorLayer.getPixelPosition({row: line, column: 0});
+		var offset = pos.top
         if (center) {
             offset -= this.$size.scrollerHeight / 2;
         }
@@ -5369,12 +5373,12 @@ exports.commands = [{
     readOnly: true
 }, {
     name: "centerselection",
-    bindKey: bindKey(null, "Ctrl-L"),
+    bindKey: bindKey("Ctrl-L", "Ctrl-L"),
     exec: function(editor) { editor.centerSelection(); },
     readOnly: true
 }, {
     name: "gotoline",
-    bindKey: bindKey("Ctrl-L", "Command-L"),
+    bindKey: bindKey("Ctrl-R", "Command-L"),
     exec: function(editor) {
         var line = parseInt(prompt("Enter line number:"), 10);
         if (!isNaN(line)) {
@@ -5403,14 +5407,29 @@ exports.commands = [{
     exec: function(editor) { editor.session.unfold(); },
     readOnly: true
 }, {
+    name: "selectWord",
+    bindKey: bindKey("Ctrl-W", ""),
+    exec: function(editor) { editor.selection.selectWord(); },
+    readOnly: true
+}, , {
     name: "findnext",
-    bindKey: bindKey("Ctrl-K", "Command-G"),
+    bindKey: bindKey("Ctrl-R", "Command-G"),
     exec: function(editor) { editor.findNext(); },
     readOnly: true
 }, {
     name: "findprevious",
-    bindKey: bindKey("Ctrl-Shift-K", "Command-Shift-G"),
+    bindKey: bindKey("Ctrl-Shift-R", "Command-Shift-G"),
     exec: function(editor) { editor.findPrevious(); },
+    readOnly: true
+}, {
+    name: "selectAndFindnext",
+    bindKey: bindKey("Ctrl-K", ""),
+    exec: function(editor) { editor.selection.selectWord(); editor.findNext(); },
+    readOnly: true
+}, {
+    name: "selectAndFfindprevious",
+    bindKey: bindKey("Ctrl-Shift-K", ""),
+    exec: function(editor) { editor.selection.selectWord(); editor.findPrevious(); },
     readOnly: true
 }, {
     name: "find",
@@ -5427,12 +5446,12 @@ exports.commands = [{
     readOnly: true
 }, {
     name: "selecttostart",
-    bindKey: bindKey("Ctrl-Shift-Home|Alt-Shift-Up", "Command-Shift-Up"),
+    bindKey: bindKey("Ctrl-Shift-Home", "Command-Shift-Up"),
     exec: function(editor) { editor.getSelection().selectFileStart(); },
     readOnly: true
 }, {
     name: "gotostart",
-    bindKey: bindKey("Ctrl-Home|Ctrl-Up", "Command-Home|Command-Up"),
+    bindKey: bindKey("Ctrl-Home", "Command-Home|Command-Up"),
     exec: function(editor) { editor.navigateFileStart(); },
     readOnly: true
 }, {
@@ -5447,12 +5466,12 @@ exports.commands = [{
     readOnly: true
 }, {
     name: "selecttoend",
-    bindKey: bindKey("Ctrl-Shift-End|Alt-Shift-Down", "Command-Shift-Down"),
+    bindKey: bindKey("Ctrl-Shift-End", "Command-Shift-Down"),
     exec: function(editor) { editor.getSelection().selectFileEnd(); },
     readOnly: true
 }, {
     name: "gotoend",
-    bindKey: bindKey("Ctrl-End|Ctrl-Down", "Command-End|Command-Down"),
+    bindKey: bindKey("Ctrl-End", "Command-End|Command-Down"),
     exec: function(editor) { editor.navigateFileEnd(); },
     readOnly: true
 }, {
@@ -5575,6 +5594,21 @@ exports.commands = [{
     bindKey: bindKey("Ctrl-Shift-E", "Command-Shift-E"),
     exec: function(editor) { editor.commands.replay(editor); },
     readOnly: true
+}, {
+    name: "fontsize++",
+    bindKey: bindKey("Ctrl-+", "Command-+"),
+    exec: function(editor) { editor.setFontSize(null, +1) },
+    readOnly: true
+}, {
+    name: "fontsize--",
+    bindKey: bindKey("Ctrl--", "Command--"),
+    exec: function(editor) { editor.setFontSize(null, -1) },
+    readOnly: true
+}, {
+    name: "fontsizetodefault",
+    bindKey: bindKey("Ctrl-NUMPAD0|Ctrl-0", "Command-Numpad0|Command-0"),
+    exec: function(editor) { editor.setFontSize(null) },
+    readOnly: true
 }, 
 
 // commands disabled in readOnly mode
@@ -5588,7 +5622,7 @@ exports.commands = [{
     exec: function(editor) { editor.toggleCommentLines(); }
 }, {
     name: "replace",
-    bindKey: bindKey("Ctrl-R", "Command-Option-F"),
+    bindKey: bindKey("Ctrl-H", "Command-Option-F"),
     exec: function(editor) {
         var needle = prompt("Find:", editor.getCopyText());
         if (!needle)
@@ -5600,7 +5634,7 @@ exports.commands = [{
     }
 }, {
     name: "replaceall",
-    bindKey: bindKey("Ctrl-Shift-R", "Command-Shift-Option-F"),
+    bindKey: bindKey("Ctrl-Shift-H", "Command-Shift-Option-F"),
     exec: function(editor) {
         var needle = prompt("Find:");
         if (!needle)
@@ -5957,6 +5991,316 @@ exports.getParentWindow = function(document) {
 
 });
 
+define("ace/lib/event",[], function(require, exports, module) {
+
+var keys = require("ace/lib/keys");
+var useragent = require("ace/lib/useragent");
+var dom = require("ace/lib/dom");
+
+exports.addListener = function(elem, type, callback) {
+    if (elem.addEventListener) {
+        return elem.addEventListener(type, callback, false);
+    }
+    if (elem.attachEvent) {
+        var wrapper = function() {
+            callback(window.event);
+        };
+        callback._wrapper = wrapper;
+        elem.attachEvent("on" + type, wrapper);
+    }
+};
+
+exports.removeListener = function(elem, type, callback) {
+    if (elem.removeEventListener) {
+        return elem.removeEventListener(type, callback, false);
+    }
+    if (elem.detachEvent) {
+        elem.detachEvent("on" + type, callback._wrapper || callback);
+    }
+};
+
+/**
+* Prevents propagation and clobbers the default action of the passed event
+*/
+exports.stopEvent = function(e) {
+    exports.stopPropagation(e);
+    exports.preventDefault(e);
+    return false;
+};
+
+exports.stopPropagation = function(e) {
+    if (e.stopPropagation)
+        e.stopPropagation();
+    else
+        e.cancelBubble = true;
+};
+
+exports.preventDefault = function(e) {
+    if (e.preventDefault)
+        e.preventDefault();
+    else
+        e.returnValue = false;
+};
+
+exports.getDocumentX = function(e) {
+    if (e.clientX) {
+        return e.clientX + dom.getPageScrollLeft();
+    } else {
+        return e.pageX;
+    }
+};
+
+exports.getDocumentY = function(e) {
+    if (e.clientY) {
+        return e.clientY + dom.getPageScrollTop();
+    } else {
+        return e.pageY;
+    }
+};
+
+/**
+ * @return {Number} 0 for left button, 1 for middle button, 2 for right button
+ */
+exports.getButton = function(e) {
+    if (e.type == "dblclick")
+        return 0;
+    else if (e.type == "contextmenu")
+        return 2;
+
+    // DOM Event
+    if (e.preventDefault) {
+        return e.button;
+    }
+    // old IE
+    else {
+        return {1:0, 2:2, 4:1}[e.button];
+    }
+};
+
+if (document.documentElement.setCapture) {
+    exports.capture = function(el, eventHandler, releaseCaptureHandler) {
+        function onMouseMove(e) {
+            eventHandler(e);
+            return exports.stopPropagation(e);
+        }
+
+        var called = false;
+        function onReleaseCapture(e) {
+            eventHandler(e);
+
+            if (!called) {
+                called = true;
+                releaseCaptureHandler(e);
+            }
+
+            exports.removeListener(el, "mousemove", eventHandler);
+            exports.removeListener(el, "mouseup", onReleaseCapture);
+            exports.removeListener(el, "losecapture", onReleaseCapture);
+
+            el.releaseCapture();
+        }
+
+        exports.addListener(el, "mousemove", eventHandler);
+        exports.addListener(el, "mouseup", onReleaseCapture);
+        exports.addListener(el, "losecapture", onReleaseCapture);
+        el.setCapture();
+    };
+}
+else {
+    exports.capture = function(el, eventHandler, releaseCaptureHandler) {
+        function onMouseMove(e) {
+            eventHandler(e);
+            e.stopPropagation();
+        }
+
+        function onMouseUp(e) {
+            eventHandler && eventHandler(e);
+            releaseCaptureHandler && releaseCaptureHandler(e);
+
+            document.removeEventListener("mousemove", onMouseMove, true);
+            document.removeEventListener("mouseup", onMouseUp, true);
+
+            e.stopPropagation();
+        }
+
+        document.addEventListener("mousemove", onMouseMove, true);
+        document.addEventListener("mouseup", onMouseUp, true);
+    };
+}
+
+exports.addMouseWheelListener = function(el, callback) {
+    var max = 0;
+    var listener = function(e) {
+        if (e.wheelDelta !== undefined) {
+
+            // some versions of Safari (e.g. 5.0.5) report insanely high
+            // scroll values. These browsers require a higher factor
+            if (Math.abs(e.wheelDeltaY) > max)
+                max = Math.abs(e.wheelDeltaY);
+
+            if (max > 5000)
+                var factor = 400;
+            else
+                var factor = 8;
+
+            if (e.wheelDeltaX !== undefined) {
+                e.wheelX = -e.wheelDeltaX / factor;
+                e.wheelY = -e.wheelDeltaY / factor;
+            } else {
+                e.wheelX = 0;
+                e.wheelY = -e.wheelDelta / factor;
+            }
+        }
+        else {
+            if (e.axis && e.axis == e.HORIZONTAL_AXIS) {
+                e.wheelX = (e.detail || 0) * 5;
+                e.wheelY = 0;
+            } else {
+                e.wheelX = 0;
+                e.wheelY = (e.detail || 0) * 5;
+            }
+        }
+        callback(e);
+    };
+    exports.addListener(el, "DOMMouseScroll", listener);
+    exports.addListener(el, "mousewheel", listener);
+};
+
+exports.addMultiMouseDownListener = function(el, button, count, timeout, callback) {
+    var clicks = 0;
+    var startX, startY;
+
+    var listener = function(e) {
+        clicks += 1;
+        if (clicks == 1) {
+            startX = e.clientX;
+            startY = e.clientY;
+
+            setTimeout(function() {
+                clicks = 0;
+            }, timeout || 600);
+        }
+
+        var isButton = exports.getButton(e) == button;
+        if (!isButton || Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5)
+            clicks = 0;
+
+        if (clicks == count) {
+            clicks = 0;
+            callback(e);
+        }
+
+        if (isButton)
+            return exports.preventDefault(e);
+    };
+
+    exports.addListener(el, "mousedown", listener);
+    useragent.isOldIE && exports.addListener(el, "dblclick", listener);
+};
+
+function normalizeCommandKeys(callback, e, keyCode) {
+    var hashId = 0;
+    if (useragent.isOpera && useragent.isMac) {
+        hashId = 0 | (e.metaKey ? 1 : 0) | (e.altKey ? 2 : 0)
+            | (e.shiftKey ? 4 : 0) | (e.ctrlKey ? 8 : 0);
+    } else {
+        hashId = 0 | (e.ctrlKey ? 1 : 0) | (e.altKey ? 2 : 0)
+            | (e.shiftKey ? 4 : 0) | (e.metaKey ? 8 : 0);
+    }
+
+    if (keyCode in keys.MODIFIER_KEYS) {
+        switch (keys.MODIFIER_KEYS[keyCode]) {
+            case "Alt":
+                hashId = 2;
+                break;
+            case "Shift":
+                hashId = 4;
+                break;
+            case "Ctrl":
+                hashId = 1;
+                break;
+            default:
+                hashId = 8;
+                break;
+        }
+        keyCode = 0;
+    }
+
+    if (hashId & 8 && (keyCode == 91 || keyCode == 93)) {
+        keyCode = 0;
+    }
+
+    // If there is no hashID and the keyCode is not a function key, then
+    // we don't call the callback as we don't handle a command key here
+    // (it's a normal key/character input).
+    if (!hashId && !(keyCode in keys.FUNCTION_KEYS) && !(keyCode in keys.PRINTABLE_KEYS)) {
+        return false;
+    }
+    return callback(e, hashId, keyCode);
+}
+
+exports.addCommandKeyListener = function(el, callback) {
+    var addListener = exports.addListener;
+    if (useragent.isOldGecko) {
+        // Old versions of Gecko aka. Firefox < 4.0 didn't repeat the keydown
+        // event if the user pressed the key for a longer time. Instead, the
+        // keydown event was fired once and later on only the keypress event.
+        // To emulate the 'right' keydown behavior, the keyCode of the initial
+        // keyDown event is stored and in the following keypress events the
+        // stores keyCode is used to emulate a keyDown event.
+        var lastKeyDownKeyCode = null;
+        addListener(el, "keydown", function(e) {
+            lastKeyDownKeyCode = e.keyCode;
+        });
+        addListener(el, "keypress", function(e) {
+            return normalizeCommandKeys(callback, e, lastKeyDownKeyCode);
+        });
+    } else {
+        var lastDown = null;
+
+        addListener(el, "keydown", function(e) {
+            lastDown = e.keyIdentifier || e.keyCode;
+            return normalizeCommandKeys(callback, e, e.keyCode);
+        });
+
+        // repeated keys are fired as keypress and not keydown events
+        if (useragent.isMac && useragent.isOpera) {
+            addListener(el, "keypress", function(e) {
+                var keyId = e.keyIdentifier || e.keyCode;
+                if (lastDown !== keyId) {
+                    return normalizeCommandKeys(callback, e, lastDown);
+                } else {
+                    lastDown = null;
+                }
+            });
+        }
+    }
+};
+
+if (window.postMessage) {
+    var postMessageId = 1;
+    exports.nextTick = function(callback, win) {
+        win = win || window;
+        var messageName = "zero-timeout-message-" + postMessageId;            
+        exports.addListener(win, "message", function listener(e) {
+            if (e.data == messageName) {
+                exports.stopPropagation(e);
+                exports.removeListener(win, "message", listener);
+                callback();
+            }
+        });
+        win.postMessage(messageName, "*");
+    };
+}
+else {
+    exports.nextTick = function(callback, win) {
+        win = win || window;
+        window.setTimeout(callback, 0);
+    };
+}
+
+});
+
 define("ace/layer/gutter",[], function(require, exports, module) {
 
 var dom = require("ace/lib/dom");
@@ -6075,12 +6419,11 @@ var Gutter = function(parentEl) {
 
             i++;
         }
-        
-		html.push(
-			"</div><div class='ace_gutter-cell' style='pointer-events:none;opacity:0'>",
-			this.session.getLength() - 1,
-			"</div>"
-		);
+        html.push(
+            "</div><div class='ace_gutter-cell' style='pointer-events:none;opacity:0'>",
+            this.session.getLength() - 1,
+            "</div>"
+        );
         this.element = dom.setInnerHtml(this.element, html.join(""));
         this.element.style.height = config.minHeight + "px";
         
@@ -6862,7 +7205,7 @@ var Cursor = function(parentEl) {
         }, 1000);
     };
 
-    this.getPixelPosition = function(onScreen) {
+    this.getPixelPosition = function(position, onScreen) {
         if (!this.config || !this.session) {
             return {
                 left : 0,
@@ -6870,7 +7213,8 @@ var Cursor = function(parentEl) {
             };
         }
 
-        var position = this.session.selection.getCursor();
+		if (!position)
+			position = this.session.selection.getCursor();
         var pos = this.session.documentToScreenPosition(position);
         var cursorLeft = Math.round(this.$padding +
                                     pos.column * this.config.characterWidth);
@@ -6886,7 +7230,7 @@ var Cursor = function(parentEl) {
     this.update = function(config) {
         this.config = config;
 
-        this.pixelPos = this.getPixelPosition(true);
+        this.pixelPos = this.getPixelPosition(null, true);
 
         this.cursor.style.left = this.pixelPos.left + "px";
         this.cursor.style.top =  this.pixelPos.top + "px";
@@ -7443,316 +7787,6 @@ define("ace/css/editor.css",[], "\
     border-color: #DE5555;\
 }\
 ");
-
-define("ace/lib/event",[], function(require, exports, module) {
-
-var keys = require("ace/lib/keys");
-var useragent = require("ace/lib/useragent");
-var dom = require("ace/lib/dom");
-
-exports.addListener = function(elem, type, callback) {
-    if (elem.addEventListener) {
-        return elem.addEventListener(type, callback, false);
-    }
-    if (elem.attachEvent) {
-        var wrapper = function() {
-            callback(window.event);
-        };
-        callback._wrapper = wrapper;
-        elem.attachEvent("on" + type, wrapper);
-    }
-};
-
-exports.removeListener = function(elem, type, callback) {
-    if (elem.removeEventListener) {
-        return elem.removeEventListener(type, callback, false);
-    }
-    if (elem.detachEvent) {
-        elem.detachEvent("on" + type, callback._wrapper || callback);
-    }
-};
-
-/**
-* Prevents propagation and clobbers the default action of the passed event
-*/
-exports.stopEvent = function(e) {
-    exports.stopPropagation(e);
-    exports.preventDefault(e);
-    return false;
-};
-
-exports.stopPropagation = function(e) {
-    if (e.stopPropagation)
-        e.stopPropagation();
-    else
-        e.cancelBubble = true;
-};
-
-exports.preventDefault = function(e) {
-    if (e.preventDefault)
-        e.preventDefault();
-    else
-        e.returnValue = false;
-};
-
-exports.getDocumentX = function(e) {
-    if (e.clientX) {
-        return e.clientX + dom.getPageScrollLeft();
-    } else {
-        return e.pageX;
-    }
-};
-
-exports.getDocumentY = function(e) {
-    if (e.clientY) {
-        return e.clientY + dom.getPageScrollTop();
-    } else {
-        return e.pageY;
-    }
-};
-
-/**
- * @return {Number} 0 for left button, 1 for middle button, 2 for right button
- */
-exports.getButton = function(e) {
-    if (e.type == "dblclick")
-        return 0;
-    else if (e.type == "contextmenu")
-        return 2;
-
-    // DOM Event
-    if (e.preventDefault) {
-        return e.button;
-    }
-    // old IE
-    else {
-        return {1:0, 2:2, 4:1}[e.button];
-    }
-};
-
-if (document.documentElement.setCapture) {
-    exports.capture = function(el, eventHandler, releaseCaptureHandler) {
-        function onMouseMove(e) {
-            eventHandler(e);
-            return exports.stopPropagation(e);
-        }
-
-        var called = false;
-        function onReleaseCapture(e) {
-            eventHandler(e);
-
-            if (!called) {
-                called = true;
-                releaseCaptureHandler(e);
-            }
-
-            exports.removeListener(el, "mousemove", eventHandler);
-            exports.removeListener(el, "mouseup", onReleaseCapture);
-            exports.removeListener(el, "losecapture", onReleaseCapture);
-
-            el.releaseCapture();
-        }
-
-        exports.addListener(el, "mousemove", eventHandler);
-        exports.addListener(el, "mouseup", onReleaseCapture);
-        exports.addListener(el, "losecapture", onReleaseCapture);
-        el.setCapture();
-    };
-}
-else {
-    exports.capture = function(el, eventHandler, releaseCaptureHandler) {
-        function onMouseMove(e) {
-            eventHandler(e);
-            e.stopPropagation();
-        }
-
-        function onMouseUp(e) {
-            eventHandler && eventHandler(e);
-            releaseCaptureHandler && releaseCaptureHandler(e);
-
-            document.removeEventListener("mousemove", onMouseMove, true);
-            document.removeEventListener("mouseup", onMouseUp, true);
-
-            e.stopPropagation();
-        }
-
-        document.addEventListener("mousemove", onMouseMove, true);
-        document.addEventListener("mouseup", onMouseUp, true);
-    };
-}
-
-exports.addMouseWheelListener = function(el, callback) {
-    var max = 0;
-    var listener = function(e) {
-        if (e.wheelDelta !== undefined) {
-
-            // some versions of Safari (e.g. 5.0.5) report insanely high
-            // scroll values. These browsers require a higher factor
-            if (Math.abs(e.wheelDeltaY) > max)
-                max = Math.abs(e.wheelDeltaY);
-
-            if (max > 5000)
-                var factor = 400;
-            else
-                var factor = 8;
-
-            if (e.wheelDeltaX !== undefined) {
-                e.wheelX = -e.wheelDeltaX / factor;
-                e.wheelY = -e.wheelDeltaY / factor;
-            } else {
-                e.wheelX = 0;
-                e.wheelY = -e.wheelDelta / factor;
-            }
-        }
-        else {
-            if (e.axis && e.axis == e.HORIZONTAL_AXIS) {
-                e.wheelX = (e.detail || 0) * 5;
-                e.wheelY = 0;
-            } else {
-                e.wheelX = 0;
-                e.wheelY = (e.detail || 0) * 5;
-            }
-        }
-        callback(e);
-    };
-    exports.addListener(el, "DOMMouseScroll", listener);
-    exports.addListener(el, "mousewheel", listener);
-};
-
-exports.addMultiMouseDownListener = function(el, button, count, timeout, callback) {
-    var clicks = 0;
-    var startX, startY;
-
-    var listener = function(e) {
-        clicks += 1;
-        if (clicks == 1) {
-            startX = e.clientX;
-            startY = e.clientY;
-
-            setTimeout(function() {
-                clicks = 0;
-            }, timeout || 600);
-        }
-
-        var isButton = exports.getButton(e) == button;
-        if (!isButton || Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5)
-            clicks = 0;
-
-        if (clicks == count) {
-            clicks = 0;
-            callback(e);
-        }
-
-        if (isButton)
-            return exports.preventDefault(e);
-    };
-
-    exports.addListener(el, "mousedown", listener);
-    useragent.isOldIE && exports.addListener(el, "dblclick", listener);
-};
-
-function normalizeCommandKeys(callback, e, keyCode) {
-    var hashId = 0;
-    if (useragent.isOpera && useragent.isMac) {
-        hashId = 0 | (e.metaKey ? 1 : 0) | (e.altKey ? 2 : 0)
-            | (e.shiftKey ? 4 : 0) | (e.ctrlKey ? 8 : 0);
-    } else {
-        hashId = 0 | (e.ctrlKey ? 1 : 0) | (e.altKey ? 2 : 0)
-            | (e.shiftKey ? 4 : 0) | (e.metaKey ? 8 : 0);
-    }
-
-    if (keyCode in keys.MODIFIER_KEYS) {
-        switch (keys.MODIFIER_KEYS[keyCode]) {
-            case "Alt":
-                hashId = 2;
-                break;
-            case "Shift":
-                hashId = 4;
-                break;
-            case "Ctrl":
-                hashId = 1;
-                break;
-            default:
-                hashId = 8;
-                break;
-        }
-        keyCode = 0;
-    }
-
-    if (hashId & 8 && (keyCode == 91 || keyCode == 93)) {
-        keyCode = 0;
-    }
-
-    // If there is no hashID and the keyCode is not a function key, then
-    // we don't call the callback as we don't handle a command key here
-    // (it's a normal key/character input).
-    if (!hashId && !(keyCode in keys.FUNCTION_KEYS) && !(keyCode in keys.PRINTABLE_KEYS)) {
-        return false;
-    }
-    return callback(e, hashId, keyCode);
-}
-
-exports.addCommandKeyListener = function(el, callback) {
-    var addListener = exports.addListener;
-    if (useragent.isOldGecko) {
-        // Old versions of Gecko aka. Firefox < 4.0 didn't repeat the keydown
-        // event if the user pressed the key for a longer time. Instead, the
-        // keydown event was fired once and later on only the keypress event.
-        // To emulate the 'right' keydown behavior, the keyCode of the initial
-        // keyDown event is stored and in the following keypress events the
-        // stores keyCode is used to emulate a keyDown event.
-        var lastKeyDownKeyCode = null;
-        addListener(el, "keydown", function(e) {
-            lastKeyDownKeyCode = e.keyCode;
-        });
-        addListener(el, "keypress", function(e) {
-            return normalizeCommandKeys(callback, e, lastKeyDownKeyCode);
-        });
-    } else {
-        var lastDown = null;
-
-        addListener(el, "keydown", function(e) {
-            lastDown = e.keyIdentifier || e.keyCode;
-            return normalizeCommandKeys(callback, e, e.keyCode);
-        });
-
-        // repeated keys are fired as keypress and not keydown events
-        if (useragent.isMac && useragent.isOpera) {
-            addListener(el, "keypress", function(e) {
-                var keyId = e.keyIdentifier || e.keyCode;
-                if (lastDown !== keyId) {
-                    return normalizeCommandKeys(callback, e, lastDown);
-                } else {
-                    lastDown = null;
-                }
-            });
-        }
-    }
-};
-
-if (window.postMessage) {
-    var postMessageId = 1;
-    exports.nextTick = function(callback, win) {
-        win = win || window;
-        var messageName = "zero-timeout-message-" + postMessageId;            
-        exports.addListener(win, "message", function listener(e) {
-            if (e.data == messageName) {
-                exports.stopPropagation(e);
-                exports.removeListener(win, "message", listener);
-                callback();
-            }
-        });
-        win.postMessage(messageName, "*");
-    };
-}
-else {
-    exports.nextTick = function(callback, win) {
-        win = win || window;
-        window.setTimeout(callback, 0);
-    };
-}
-
-});
 
 define("ace/mouse/default_handlers",[], function(require, exports, module) {
 
@@ -9958,7 +9992,7 @@ function Folding() {
 
     this.foldAll = function(startRow, endRow) {
         var foldWidgets = this.foldWidgets;
-        endRow = endRow || foldWidgets.length;
+        endRow = endRow || this.getLength();
         for (var row = startRow || 0; row < endRow; row++) {
             if (foldWidgets[row] == null)
                 foldWidgets[row] = this.getFoldWidget(row);

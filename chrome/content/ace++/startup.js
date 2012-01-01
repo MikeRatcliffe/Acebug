@@ -275,10 +275,6 @@ exports.launch = function(env, options) {
 	// not needed in acebug
     Renderer.prototype.moveTextAreaToCursor =
 	require("ace/layer/text").Text.prototype.$pollSizeChanges = function(){}
-	Editor.prototype.setFontSize = function(size){
-		this.container.style.fontSize = size
-		this.renderer.$textLayer.checkForSizeChanges()
-	}
 	// selection on first/last lines
 	Renderer.prototype.screenToTextCoordinates = function(pageX, pageY) {
         var canvasPos = this.scroller.getBoundingClientRect();
