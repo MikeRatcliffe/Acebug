@@ -533,18 +533,16 @@ exports.launch = function(env, options) {
         bindKey: {
             win: "Ctrl-S",
             mac: "Command-S",
-            sender: "editor"
         },
         exec: function(editor) {
 			aceManager.saveFile(editor, "session")
         }
     });
     canon.addCommand({
-        name: "save",
+        name: "save-as",
         bindKey: {
             win: "Ctrl-Shift-S",
             mac: "Command-Shift-S",
-            sender: "editor"
         },
         exec: function(editor) {
 			aceManager.saveFile(editor, "picker")
@@ -555,7 +553,6 @@ exports.launch = function(env, options) {
         bindKey: {
             win: "Ctrl-O",
             mac: "Command-O",
-            sender: "editor"
         },
         exec: function(editor) {
 			aceManager.loadFile(editor)
