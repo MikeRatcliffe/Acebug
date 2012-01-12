@@ -920,7 +920,7 @@ var StyleSheetEditor = function() {
     this.session.owner = 'stylesheetEditor';
     this.session.autocompletionType = 'css';
 
-    this.cmdID = Firebug.version<'1.8'? 'cmd_toggleCSSEditing': 'cmd_togglecssEditMode';
+    this.cmdID = 'cmd_togglecssEditMode';
 };
 
 StyleSheetEditor.prototype = FBL.extend(HTMLPanelEditor.prototype, {
