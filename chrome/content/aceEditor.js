@@ -38,6 +38,8 @@ Firebug.Ace = {
         acebugPrefObserver.register();
 
         this.hookIntoFirebug(Firebug.chrome)
+		
+		Firebug.largeCommandLineEditor.hook()
     },
 
     shutdown: function() {
@@ -371,6 +373,50 @@ Firebug.Ace = {
 };
 
 Firebug.largeCommandLineEditor = {
+	hook: function(){
+		Components.utils.import("resource://gre/modules/reflect.jsm")		
+		Firebug.CommandLine.enter = this.onLineEditorEnterOverride		
+	},
+	onLineEditorEnterOverride: function (context, command) {
+		var expr = command ? command : this.acceptCompletionOrReturnIt(context);
+		if (expr == "") {
+			return;
+		}
+		var mozJSEnabled = Firebug.Options.getPref("javascript", "enabled");
+		if (!mozJSEnabled) {
+			Firebug.Console.log(Locale.$STR("console.JSDisabledInFirefoxPrefs"), context, "info");
+			return;
+		}
+		if (!Firebug.commandEditor || context.panelName != "console") {
+			this.clear(context);
+			Firebug.Console.log(">>> " + expr, context, "command", FirebugReps.Text);
+		} else {
+			var shortExpr = Str.cropString(Str.stripNewLines(expr), 100);
+			Firebug.Console.log(">>> " + shortExpr, context, "command", FirebugReps.Text);
+		}
+		this.commandHistory.appendToHistory(expr);
+
+		var goodOrBad = Firebug.Console.log.bind(Firebug.Console);
+		this.evaluate(Firebug.largeCommandLineEditor.jsOrCoffee(expr), context, null, null, goodOrBad, goodOrBad);
+	},
+
+	jsOrCoffee: function(v) {	
+		try {
+			Reflect.parse("sd+")    
+			return v
+		} catch(e) {
+			try {
+				return this.coffeeScriptCompiler.compile(v, {bare:true})
+			} catch(e) {
+				return v
+			}
+		}
+	},
+	get coffeeScriptCompiler (){
+		return (Firebug.Ace.win2.coffeeScriptCompiler ||	Services.scriptloader.loadSubScript(
+			"chrome://acebug/content/ace++/res/coffee-script.js", Firebug.Ace.win2
+		), Firebug.Ace.win2.coffeeScriptCompiler = Firebug.Ace.win2.CoffeeScript)
+	},
     initialize: function() {
         if (!this._getValue)
             return;
@@ -503,6 +549,7 @@ Firebug.largeCommandLineEditor = {
 
         if (runSelection)
             var text = editor.getCopyText();
+
         if (!text) {
             //log lines with breakpoints
             var bp = editor.session.$breakpoints;
@@ -512,25 +559,30 @@ Firebug.largeCommandLineEditor = {
             } else if (cell.coffeeText) {
                 text = cell.coffeeText
             } else {
-                text = cell.body.map(function(x, i) {
-                    var index = i + cell.bodyStart
-					if (bp[index]) {
-                        // strip comments and ;
-                        x = x.replace(/\/\/.*$/, '')
-                             .replace(/;\s*$/, '')
-                             .replace(/^\s*var\s+/g, '')
-						if(x)
-							try {
-								Function('console.log(' + x + ')')
-								x = 'console.log(' + x + ')'
-								bp[index] = 'valid'
-							}catch(e){
-								bp[index] = 'invalid'
-							}
-                    }
-                    return x;
-                }).join('\n');
-				editor.session.setBreakpoints(bp)
+				var input = cell.body.join('\n')
+				var cf = this.jsOrCoffee(input)
+				if (cf == input){
+					text = cell.body.map(function(x, i) {
+						var index = i + cell.bodyStart
+						if (bp[index]) {
+							// strip comments and ;
+							x = x.replace(/\/\/.*$/, '')
+								 .replace(/;\s*$/, '')
+								 .replace(/^\s*var\s+/g, '')
+							if(x)
+								try {
+									Function('console.log(' + x + ')')
+									x = 'console.log(' + x + ')'
+									bp[index] = 'valid'
+								}catch(e){
+									bp[index] = 'invalid'
+								}
+						}
+						return x;
+					}).join('\n');
+					editor.session.setBreakpoints(bp)
+				} else
+					text = cf
 			}
             Firebug.CommandLine.commandHistory.appendToHistory(cell.body.join('\n'));
         }
