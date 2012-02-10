@@ -21,6 +21,7 @@ var Editor = function(renderer, session) {
     this.container = container;
     this.renderer = renderer;
     
+    this.commands = new CommandManager(useragent.isMac ? "mac" : "win", defaultCommands);
     this.textInput  = new TextInput(renderer.getTextAreaContainer(), this);
     this.keyBinding = new KeyBinding(this);
 
@@ -37,7 +38,6 @@ var Editor = function(renderer, session) {
         wrap: true
     });
 
-    this.commands = new CommandManager(useragent.isMac ? "mac" : "win", defaultCommands);
     this.setSession(session || new EditSession(""));
 };
 
@@ -132,7 +132,10 @@ var Editor = function(renderer, session) {
 
         this.onChangeMode();
 
+        this.$blockScrolling += 1;
         this.onCursorChange();
+        this.$blockScrolling -= 1;
+
         this.onScrollTopChange();
         this.onScrollLeftChange();
         this.onSelectionChange();
@@ -178,16 +181,16 @@ var Editor = function(renderer, session) {
     };
 
     this.setFontSize = function(size, delta) {
-		if (delta && !size)
-			size = (parseInt(this.container.style.fontSize) || 12) + delta;
-		else if (!size)
-			size = 12;
+        if (delta && !size)
+            size = (parseInt(this.container.style.fontSize) || 12) + delta;
+        else if (!size)
+            size = 12;
 
-		if (typeof size == "number")
-			size = size + "px";
-	
+        if (typeof size == "number")
+            size = size + "px";
+    
         this.container.style.fontSize = size;
-		this.renderer.updateFontSize();
+        this.renderer.updateFontSize();
     };
 
     this.$highlightBrackets = function() {
@@ -998,12 +1001,12 @@ var Editor = function(renderer, session) {
         }
         
         if (pos) {
-			if (select) {
-				this.selection.selectTo(pos.row, pos.column);
-			} else {
-				this.clearSelection();
-				this.moveCursorTo(pos.row, pos.column);
-			}
+            if (select) {
+                this.selection.selectTo(pos.row, pos.column);
+            } else {
+            this.clearSelection();
+            this.moveCursorTo(pos.row, pos.column);
+        }
         }
     };
     
@@ -1267,7 +1270,7 @@ var VirtualRenderer = function(container, theme) {
 
     this.scrollTop = 0;
     this.scrollLeft = 0;
-
+    
     event.addListener(this.scroller, "scroll", function() {
         _self.session.setScrollLeft(_self.scroller.scrollLeft);
     });
@@ -1574,21 +1577,27 @@ var VirtualRenderer = function(container, theme) {
             changes & this.CHANGE_SCROLL
         )
             this.$computeLayerConfig();
+        
+        //this.content.style.left = -this.scrollLeft + "px";
+        if (changes & this.CHANGE_H_SCROLL)
+            this.scroller.scrollLeft = this.scrollLeft
 
         // full
         if (changes & this.CHANGE_FULL) {
+            // update scrollbar first to not loose scroll position when gutter calls resize
+            this.$updateScrollBar();
             this.$textLayer.update(this.layerConfig);
             if (this.showGutter)
                 this.$gutterLayer.update(this.layerConfig);
             this.$markerBack.update(this.layerConfig);
             this.$markerFront.update(this.layerConfig);
             this.$cursorLayer.update(this.layerConfig);
-            this.$updateScrollBar();
             return;
         }
 
         // scrolling
         if (changes & this.CHANGE_SCROLL) {
+            this.$updateScrollBar();
             if (changes & this.CHANGE_TEXT || changes & this.CHANGE_LINES)
                 this.$textLayer.update(this.layerConfig);
             else
@@ -1599,7 +1608,6 @@ var VirtualRenderer = function(container, theme) {
             this.$markerBack.update(this.layerConfig);
             this.$markerFront.update(this.layerConfig);
             this.$cursorLayer.update(this.layerConfig);
-            this.$updateScrollBar();
             return;
         }
 
@@ -1632,11 +1640,6 @@ var VirtualRenderer = function(container, theme) {
 
         if (changes & this.CHANGE_SIZE)
             this.$updateScrollBar();
-
-        if (changes & this.CHANGE_H_SCROLL) {
-            //this.content.style.left = -this.scrollLeft + "px";
-            this.scroller.scrollLeft = this.scrollLeft
-        }
     };
 
     this.$computeLayerConfig = function() {
@@ -1650,9 +1653,13 @@ var VirtualRenderer = function(container, theme) {
         var horizScroll = this.$horizScrollAlwaysVisible || this.$size.scrollerWidth - longestLine < 0;
         var horizScrollChanged = this.$horizScroll !== horizScroll;
         this.$horizScroll = horizScroll;
-        if (horizScrollChanged)
+        if (horizScrollChanged) {
             this.scroller.style.overflowX = horizScroll ? "scroll" : "hidden";
-
+            // when we hide scrollbar scroll event isn't emited
+            // leaving session with wrong scrollLeft value
+            if (!horizScroll)
+                this.session.setScrollLeft(0);
+        }
         var maxHeight = this.session.getScreenLength() * this.lineHeight;
         this.session.setScrollTop(Math.max(0, Math.min(this.scrollTop, maxHeight - this.$size.scrollerHeight)));
 
@@ -1824,7 +1831,7 @@ var VirtualRenderer = function(container, theme) {
     };
 
     this.getScrollLeft = function() {
-        return this.session.getScrollTop();
+        return this.session.getScrollLeft();
     };
 
     this.getScrollTopRow = function() {
@@ -1841,10 +1848,10 @@ var VirtualRenderer = function(container, theme) {
 
     this.scrollToLine = function(line, center) {
         var pos = this.$cursorLayer.getPixelPosition({row: line, column: 0});
-		var offset = pos.top
-        if (center) {
+        var offset = pos.top;
+        if (center)
             offset -= this.$size.scrollerHeight / 2;
-        }
+
         this.session.setScrollTop(offset);
     };
 
@@ -1884,14 +1891,19 @@ var VirtualRenderer = function(container, theme) {
         var canvasPos = this.scroller.getBoundingClientRect();
 
         var col = Math.round(
-            (pageX + this.scrollLeft - canvasPos.left - this.$padding - dom.getPageScrollLeft())
-            / this.characterWidth
-        );
+            (pageX + this.scrollLeft - canvasPos.left - this.$padding - window.pageYOffset) / this.characterWidth
+         );
         var row = Math.floor(
-            (pageY + this.scrollTop - canvasPos.top - dom.getPageScrollTop())
-            / this.lineHeight
-        );
-
+            (pageY + this.scrollTop - canvasPos.top - window.pageYOffset) / this.lineHeight
+         );
+        if (row < 0) {
+            row = 0;
+        } else {
+            var maxRow = this.layerConfig.maxHeight / this.layerConfig.lineHeight - 1;
+            if(row > maxRow)
+                row = maxRow;
+        }
+        
         return this.session.screenToDocumentPosition(row, Math.max(col, 0));
     };
 
@@ -2094,7 +2106,7 @@ exports.cssText = ".ace-tm .ace_editor {\
 }\
 \
 .ace-tm .ace_fold {\
-    background-color: #4b50c3;\
+    background-color: #6B72E6;\
 }\
 \
 .ace-tm .ace_text-layer {\
@@ -2772,7 +2784,7 @@ require("ace/commands/default_commands");
 var KeyBinding = function(editor) {
     this.$editor = editor;
     this.$data = { };
-    this.$handlers = [this];
+    this.$handlers = [this.$editor.commands];
 };
 
 (function() {
@@ -2783,7 +2795,7 @@ var KeyBinding = function(editor) {
         for (var i = 0; i < this.$handlers.length; i++)
             this.$handlers[i].detach && this.$handlers[i].detach(this.$editor);
         
-        this.$handlers = [this];
+        this.$handlers = [this.$editor.commands];
         if (keyboardHandler) {
             this.$handlers.push(keyboardHandler);
             keyboardHandler.attach && keyboardHandler.attach(this.$editor);
@@ -2815,21 +2827,23 @@ var KeyBinding = function(editor) {
             toExecute = this.$handlers[i].handleKeyboard(
                 this.$data, hashId, keyString, keyCode, e
             );
-            if (toExecute && toExecute.command)
+            if (toExecute)
                 break;
         }
 
-        if (!toExecute || !toExecute.command)
+        if (!toExecute)
             return false;
 
         var success = false;
         var commands = this.$editor.commands;
 
         // allow keyboardHandler to consume keys
-        if (toExecute.command != "null")
+        if (toExecute.command == "null")
+            success = true;
+        else if (toExecute.command)
             success = commands.exec(toExecute.command, this.$editor, toExecute.args);
         else
-            success = true;
+            success = commands.exec(toExecute, this.$editor);
 
         if (success && e)
             event.stopEvent(e);
@@ -2837,21 +2851,15 @@ var KeyBinding = function(editor) {
         return success;
     };
 
-    this.handleKeyboard = function(data, hashId, keyString) {
-        return {
-            command: this.$editor.commands.findKeyCommand(hashId, keyString)
-        };
-    };
-
     this.onCommandKey = function(e, hashId, keyCode) {
-        var keyString = keyUtil.keyCodeToString(keyCode);
+        var keyString = keyUtil.keyCodeToString(keyCode).toLowerCase();
         this.$callKeyboardHandlers(hashId, keyString, keyCode, e);
     };
 
     this.onTextInput = function(text, pasted) {
         var success = false;
         if (!pasted && text.length == 1)
-            success = this.$callKeyboardHandlers(0, text);
+            success = this.$callKeyboardHandlers(-1, text);
         if (!success)
             this.$editor.commands.exec("insertstring", this.$editor, text);
     };
@@ -5157,131 +5165,22 @@ exports.EventEmitter = EventEmitter;
 
 define("ace/commands/command_manager",[], function(require, exports, module) {
 
-var keyUtil = require("ace/lib/keys");
+var oop = require("ace/lib/oop");
+var HashHandler = require("ace/keyboard/hash_handler").HashHandler;
 
 var CommandManager = function(platform, commands) {
-    if (typeof platform !== "string")
-        throw new TypeError("'platform' argument must be either 'mac' or 'win'");
-
     this.platform = platform;
     this.commands = {};
     this.commmandKeyBinding = {};
 
-    if (commands)
-        commands.forEach(this.addCommand, this);
+    this.addCommands(commands);
 };
 
+oop.inherits(CommandManager, HashHandler);
+
 (function() {
+//	oop.implement(this, HashHandler.prototype)
 
-    this.addCommand = function(command) {
-        if (this.commands[command.name])
-            this.removeCommand(command);
-
-        this.commands[command.name] = command;
-
-        if (command.bindKey) {
-            this._buildKeyHash(command);
-        }
-    };
-
-    this.removeCommand = function(command) {
-        var name = (typeof command === 'string' ? command : command.name);
-        command = this.commands[name];
-        delete this.commands[name];
-
-        // exaustive search is brute force but since removeCommand is
-        // not a performance critical operation this should be OK
-        var ckb = this.commmandKeyBinding;
-        for (var hashId in ckb) {
-            for (var key in ckb[hashId]) {
-                if (ckb[hashId][key] == command)
-                    delete ckb[hashId][key];
-            }
-        }
-    };
-
-    this.addCommands = function(commands) {
-        Object.keys(commands).forEach(function(name) {
-            var command = commands[name];
-            if (typeof command === "string")
-                return this.bindKey(command, name);
-
-            if (typeof command === "function")
-                command = { exec: command };
-
-            if (!command.name)
-                command.name = name;
-
-            this.addCommand(command);
-        }, this);
-    };
-
-    this.removeCommands = function(commands) {
-        Object.keys(commands).forEach(function(name) {
-            this.removeCommand(commands[name]);
-        }, this);
-    };
-
-    this.bindKey = function(key, command) {
-        if(!key)
-            return;
-
-        var ckb = this.commmandKeyBinding;
-        key.split("|").forEach(function(keyPart) {
-            var binding = parseKeys(keyPart, command);
-            var hashId = binding.hashId;
-            (ckb[hashId] || (ckb[hashId] = {}))[binding.key] = command;
-        });
-    };
-
-    this.bindKeys = function(keyList) {
-        Object.keys(keyList).forEach(function(key) {
-            this.bindKey(key, keyList[key]);
-        }, this);
-    };
-
-    this._buildKeyHash = function(command) {
-        var binding = command.bindKey;
-        if (!binding)
-            return;
-
-        var key = typeof binding == "string" ? binding: binding[this.platform];
-        this.bindKey(key, command);
-    }
-
-    function parseKeys(keys, val, ret) {
-        var key;
-        var hashId = 0;
-        var parts = splitSafe(keys);
-
-        for (var i=0, l = parts.length; i < l; i++) {
-            if (keyUtil.KEY_MODS[parts[i]])
-                hashId = hashId | keyUtil.KEY_MODS[parts[i]];
-            else
-                key = parts[i] || "-"; //when empty, the splitSafe removed a '-'
-        }
-
-        return {
-            key: key,
-            hashId: hashId
-        }
-    }
-
-    function splitSafe(s, separator) {
-        return (s.toLowerCase()
-            .trim()
-            .split(new RegExp("[\\s ]*\\-[\\s ]*", "g"), 999));
-    }
-
-    this.findKeyCommand = function findKeyCommand(hashId, textOrKey) {
-        // Convert keyCode to the string representation.
-        if (typeof textOrKey == "number") {
-            textOrKey = keyUtil.keyCodeToString(textOrKey);
-        }
-
-        var ckbr = this.commmandKeyBinding;
-        return ckbr[hashId] && ckbr[hashId][textOrKey.toLowerCase()];
-    }
 
     this.exec = function(command, editor, args) {
         if (typeof command === 'string')
@@ -5293,7 +5192,11 @@ var CommandManager = function(platform, commands) {
         if (editor && editor.$readOnly && !command.readOnly)
             return false;
 
-        command.exec(editor, args || {});
+        if (typeof command == "function")
+            command(editor, args || {});
+        else
+            command.exec(editor, args || {});
+
         return true;
     };
 
@@ -5307,6 +5210,7 @@ var CommandManager = function(platform, commands) {
             if (!this.macro.length)
                 this.macro = this.oldMacro;
 
+			editor.status.set("");
             return this.recording = false;
         }
         this.oldMacro = this.macro;
@@ -5316,6 +5220,7 @@ var CommandManager = function(platform, commands) {
             this.macro.push([command, args]);
             return this.normal_exec(command, editor, args);
         };
+		editor.status.set("recording_macro");
         return this.recording = true;
     };
 
@@ -5328,6 +5233,7 @@ var CommandManager = function(platform, commands) {
 
         try {
             this.$inReplay = true;
+			editor.status.set("in_replay");
             this.macro.forEach(function(x) {
                 if (typeof x == "string")
                     this.exec(x, editor);
@@ -5336,6 +5242,7 @@ var CommandManager = function(platform, commands) {
             }, this)
         } finally {
             this.$inReplay = false;
+			editor.status.set("replay_finished", 2);
         }
     };
 
@@ -5378,7 +5285,7 @@ exports.commands = [{
     readOnly: true
 }, {
     name: "gotoline",
-    bindKey: bindKey("Ctrl-R", "Command-L"),
+    bindKey: bindKey("Ctrl-G", "Command-L"),
     exec: function(editor) {
         var line = parseInt(prompt("Enter line number:"), 10);
         if (!isNaN(line)) {
@@ -5402,6 +5309,11 @@ exports.commands = [{
     exec: function(editor) { editor.session.foldAll(); },
     readOnly: true
 }, {
+    name: "foldadjacent",
+    bindKey: bindKey("Alt-9", "Alt-9"),
+    exec: function(editor) { editor.session.foldAdjacent(editor.getCursorPosition().row); },
+    readOnly: true
+}, {
     name: "unfoldall",
     bindKey: bindKey("Alt-Shift-0", "Alt-Shift-0"),
     exec: function(editor) { editor.session.unfold(); },
@@ -5411,7 +5323,7 @@ exports.commands = [{
     bindKey: bindKey("Ctrl-W", ""),
     exec: function(editor) { editor.selection.selectWord(); },
     readOnly: true
-}, , {
+}, {
     name: "findnext",
     bindKey: bindKey("Ctrl-R", "Command-G"),
     exec: function(editor) { editor.findNext(); },
@@ -5595,6 +5507,16 @@ exports.commands = [{
     exec: function(editor) { editor.commands.replay(editor); },
     readOnly: true
 }, {
+    name: "jumptomatching",
+    bindKey: bindKey("Ctrl-P", "Ctrl-P"),
+    exec: function(editor) { editor.jumpToMatching(); },
+    readOnly: true
+}, {
+    name: "jumpselecttomatching",
+    bindKey: bindKey("Ctrl-Shift-P", "Ctrl-Shift-P"),
+    exec: function(editor) { editor.jumpToMatching(true); },
+    readOnly: true
+}, {
     name: "fontsize++",
     bindKey: bindKey("Ctrl-+", "Command-+"),
     exec: function(editor) { editor.setFontSize(null, +1) },
@@ -5614,8 +5536,29 @@ exports.commands = [{
 // commands disabled in readOnly mode
 {
     name: "removeline",
-    bindKey: bindKey("Ctrl-D", "Command-D"),
+    bindKey: bindKey("Alt-D", "Command-D"),
     exec: function(editor) { editor.removeLines(); }
+}, {
+    name: "duplicate",
+    bindKey: bindKey("Ctrl-D", "Command-Option-D"),
+    exec: function(editor) {
+		var sel = editor.selection;
+		var doc = editor.session;
+		var range = sel.getRange();
+		if (range.isEmpty()) {
+			var row = range.start.row;
+			doc.duplicateLines(row, row);
+			//ed.copyLinesDown();
+		} else {
+			var reverse = sel.isBackwards()
+			var point = sel.isBackwards() ? range.start : range.end;
+			var endPoint = doc.insert(point, doc.getTextRange(range), false);
+			range.start = point;
+			range.end = endPoint;
+			
+			sel.setSelectionRange(range, reverse)
+		}
+	}
 }, {
     name: "togglecomment",
     bindKey: bindKey("Ctrl-7", "Command-7"),
@@ -5727,14 +5670,6 @@ exports.commands = [{
     name: "tolowercase",
     bindKey: bindKey("Ctrl-Shift-U", "Ctrl-Shift-U"),
     exec: function(editor) { editor.toLowerCase(); }
-}, {
-    name: "jumptomatching",
-    bindKey: bindKey("Ctrl-P", "Ctrl-P"),
-    exec: function(editor) { editor.jumpToMatching(); }
-}, {
-    name: "jumpselecttomatching",
-    bindKey: bindKey("Ctrl-Shift-P", "Ctrl-Shift-P"),
-    exec: function(editor) { editor.jumpToMatching(true); }
 }];
 
 });
@@ -6241,7 +6176,7 @@ function normalizeCommandKeys(callback, e, keyCode) {
 
 exports.addCommandKeyListener = function(el, callback) {
     var addListener = exports.addListener;
-    if (useragent.isOldGecko) {
+    if (useragent.isOldGecko || useragent.isOpera) {
         // Old versions of Gecko aka. Firefox < 4.0 didn't repeat the keydown
         // event if the user pressed the key for a longer time. Instead, the
         // keydown event was fired once and later on only the keypress event.
@@ -6262,18 +6197,6 @@ exports.addCommandKeyListener = function(el, callback) {
             lastDown = e.keyIdentifier || e.keyCode;
             return normalizeCommandKeys(callback, e, e.keyCode);
         });
-
-        // repeated keys are fired as keypress and not keydown events
-        if (useragent.isMac && useragent.isOpera) {
-            addListener(el, "keypress", function(e) {
-                var keyId = e.keyIdentifier || e.keyCode;
-                if (lastDown !== keyId) {
-                    return normalizeCommandKeys(callback, e, lastDown);
-                } else {
-                    lastDown = null;
-                }
-            });
-        }
     }
 };
 
@@ -6739,7 +6662,7 @@ var Text = function(parentEl) {
 
         // Size and width can be null if the editor is not visible or
         // detached from the document
-        if (size.width == 0 && size.height == 0)
+        if (!size.width || !size.height)
             return null;
 
         return size;
@@ -7213,8 +7136,8 @@ var Cursor = function(parentEl) {
             };
         }
 
-		if (!position)
-			position = this.session.selection.getCursor();
+        if (!position)
+            position = this.session.selection.getCursor();
         var pos = this.session.documentToScreenPosition(position);
         var cursorLeft = Math.round(this.$padding +
                                     pos.column * this.config.characterWidth);
@@ -7534,23 +7457,11 @@ define("ace/css/editor.css",[], "\
     cursor: text;\
 }\
 \
-/* setting pointer-events: auto; on node under the mouse, which changes during scroll,\
-  will break mouse wheel scrolling in Safari */\
-.ace_content * {\
-     pointer-events: none;\
-}\
-\
 .ace_composition {\
     position: absolute;\
     background: #555;\
     color: #DDD;\
     z-index: 4;\
-}\
-\
-.ace_gutter .ace_layer {\
-    position: relative;\
-    min-width: 40px;\
-    text-align: right;\
 }\
 \
 .ace_gutter {\
@@ -7637,6 +7548,16 @@ define("ace/css/editor.css",[], "\
     box-sizing: border-box;\
     -moz-box-sizing: border-box;\
     -webkit-box-sizing: border-box;\
+    /* setting pointer-events: auto; on node under the mouse, which changes\
+        during scroll, will break mouse wheel scrolling in Safari */\
+    pointer-events: none;\
+}\
+\
+.ace_gutter .ace_layer {\
+    position: relative;\
+    min-width: 40px;\
+    text-align: right;\
+    pointer-events: auto;\
 }\
 \
 .ace_text-layer {\
@@ -7729,7 +7650,7 @@ define("ace/css/editor.css",[], "\
     cursor: move;\
 }\
 \
-.ace_folding-enabled .ace_gutter-cell {\
+.ace_folding-enabled > .ace_gutter-cell {\
     padding-right: 13px;\
 }\
 \
@@ -8224,7 +8145,7 @@ var Keys = (function() {
            80: 'p',  81: 'q',  82: 'r',  83: 's',  84: 't',  85: 'u', 86:  'v',
            87: 'w',  88: 'x',  89: 'y',  90: 'z', 107: '+', 109: '-', 110: '.',
           188: ',', 190: '.', 191: '/', 192: '`', 219: '[', 220: '\\',
-          221: ']', 222: '\"'
+          221: ']', 222: '\''
         }
     };
 
@@ -10056,10 +9977,55 @@ function Folding() {
         
     };
 
+	this.foldAdjacent = function (startRow) {
+        var endRow = this.getLength();
+		var range, self = this;
+		var foldWidgets = this.foldWidgets;
+		var getFoldWidget = function(row) {
+			if (foldWidgets[row] == null)
+                foldWidgets[row] = self.getFoldWidget(row);
+			return foldWidgets[row];
+		}
+		
+		var row = startRow || 0
+		var parentFoldFound = false
+        do {
+			var fw = getFoldWidget(row);
+            if (fw != "start")
+                continue;
+
+			if (!parentFoldFound) {
+				parentFoldFound = true
+				continue
+			}
+
+			range = this.getFoldWidgetRange(row);
+			if (range && range.end.row > startRow)
+				break
+		} while (row --> 0)
+		
+		startRow = row + 1
+		if (range)
+			endRow = range.end.row
+		
+        for (var row = startRow; row < endRow; row++) {
+			if (getFoldWidget(row) != "start")
+				continue
+            range = this.getFoldWidgetRange(row);
+            if (!range)
+				continue;
+			row = range.end.row;
+			if (row < endRow) try {
+                this.addFold("...", range);
+            } catch(e) {}
+        }
+	}
+	
     this.onFoldWidgetClick = function(row, e) {
         var type = this.getFoldWidget(row);
         var line = this.getLine(row);
         var onlySubfolds = e.shiftKey;
+        var onlyAjacent = !e.shiftKey && !e.ctrlKey && (e.altKey || e.metaKey);
         var addSubfolds = onlySubfolds || e.ctrlKey || e.altKey || e.metaKey;
         var fold;
 
@@ -10086,6 +10052,9 @@ function Folding() {
                     return;
                 }
             }
+			
+			if (onlyAjacent)
+				return this.foldAdjacent(range.start.row)
             
             if (!onlySubfolds)
                 this.addFold("...", range);
@@ -10094,7 +10063,7 @@ function Folding() {
                 this.foldAll(range.start.row + 1, range.end.row);
         } else {
             if (addSubfolds)
-                this.foldAll(row + 1, this.getLength());
+                this.foldAll(row + 1);
             e.target.className += " invalid"
         }
     };
@@ -10263,6 +10232,140 @@ function BracketMatch() {
 }
 exports.BracketMatch = BracketMatch;
 
+});
+
+define("ace/keyboard/hash_handler",[], function(require, exports, module) {
+
+var keyUtil  = require("ace/lib/keys");
+
+function HashHandler(config, platform) {
+    this.platform = platform;
+    this.commands = {};
+    this.commmandKeyBinding = {};
+
+    this.addCommands(config);
+};
+
+(function() {
+
+    this.addCommand = function(command) {
+        if (this.commands[command.name])
+            this.removeCommand(command);
+
+        this.commands[command.name] = command;
+
+        if (command.bindKey) {
+            this._buildKeyHash(command);
+        }
+    };
+
+    this.removeCommand = function(command) {
+        var name = (typeof command === 'string' ? command : command.name);
+        command = this.commands[name];
+        delete this.commands[name];
+
+        // exaustive search is brute force but since removeCommand is
+        // not a performance critical operation this should be OK
+        var ckb = this.commmandKeyBinding;
+        for (var hashId in ckb) {
+            for (var key in ckb[hashId]) {
+                if (ckb[hashId][key] == command)
+                    delete ckb[hashId][key];
+            }
+        }
+    };
+
+    this.addCommands = function(commands) {
+        commands && Object.keys(commands).forEach(function(name) {
+            var command = commands[name];
+            if (typeof command === "string")
+                return this.bindKey(command, name);
+
+            if (typeof command === "function")
+                command = { exec: command };
+
+            if (!command.name)
+                command.name = name;
+
+            this.addCommand(command);
+        }, this);
+    };
+
+    this.removeCommands = function(commands) {
+        Object.keys(commands).forEach(function(name) {
+            this.removeCommand(commands[name]);
+        }, this);
+    };
+
+    this.bindKey = function(key, command) {
+        if(!key)
+            return;
+
+        var ckb = this.commmandKeyBinding;
+        key.split("|").forEach(function(keyPart) {
+            var binding = parseKeys(keyPart, command);
+            var hashId = binding.hashId;
+            (ckb[hashId] || (ckb[hashId] = {}))[binding.key] = command;
+        });
+    };
+
+    this.bindKeys = function(keyList) {
+        Object.keys(keyList).forEach(function(key) {
+            this.bindKey(key, keyList[key]);
+        }, this);
+    };
+
+    this._buildKeyHash = function(command) {
+        var binding = command.bindKey;
+        if (!binding)
+            return;
+
+        var key = typeof binding == "string" ? binding: binding[this.platform];
+        this.bindKey(key, command);
+    }
+
+    function parseKeys(keys, val, ret) {
+        var key;
+        var hashId = 0;
+        var parts = splitSafe(keys.toLowerCase());
+
+        for (var i=0, l = parts.length; i < l; i++) {
+            if (keyUtil.KEY_MODS[parts[i]])
+                hashId = hashId | keyUtil.KEY_MODS[parts[i]];
+            else
+                key = parts[i] || "-"; //when empty, the splitSafe removed a '-'
+        }
+
+        // Shift-(l/L) -> text-L, l/L -> text-l, (Shift-:)/: -> :
+        if (key.length == 1 && (hashId == 0 || hashId == keyUtil.KEY_MODS.shift)) {
+            if (key.toUpperCase() != key && hashId == keyUtil.KEY_MODS.shift)
+                key = key.toUpperCase();
+            hashId = -1;
+        }
+
+        return {
+            key: key,
+            hashId: hashId
+        }
+    }
+
+    function splitSafe(s, separator) {
+        return (s.trim()
+            .split(new RegExp("[\\s ]*\\-[\\s ]*", "g"), 999));
+    }
+
+    this.findKeyCommand = function findKeyCommand(hashId, keyString) {
+        var ckbr = this.commmandKeyBinding;
+        return ckbr[hashId] && ckbr[hashId][keyString];
+    }
+
+    this.handleKeyboard = function(data, hashId, keyString, keyCode) {
+        return this.findKeyCommand(hashId, keyString)
+    };
+
+}).call(HashHandler.prototype)
+
+exports.HashHandler = HashHandler;
 });
 
 define("ace/tokenizer",[], function(require, exports, module) {

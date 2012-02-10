@@ -81,13 +81,12 @@ separator{
     position: absolute;
     width: 28px;
     height: 28px;
-	margin: -14px 0 0 -14px 
+	margin: -14px 0 0 -14px;
     border: 1px solid red;
     z-index: 10000;
     display: none;
 	top:50%;
 	left:50%;
-	-moz-border-radius: 2px;
 	border-radius: 2px;
 	border: 1px solid transparent;
 }
@@ -102,7 +101,6 @@ separator{
     bottom: 0;
     position: fixed;
     z-index: 1000;
-    -moz-border-radius-topright: 20px;
     border-top-right-radius: 20px;
 }
 
@@ -117,15 +115,13 @@ separator{
     width: 10px;
     background: lightblue;
     top: 0;
-	/right:4px;
     position: fixed;
     z-index: 1000;
-    -moz-border-radius-bottomright: 20px;
     border-bottom-right-radius: 20px;
 }
 
 #toggleWrap:hover{
-    -moz-box-shadow: 2px -1px 5px 3px #91B6D5;
+    box-shadow: 2px -1px 5px 3px #91B6D5;
     border-right: 1px solid #A1A1CF;
     border-bottom: 1px solid #A1A1CF;
 }
@@ -181,12 +177,6 @@ separator{
 	background:rgba(120,50,100,0.1);
 	color: darkred;
 }
-.ace_filler{
-    //background: none repeat scroll 0 0 rgba(100, 50, 100, 0.2);
-    display: inline-block;
-	border-top: 1px solid gray;
-    width: 100%;
-}
 
 .ace_firstcell{
 	border-top: 1px solid gray;
@@ -197,7 +187,7 @@ separator{
 	color: darkred;
 }
 .ace_filler{
-    //background: none repeat scroll 0 0 rgba(100, 50, 100, 0.2);
+    /*background: none repeat scroll 0 0 rgba(100, 50, 100, 0.2);*/
     display: inline-block;
 	border-top: 1px solid gray;
     width: 100%;
@@ -215,13 +205,12 @@ separator{
 .ace_gutter-cell.ace_breakpoint{
     border-radius: 20px 0 0 20px;
     box-shadow: 0 0 1px 1px red inset;
-    -moz-box-shadow: 0 0 1px 1px gold inset;
 }
 .ace_gutter-cell.ace_breakpoint.invalid{
-    -moz-box-shadow: 0 0 1px 1px red inset;
+    box-shadow: 0 0 1px 1px red inset;
 }
 .ace_gutter-cell.ace_breakpoint.valid{
-    -moz-box-shadow: 0 0 1px 1px lime inset;
+    box-shadow: 0 0 1px 1px lime inset;
 }
 
 

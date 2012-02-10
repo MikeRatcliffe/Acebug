@@ -1,82 +1,3 @@
-define('ace/keyboard/hash_handler', function(require, exports, module) {
-
-var keyUtil  = require("ace/lib/keys");
-
-function HashHandler(config) {
-    this.setConfig(config);
-}
-
-(function() {
-	function splitSafe(s, separator, limit, bLowerCase) {
-        return s.toLowerCase().split('-');
-    }
-
-    function parseKeys(keys, val, ret) {
-        var key,
-            hashId = 0,
-            parts  = splitSafe(keys, "\\-", null, true),
-            i      = 0,
-            l      = parts.length;
-
-        for (; i < l; ++i) {
-            if (keyUtil.KEY_MODS[parts[i]])
-                hashId = hashId | keyUtil.KEY_MODS[parts[i]];
-            else
-                key = parts[i] || "-"; //when empty, the splitSafe removed a '-'
-        }
-
-        (ret[hashId] || (ret[hashId] = {}))[key] = val;
-        return ret;
-    }
-
-    function objectReverse(obj, keySplit) {
-        var i, j, l, key,
-            ret = {};
-        for (i in obj) {
-            key = obj[i];
-            if (keySplit && typeof key == "string") {
-                key = key.split(keySplit);
-                for (j = 0, l = key.length; j < l; ++j)
-                    parseKeys.call(this, key[j], i, ret);
-            }
-            else {
-                parseKeys.call(this, key, i, ret);
-            }
-        }
-        return ret;
-    }
-
-    this.setConfig = function(config) {
-        this.$config = config;
-        if (typeof this.$config.reverse == "undefined")
-            this.$config.reverse = objectReverse.call(this, this.$config, "|");
-    };
-
-    /**
-     * This function is called by keyBinding.
-     */
-    this.handleKeyboard = function(data, hashId, textOrKey, keyCode) {
-        // Figure out if a commandKey was pressed or just some text was insert.
-        if (hashId != 0 || keyCode != 0) {
-            return {
-                command: (this.$config.reverse[hashId] || {})[textOrKey]
-            }
-        } else {
-            return {
-                command: "inserttext",
-                args: {
-                    text: textOrKey
-                }
-            }
-        }
-    }
-}).call(HashHandler.prototype);
-
-exports.HashHandler = HashHandler;
-});
-
-
-
 /************************************************************************************/
 define('fbace/startup', function(require, exports, module) {
 
@@ -98,7 +19,7 @@ exports.launch = function(env, options) {
 	
 	/**************************** breakpoint handler *********************************************/
 
-	function CStyleFolding() {
+	function SmartBreakpoints() {
 		this.setBreakpointsAtRows = function(rows) {
 			this.$breakpoints = [];
 			for (var i=0; i<rows.length; i++) {
@@ -182,7 +103,7 @@ exports.launch = function(env, options) {
 			this.doc.on('change', this.updateDataOnDocChange.bind(this));
 		}
 	};
-	CStyleFolding.call(EditSession.prototype);
+	SmartBreakpoints.call(EditSession.prototype);
 	
 	/**************************** initialize ****************************************************/
 	// global functions
@@ -276,23 +197,6 @@ exports.launch = function(env, options) {
     Renderer.prototype.moveTextAreaToCursor =
 	require("ace/layer/text").Text.prototype.$pollSizeChanges = function(){}
 	// selection on first/last lines
-	Renderer.prototype.screenToTextCoordinates = function(pageX, pageY) {
-        var canvasPos = this.scroller.getBoundingClientRect();
-
-        var col = Math.round((pageX + this.scroller.scrollLeft - canvasPos.left - this.$padding - window.pageYOffset)
-                / this.characterWidth);
-        var row = Math.floor((pageY + this.scrollTop - canvasPos.top - window.pageYOffset)
-                / this.lineHeight);
-		if (row < 0) {
-			row = 0
-		} else {
-			var maxRow = this.layerConfig.maxHeight/this.layerConfig.lineHeight-1
-			if(row > maxRow)
-				row = maxRow
-		}
-		
-        return this.session.screenToDocumentPosition(row, Math.max(col, 0));
-    };
 
     var container = document.getElementById("editor");
     editor = env.editor = new Editor(new Renderer(container, options.theme));
@@ -395,19 +299,7 @@ exports.launch = function(env, options) {
 
     // add commands
     editor.addCommands({
-        duplicate: function(editor, args, request) {
-            var sel = editor.selection;
-            var doc = editor.session;
-            var range = sel.getRange();
-            if (range.isEmpty()) {
-                var row = range.start.row;
-                doc.duplicateLines(row, row);
-                //ed.copyLinesDown();
-            } else {
-                doc.insert(sel.selectionLead, doc.getTextRange(range), false);
-            }
-        },
-        startAutocompleter: function(editor, args, request) {
+        startAutocompleter: function(editor) {
             startAcebugAutocompleter(editor);
         },
         toggleStreamComment: function() {
@@ -523,12 +415,7 @@ exports.launch = function(env, options) {
         }
     });
 
-    var com = canon.getCommand('removeline')
-    com.bindKey.win = com.bindKey.mac = 'Alt-D'
-    //canon.removeCommand('removeline')
-    canon.addCommand(com)
-
-    canon.addCommand({
+    canon.addCommands([{
         name: "save",
         bindKey: {
             win: "Ctrl-S",
@@ -537,8 +424,7 @@ exports.launch = function(env, options) {
         exec: function(editor) {
 			aceManager.saveFile(editor, "session")
         }
-    });
-    canon.addCommand({
+    }, {
         name: "save-as",
         bindKey: {
             win: "Ctrl-Shift-S",
@@ -547,8 +433,7 @@ exports.launch = function(env, options) {
         exec: function(editor) {
 			aceManager.saveFile(editor, "picker")
         }
-    });
-	canon.addCommand({
+    }, {
         name: "load",
         bindKey: {
             win: "Ctrl-O",
@@ -557,9 +442,9 @@ exports.launch = function(env, options) {
         exec: function(editor) {
 			aceManager.loadFile(editor)
         }
-    });
+    }]);
 
- 	/**************************** folding commands ***********************************************/
+ 	/**************************** misc ***********************************************/
 	canon.addCommand({
         name: "newCell",
         bindKey: {
