@@ -527,44 +527,39 @@ module.exports = {
     onVisualLineMode: false,
     currentMode: 'normal',
     insertMode: function(editor) {
-        var _self = this;
-        var theme = editor && editor.getTheme() || "ace/theme/textmate";
+		var isDarkTheme = editor.container.className.indexOf("ace_dark") != -1;
 
-        require(["require", theme], function (require) {
-            var isDarkTheme = require(theme).isDark;
+		this.currentMode = 'insert';
+		// Switch editor to insert mode
+		editor.unsetStyle('insert-mode');
 
-            _self.currentMode = 'insert';
-            // Switch editor to insert mode
-            editor.unsetStyle('insert-mode');
+		var cursor = document.getElementsByClassName("ace_cursor")[0];
+		if (cursor) {
+			cursor.style.display = null;
+			cursor.style.backgroundColor = null;
+			cursor.style.opacity = null;
+			cursor.style.border = null;
+			cursor.style.borderLeftColor = isDarkTheme? "#eeeeee" : "#333333";
+			cursor.style.borderLeftStyle = "solid";
+			cursor.style.borderLeftWidth = "2px";
+		}
 
-            var cursor = document.getElementsByClassName("ace_cursor")[0];
-            if (cursor) {
-                cursor.style.display = null;
-                cursor.style.backgroundColor = null;
-                cursor.style.opacity = null;
-                cursor.style.border = null;
-                cursor.style.borderLeftColor = isDarkTheme? "#eeeeee" : "#333333";
-                cursor.style.borderLeftStyle = "solid";
-                cursor.style.borderLeftWidth = "2px";
-            }
-
-            editor.setOverwrite(false);
-            editor.keyBinding.$data.buffer = "";
-            editor.keyBinding.$data.state = "insertMode";
-            _self.onVisualMode = false;
-            _self.onVisualLineMode = false;
-            if(_self.onInsertReplaySequence) {
-                // Ok, we're apparently replaying ("."), so let's do it
-                editor.commands.macro = _self.onInsertReplaySequence;
-                editor.commands.replay(editor);
-                _self.onInsertReplaySequence = null;
-                _self.normalMode(editor);
-            } else {
-                // Record any movements, insertions in insert mode
-                if(!editor.commands.recording)
-                    editor.commands.toggleRecording();
-            }
-        });
+		editor.setOverwrite(false);
+		editor.keyBinding.$data.buffer = "";
+		editor.keyBinding.$data.state = "insertMode";
+		this.onVisualMode = false;
+		this.onVisualLineMode = false;
+		if(this.onInsertReplaySequence) {
+			// Ok, we're apparently replaying ("."), so let's do it
+			editor.commands.macro = this.onInsertReplaySequence;
+			editor.commands.replay(editor);
+			this.onInsertReplaySequence = null;
+			this.normalMode(editor);
+		} else {
+			// Record any movements, insertions in insert mode
+			if(!editor.commands.recording)
+				editor.commands.toggleRecording();
+		}
     },
     normalMode: function(editor) {
         // Switch editor to normal mode
@@ -609,9 +604,9 @@ module.exports = {
     },
     getLeftNthChar: function(editor, cursor, char, n) {
         var line = editor.getSession().getLine(cursor.row);
-        var matches = line.substr(0, cursor.column + 1).split(char);
+        var matches = line.substr(0, cursor.column).split(char);
 
-        return n < matches.length ? matches.slice(-1 * n).join(char).length + 1: 0;
+        return n < matches.length ? matches.slice(-1 * n).join(char).length + 2 : 0;
     },
     toRealChar: function(char) {
         if (char.length === 1)
@@ -746,7 +741,23 @@ module.exports = {
             editor.selection.selectWordRight();
         }
     },
+	"shift-w": {
+        nav: function(editor) {
+            editor.navigateWordRight();
+        },
+        sel: function(editor) {
+            editor.selection.selectWordRight();
+        }
+    },
     "b": {
+        nav: function(editor) {
+            editor.navigateWordLeft();
+        },
+        sel: function(editor) {
+            editor.selection.selectWordLeft();
+        }
+    },
+	"shift-b": {
         nav: function(editor) {
             editor.navigateWordLeft();
         },
@@ -836,6 +847,30 @@ module.exports = {
 
             if (typeof column === "number") {
                 ed.moveCursorTo(cursor.row, column + cursor.column + 1);
+            }
+        }
+    },
+    "shift-f": {
+        param: true,
+        nav: function(editor, range, count, param) {
+            count = parseInt(count, 10) || 1;
+            var ed = editor;
+            var cursor = ed.getCursorPosition();
+            var column = util.getLeftNthChar(editor, cursor, param, count);
+
+            if (typeof column === "number") {
+                ed.selection.clearSelection(); // Why does it select in the first place?
+                ed.moveCursorTo(cursor.row, cursor.column - column + 1);
+            }
+        },
+        sel: function(editor, range, count, param) {
+            count = parseInt(count, 10) || 1;
+            var ed = editor;
+            var cursor = ed.getCursorPosition();
+            var column = util.getLeftNthChar(editor, cursor, param, count);
+
+            if (typeof column === "number") {
+                ed.moveCursorTo(cursor.row, cursor.column - column + 1);
             }
         }
     },
@@ -1233,8 +1268,6 @@ module.exports = {
 
 define("ace/keyboard/vim/registers",[], function(require, exports, module) {
 
-"never use strict";
-
 module.exports = {
     _default: {
         text: "",
@@ -1242,5 +1275,223 @@ module.exports = {
     }
 };
 
+});
+
+define("ace/keyboard/state_handler",[], function(require, exports, module) {
+
+// If you're developing a new keymapping and want to get an idea what's going
+// on, then enable debugging.
+var DEBUG = false;
+
+function StateHandler(keymapping) {
+    this.keymapping = this.$buildKeymappingRegex(keymapping);
+}
+
+StateHandler.prototype = {
+    /**
+     * Build the RegExp from the keymapping as RegExp can't stored directly
+     * in the metadata JSON and as the RegExp used to match the keys/buffer
+     * need to be adapted.
+     */
+    $buildKeymappingRegex: function(keymapping) {
+        for (var state in keymapping) {
+            this.$buildBindingsRegex(keymapping[state]);
+        }
+        return keymapping;
+    },
+
+    $buildBindingsRegex: function(bindings) {
+        // Escape a given Regex string.
+        bindings.forEach(function(binding) {
+            if (binding.key) {
+                binding.key = new RegExp('^' + binding.key + '$');
+            } else if (Array.isArray(binding.regex)) {
+                if (!('key' in binding))
+                  binding.key = new RegExp('^' + binding.regex[1] + '$');
+                binding.regex = new RegExp(binding.regex.join('') + '$');
+            } else if (binding.regex) {
+                binding.regex = new RegExp(binding.regex + '$');
+            }
+        });
+    },
+
+    $composeBuffer: function(data, hashId, key, e) {
+        // Initialize the data object.
+        if (data.state == null || data.buffer == null) {
+            data.state = "start";
+            data.buffer = "";
+        }
+
+        var keyArray = [];
+        if (hashId & 1) keyArray.push("ctrl");
+        if (hashId & 8) keyArray.push("command");
+        if (hashId & 2) keyArray.push("option");
+        if (hashId & 4) keyArray.push("shift");
+        if (key)        keyArray.push(key);
+
+        var symbolicName = keyArray.join("-");
+        var bufferToUse = data.buffer + symbolicName;
+
+        // Don't add the symbolic name to the key buffer if the alt_ key is
+        // part of the symbolic name. If it starts with alt_, this means
+        // that the user hit an alt keycombo and there will be a single,
+        // new character detected after this event, which then will be
+        // added to the buffer (e.g. alt_j will result in ∆).
+        //
+        // We test for 2 and not for & 2 as we only want to exclude the case where
+        // the option key is pressed alone.
+        if (hashId != 2) {
+            data.buffer = bufferToUse;
+        }
+
+        var bufferObj = {
+            bufferToUse: bufferToUse,
+            symbolicName: symbolicName,
+        };
+
+        if (e) {
+            bufferObj.keyIdentifier = e.keyIdentifier
+        }
+
+        return bufferObj;
+    },
+
+    $find: function(data, buffer, symbolicName, hashId, key, keyIdentifier) {
+        // Holds the command to execute and the args if a command matched.
+        var result = {};
+
+        // Loop over all the bindings of the keymap until a match is found.
+        this.keymapping[data.state].some(function(binding) {
+            var match;
+
+            // Check if the key matches.
+            if (binding.key && !binding.key.test(symbolicName)) {
+                return false;
+            }
+
+            // Check if the regex matches.
+            if (binding.regex && !(match = binding.regex.exec(buffer))) {
+                return false;
+            }
+
+            // Check if the match function matches.
+            if (binding.match && !binding.match(buffer, hashId, key, symbolicName, keyIdentifier)) {
+                return false;
+            }
+
+            // Check for disallowed matches.
+            if (binding.disallowMatches) {
+                for (var i = 0; i < binding.disallowMatches.length; i++) {
+                    if (!!match[binding.disallowMatches[i]]) {
+                        return false;
+                    }
+                }
+            }
+
+            // If there is a command to execute, then figure out the
+            // command and the arguments.
+            if (binding.exec) {
+                result.command = binding.exec;
+
+                // Build the arguments.
+                if (binding.params) {
+                    var value;
+                    result.args = {};
+                    binding.params.forEach(function(param) {
+                        if (param.match != null && match != null) {
+                            value = match[param.match] || param.defaultValue;
+                        } else {
+                            value = param.defaultValue;
+                        }
+
+                        if (param.type === 'number') {
+                            value = parseInt(value);
+                        }
+
+                        result.args[param.name] = value;
+                    });
+                }
+                data.buffer = "";
+            }
+
+            // Handle the 'then' property.
+            if (binding.then) {
+                data.state = binding.then;
+                data.buffer = "";
+            }
+
+            // If no command is set, then execute the "null" fake command.
+            if (result.command == null) {
+                result.command = "null";
+            }
+
+            if (DEBUG) {
+                console.log("KeyboardStateMapper#find", binding);
+            }
+            return true;
+        });
+
+        if (result.command) {
+            return result;
+        } else {
+            data.buffer = "";
+            return false;
+        }
+    },
+
+    /**
+     * This function is called by keyBinding.
+     */
+    handleKeyboard: function(data, hashId, key, keyCode, e) {
+        // If we pressed any command key but no other key, then ignore the input.
+        // Otherwise "shift-" is added to the buffer, and later on "shift-g"
+        // which results in "shift-shift-g" which doesn't make sense.
+        if (hashId != 0 && (key == "" || key == String.fromCharCode(0))) {
+            return null;
+        }
+
+        // Compute the current value of the keyboard input buffer.
+        var r = this.$composeBuffer(data, hashId, key, e);
+        var buffer = r.bufferToUse;
+        var symbolicName = r.symbolicName;
+        var keyId = r.keyIdentifier;
+
+        r = this.$find(data, buffer, symbolicName, hashId, key, keyId);
+        if (DEBUG) {
+            console.log("KeyboardStateMapper#match", buffer, symbolicName, r);
+        }
+
+        return r;
+    }
+}
+
+/**
+ * This is a useful matching function and therefore is defined here so that
+ * users of KeyboardStateMapper can use it.
+ *
+ * @return boolean
+ *          If no command key (Command|Option|Shift|Ctrl) is pressed, it
+ *          returns true. If the only the Shift key is pressed + a character
+ *          true is returned as well. Otherwise, false is returned.
+ *          Summing up, the function returns true whenever the user typed
+ *          a normal character on the keyboard and no shortcut.
+ */
+exports.matchCharacterOnly = function(buffer, hashId, key, symbolicName) {
+    // If no command keys are pressed, then catch the input.
+    if (hashId == 0) {
+        return true;
+    }
+    // If only the shift key is pressed and a character key, then
+    // catch that input as well.
+    else if ((hashId == 4) && key.length == 1) {
+        return true;
+    }
+    // Otherwise, we let the input got through.
+    else {
+        return false;
+    }
+};
+
+exports.StateHandler = StateHandler;
 });
 

@@ -178,14 +178,14 @@ exports.launch = function(env, options) {
             env.editor.setKeyboardHandler(null);
             return;
         }
-        var path = "ace/keyboard/keybinding/" + name.toLowerCase();
+        var path = "ace/keyboard/" + name.toLowerCase();
         var module = require(path);
         if (!module)
             require([path], function(module) {
-                env.editor.setKeyboardHandler(env.editor.normalKeySet = module[name]);
+                env.editor.setKeyboardHandler(env.editor.normalKeySet = module.handler);
             });
         else
-            env.editor.setKeyboardHandler(env.editor.normalKeySet = module[name]);
+            env.editor.setKeyboardHandler(env.editor.normalKeySet = module.handler);
     };
 
     //since we are using separate window make everything global for now

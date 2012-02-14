@@ -27,7 +27,7 @@ if (!window.console) {
 var aceRoot = './res/ace/';
 var PATHS = {
 	'ace/theme/'              :  aceRoot + 'theme-',
-	'ace/keyboard/keybinding/':  aceRoot + 'keybinding-',
+	'ace/keyboard/'           :  aceRoot + 'keybinding-',
 	'ace/mode/'               :  aceRoot + 'mode-',
 	'fbace/'                  :  '',
 	'res/'                    :  'res/',
@@ -128,11 +128,10 @@ var lookup = function(moduleName) {
     }
 
     if (typeof module === 'function') {
-        var exports = {};
-        module(require, exports, { id: moduleName, uri: '' });
+        var exports = {}, req = require, mod = {id: moduleName, uri: ''};
+        module(req, exports, mod);
         // cache the resulting module object for next time
-        require.modules[moduleName] = exports;
-        return exports;
+        return require.modules[moduleName] = mod.exports || exports;
     }
 
     return module;

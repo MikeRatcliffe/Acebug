@@ -5200,7 +5200,7 @@ oop.inherits(CommandManager, HashHandler);
         return true;
     };
 
-    this.toggleRecording = function() {
+    this.toggleRecording = function(editor) {
         if (this.$inReplay)
             return;
         if (this.recording) {
@@ -5210,7 +5210,7 @@ oop.inherits(CommandManager, HashHandler);
             if (!this.macro.length)
                 this.macro = this.oldMacro;
 
-			editor.status.set("");
+			//editor && editor.status.set("");
             return this.recording = false;
         }
         this.oldMacro = this.macro;
@@ -5220,7 +5220,7 @@ oop.inherits(CommandManager, HashHandler);
             this.macro.push([command, args]);
             return this.normal_exec(command, editor, args);
         };
-		editor.status.set("recording_macro");
+		//editor && editor.status.set("recording_macro");
         return this.recording = true;
     };
 
@@ -5233,7 +5233,7 @@ oop.inherits(CommandManager, HashHandler);
 
         try {
             this.$inReplay = true;
-			editor.status.set("in_replay");
+			//editor.status.set("in_replay");
             this.macro.forEach(function(x) {
                 if (typeof x == "string")
                     this.exec(x, editor);
@@ -5242,7 +5242,7 @@ oop.inherits(CommandManager, HashHandler);
             }, this)
         } finally {
             this.$inReplay = false;
-			editor.status.set("replay_finished", 2);
+			//editor && editor.status.set("replay_finished", 2);
         }
     };
 
@@ -5499,7 +5499,7 @@ exports.commands = [{
 }, {
     name: "togglerecording",
     bindKey: bindKey("Ctrl-Alt-E", "Command-Option-E"),
-    exec: function(editor) { editor.commands.toggleRecording(); },
+    exec: function(editor) { editor.commands.toggleRecording(editor); },
     readOnly: true
 }, {
     name: "replaymacro",

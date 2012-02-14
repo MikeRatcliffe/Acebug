@@ -1,4 +1,2 @@
-exclude chrome/content/ace/
-include chrome/content/ace/build/src/theme-\.*
-include chrome/content/ace/build/src/(theme|keybinding|ace)-\.*
-include chrome/content/ace/build/src/mode-(html|xml|coffee|svg)\.*
+exclude chrome/content/ace++/(boot|consoleOutputMode|edit-protocol-editor|editApp|fbeditor-devel|log-view).js
+exclude chrome/content/ace++/(log-view|simple-editor).html
