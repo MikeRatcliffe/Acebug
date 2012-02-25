@@ -8,4 +8,4 @@ pref("extensions.acebug.softtabs", true);
 pref("extensions.acebug.tabsize", 4);
 pref("extensions.acebug.wordwrap", true);
 pref("extensions.acebug.theme", "ace/theme/textmate");
-pref("extensions.acebug.keybinding", "Ace");
+pref("extensions.acebug.autopair", true);

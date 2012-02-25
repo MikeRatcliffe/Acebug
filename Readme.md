@@ -19,4 +19,4 @@ follow instructions from [MDN](https://developer.mozilla.org/en/Setting_up_exten
 Webpage
 =======
 
-[http://www.msi-stuff.com/acebug/](http://www.msi-stuff.com/acebug/)
+[http://www.flailingmonkey.com/acebug/](http://www.flailingmonkey.com/acebug/)

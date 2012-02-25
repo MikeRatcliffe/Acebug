@@ -758,6 +758,10 @@ var acebugPrefObserver = {
                 env1 && env1.editor.session.setUseWrapMode(this._branch.getBoolPref(aData));
                 env2 && env2.editor.session.setUseWrapMode(this._branch.getBoolPref(aData));
             break;
+            case "autopair":
+                env1 && env1.editor.setBehavioursEnabled(this._branch.getBoolPref(aData));
+                env2 && env2.editor.setBehavioursEnabled(this._branch.getBoolPref(aData));
+            break;
             case "showautocompletionhints":
                 Firebug.Ace.showautocompletionhints = this._branch.getBoolPref(aData);
             break;

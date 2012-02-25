@@ -19,6 +19,7 @@
             <preference id="acebug-wordwrap" name="extensions.acebug.wordwrap" type="bool" />
             <preference id="acebug-theme" name="extensions.acebug.theme" type="string" />
             <preference id="acebug-keybinding" name="extensions.acebug.keybinding" type="string" />
+            <preference id="acebug-autopair" name="extensions.acebug.autopair" type="bool" />
         </preferences>
 
         <groupbox>
@@ -31,6 +32,8 @@
                         label="&acebug.options.highlightactiveline;" />
                     <checkbox id="abHighlightselectedword" preference="acebug-highlightselectedword"
                         label="&acebug.options.highlightselectedword;" />
+                    <checkbox id="a" preference="acebug-autopair"
+                        label="autopair brackets and quotes" />
                     <checkbox id="abValidateasyoutype" preference="acebug-validateasyoutype"
                         label="&acebug.options.validateasyoutype;" />
                     <checkbox id="abShowinvisiblecharacters" preference="acebug-showinvisiblecharacters"

@@ -106,7 +106,7 @@ Firebug.Ace.BaseAutocompleter = {
         }
 
         // add editor handlers
-        this.editor.setKeyboardHandler(this.editor.autocompletionKeySet);
+        this.editor.keyBinding.addKeyboardHandler(this.editor.autocompletionKeySet);
         if (!this.editor.autocompleteCommandsAdded)
             this.addComandsToEditor();
         if (!this.selectionListener)
@@ -340,7 +340,7 @@ Firebug.Ace.BaseAutocompleter = {
         this.hidden = true;
         this.editor.selection.removeEventListener('changeCursor', this.selectionListener);
         this.text = this.sortedArray = this.unfilteredArray = this.object = this.text = null;
-        this.editor.setKeyboardHandler(this.editor.normalKeySet);
+        this.editor.keyBinding.removeKeyboardHandler(this.editor.autocompletionKeySet);
         this.panel.hidePopup();
         this.bubble.hidePopup();
     },

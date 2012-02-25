@@ -953,8 +953,11 @@ var Editor = function(renderer, session) {
 
     this.centerSelection = function() {
         var range = this.getSelectionRange();
-        var line = Math.floor(range.start.row + (range.end.row - range.start.row) / 2);
-        this.renderer.scrollToLine(line, true);
+        var pos = {
+            row: Math.floor(range.start.row + (range.end.row - range.start.row) / 2),
+            column: Math.floor(range.start.column + (range.end.column - range.start.column) / 2)
+        }
+        this.renderer.alignCursor(pos, 0.5);
     };
 
     this.getCursorPosition = function() {
@@ -1825,6 +1828,26 @@ var VirtualRenderer = function(container, theme) {
             this.session.setScrollLeft(Math.round(left + this.characterWidth - this.$size.scrollerWidth));
         }
     };
+	
+	this.scrollSelectionIntoView = function(start, end) {
+		// the editor is not visible
+        if (this.$size.scrollerHeight === 0)
+            return;
+		
+		var pos1 = this.$cursorLayer.getPixelPosition(start);
+		var pos2 = end && this.$cursorLayer.getPixelPosition(start);
+
+        var left = pos1.left;
+        var top = pos1.top;
+
+        if (this.scrollTop > top) {
+            this.session.setScrollTop(top);
+        }
+
+        if (this.scrollTop + this.$size.scrollerHeight < top + this.lineHeight) {
+            this.session.setScrollTop(top + this.lineHeight - this.$size.scrollerHeight);
+        }
+	};
 
     this.getScrollTop = function() {
         return this.session.getScrollTop();
@@ -1846,13 +1869,19 @@ var VirtualRenderer = function(container, theme) {
         this.session.setScrollTop(row * this.lineHeight);
     };
 
-    this.scrollToLine = function(line, center) {
-        var pos = this.$cursorLayer.getPixelPosition({row: line, column: 0});
-        var offset = pos.top;
-        if (center)
-            offset -= this.$size.scrollerHeight / 2;
+    this.alignCursor = function(cursor, alignment) {
+        if (typeof cursor == "number")
+            cursor = {row: cursor, column: 0};
+
+        var pos = this.$cursorLayer.getPixelPosition(cursor);
+        var offset = pos.top - this.$size.scrollerHeight * (alignment || 0);
 
         this.session.setScrollTop(offset);
+    };
+
+    // deprecated use alignCursor
+    this.scrollToLine = function(line, center) {
+        this.alignCursor(line, center ? 0.5 : 0)
     };
 
     this.scrollToY = function(scrollTop) {
@@ -2838,8 +2867,8 @@ var KeyBinding = function(editor) {
         var commands = this.$editor.commands;
 
         // allow keyboardHandler to consume keys
-        if (toExecute.command == "null")
-            success = true;
+        if (!toExecute.command && toExecute.isSuccessCode)
+            success = toExecute.stopEvent;
         else if (toExecute.command)
             success = commands.exec(toExecute.command, this.$editor, toExecute.args);
         else
@@ -4659,7 +4688,10 @@ Search.SELECTION = 2;
     };
 
     this.$assembleRegExp = function() {
-        if (this.$options.regExp) {
+        if (typeof this.$options.needle != 'string')
+			return this.$options.needle;
+
+		if (this.$options.regExp) {
             var needle = this.$options.needle;
         } else {
             needle = lang.escapeRegExp(this.$options.needle);
@@ -6176,7 +6208,7 @@ function normalizeCommandKeys(callback, e, keyCode) {
 
 exports.addCommandKeyListener = function(el, callback) {
     var addListener = exports.addListener;
-    if (useragent.isOldGecko || useragent.isOpera) {
+    if (useragent.isGecko || useragent.isOldGecko || useragent.isOpera) {
         // Old versions of Gecko aka. Firefox < 4.0 didn't repeat the keydown
         // event if the user pressed the key for a longer time. Instead, the
         // keydown event was fired once and later on only the keypress event.
@@ -7196,7 +7228,7 @@ dom.importCssString(
   overflow: hidden!important;\
   right: 0;\
   background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAHCAIAAABPxRC5AAAAPElEQVQImVWLwRGAMBCElou5/vuLtQQfPoz8GAbutWb3Ncacs7tLTaJSpVaSJIB7AwXkoE5Rv//X3wt4ACQ3F9lopNWrAAAAAElFTkSuQmCC) transparent 50% 0 repeat-y;\
-  -moz-border-radius:5px;\
+  border-radius:5px;\
 }\
 \
 .ace_editor>.ace_sb>div {\
@@ -7204,7 +7236,7 @@ dom.importCssString(
   left: 0px;  \
   background:#c5c5c4;\
   background: -moz-linear-gradient(left top 0grad, #f9f9f9, #e6e6e6);background:-webkit-gradient(linear, left top, right top, from(#f9f9f9), to(#e6e6e6));\
-  -moz-border-radius:4px;\
+  border-radius:4px;\
   border:1px solid #d3d2d2;\
   -moz-box-shadow:0 1px 1px rgba(0,0,0,0.1);\
 }'
@@ -7627,7 +7659,7 @@ define("ace/css/editor.css",[], "\
     color: transparent;\
 \
     border: 1px solid black;\
-    -moz-border-radius: 2px;\
+    border-radius: 2px;\
     -webkit-border-radius: 2px;\
     border-radius: 2px;\
     \
@@ -8570,6 +8602,94 @@ var Selection = function(session) {
             this.session.nonTokenRe.lastIndex = 0;
         }
         else if (match = this.session.tokenRe.exec(leftOfCursor)) {
+            column -= this.session.tokenRe.lastIndex;
+            this.session.tokenRe.lastIndex = 0;
+        }
+
+        this.moveCursorTo(row, column);
+    };
+    
+	this.moveCursorBWordRight = function() {
+        var row = this.selectionLead.row;
+        var column = this.selectionLead.column;
+        var line = this.doc.getLine(row);
+        var rightOfCursor = line.substring(column);
+
+        var match;
+        this.session.nonTokenRe.lastIndex = 0;
+        this.session.tokenRe.lastIndex = 0;
+
+        // skip folds
+        var fold = this.session.getFoldAt(row, column, 1);
+        if (fold) {
+            this.moveCursorTo(fold.end.row, fold.end.column);
+            return;
+        }
+        
+        // first skip space
+        if (match = this.session.nonTokenRe.exec(rightOfCursor)) {
+            column += this.session.nonTokenRe.lastIndex;
+            this.session.nonTokenRe.lastIndex = 0;
+            rightOfCursor = line.substring(column);
+        }
+        
+        // if at line end proceed with next line
+        if (column >= line.length) {
+            this.moveCursorTo(row, line.length);
+            this.moveCursorRight();
+            if (row < this.doc.getLength() - 1)
+                this.moveCursorWordRight();
+            return;
+        }
+        
+        // advance to the end of the next token
+        if (match = this.session.tokenRe.exec(rightOfCursor)) {
+            column += this.session.tokenRe.lastIndex;
+            this.session.tokenRe.lastIndex = 0;
+        }
+
+        this.moveCursorTo(row, column);
+    };
+
+    this.moveCursorBWordLeft = function() {
+        var row = this.selectionLead.row;
+        var column = this.selectionLead.column;
+
+        // skip folds
+        var fold;
+        if (fold = this.session.getFoldAt(row, column, -1)) {
+            this.moveCursorTo(fold.start.row, fold.start.column);
+            return;
+        }
+
+        var str = this.session.getFoldStringAt(row, column, -1);
+        if (str == null) {
+            str = this.doc.getLine(row).substring(0, column)
+        }
+        
+        var leftOfCursor = lang.stringReverse(str);
+        var match;
+        this.session.nonTokenRe.lastIndex = 0;
+        this.session.tokenRe.lastIndex = 0;
+        
+        // skip whitespace
+        if (match = this.session.nonTokenRe.exec(leftOfCursor)) {
+            column -= this.session.nonTokenRe.lastIndex;
+            leftOfCursor = leftOfCursor.slice(this.session.nonTokenRe.lastIndex);
+            this.session.nonTokenRe.lastIndex = 0;
+        }
+        
+        // if at begin of the line proceed in line above
+        if (column <= 0) {
+            this.moveCursorTo(row, 0);
+            this.moveCursorLeft();
+            if (row > 0)
+                this.moveCursorWordLeft();
+            return;
+        }
+
+        // move to the begin of the word
+        if (match = this.session.tokenRe.exec(leftOfCursor)) {
             column -= this.session.tokenRe.lastIndex;
             this.session.tokenRe.lastIndex = 0;
         }
@@ -10124,21 +10244,24 @@ function BracketMatch() {
         "}": "{"
     };
 
-    this.$findOpeningBracket = function(bracket, position) {
+    this.$findOpeningBracket = function(bracket, position, typeRe) {
         var openBracket = this.$brackets[bracket];
         var depth = 1;
 
         var iterator = new TokenIterator(this, position.row, position.column);
         var token = iterator.getCurrentToken();
-        if (!token) return null;
+        if (!token)
+			token = iterator.stepForward();
+		if (!token)
+			return
         
-        // token.type contains a period-delimited list of token identifiers
-        // (e.g.: "constant.numeric" or "paren.lparen").  Create a pattern that
-        // matches any token containing the same identifiers or a subset.  In
-        // addition, if token.type includes "rparen", then also match "lparen".
-        // So if type.token is "paren.rparen", then typeRe will match "lparen.paren".
-        var typeRe = new RegExp("(\\.?" +
-            token.type.replace(".", "|").replace("rparen", "lparen|rparen") + ")+");
+         if (!typeRe){
+			typeRe = new RegExp(
+				"(\\.?" +
+				token.type.replace(".", "\\.").replace("rparen", ".paren")
+				+ ")+"
+			);
+		}
         
         // Start searching in token, just before the character at position.column
         var valueIndex = position.column - iterator.getCurrentTokenColumn() - 2;
@@ -10177,21 +10300,24 @@ function BracketMatch() {
         return null;
     };
 
-    this.$findClosingBracket = function(bracket, position) {
+    this.$findClosingBracket = function(bracket, position, typeRe) {
         var closingBracket = this.$brackets[bracket];
         var depth = 1;
 
         var iterator = new TokenIterator(this, position.row, position.column);
         var token = iterator.getCurrentToken();
-        if (!token) return null;
+        if (!token)
+			token = iterator.stepForward();
+		if (!token)
+			return
 
-        // token.type contains a period-delimited list of token identifiers
-        // (e.g.: "constant.numeric" or "paren.lparen").  Create a pattern that
-        // matches any token containing the same identifiers or a subset.  In
-        // addition, if token.type includes "lparen", then also match "rparen".
-        // So if type.token is "lparen.paren", then typeRe will match "paren.rparen".
-        var typeRe = new RegExp("(\\.?" +
-            token.type.replace(".", "|").replace("lparen", "lparen|rparen") + ")+");
+        if (!typeRe){
+			typeRe = new RegExp(
+				"(\\.?" +
+				token.type.replace(".", "\\.").replace("lparen", ".paren")
+				+ ")+"
+			);
+		}
 
         // Start searching in token, after the character at position.column
         var valueIndex = position.column - iterator.getCurrentTokenColumn();

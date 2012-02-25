@@ -8,7 +8,7 @@ var util = require("ace/keyboard/vim/maps/util");
 exports.handler = require("ace/keyboard/vim/keyboard").handler;
 
 exports.onCursorMove = function(e) {
-    commands.onCursorMove(e.editor);
+    commands.onCursorMove(e.editor, e);
     exports.onCursorMove.scheduled = false;
 };
 
@@ -20,7 +20,7 @@ exports.handler.attach = function(editor) {
 
 exports.handler.detach = function(editor) {
     editor.removeListener("click", exports.onCursorMove);
-    commands.coreCommands.start.exec(editor);
+    util.noMode(editor);
     util.currentMode = "normal";
 };
 
@@ -36,15 +36,11 @@ var operators = require("ace/keyboard/vim/maps/operators");
 var alias = require("ace/keyboard/vim/maps/aliases");
 var registers = require("ace/keyboard/vim/registers");
 
-var NUMBER   = 1;
+var NUMBER = 1;
 var OPERATOR = 2;
-var MOTION   = 3;
-var ACTION   = 4;
-
-//var NORMAL_MODE = 0;
-//var INSERT_MODE = 1;
-//var VISUAL_MODE = 2;
-//getSelectionLead
+var MOTION = 3;
+var ACTION = 4;
+var HMARGIN = 8; // Minimum amount of line separation between margins;
 
 exports.searchStore = {
     current: "",
@@ -59,21 +55,50 @@ exports.searchStore = {
 };
 
 var repeat = function repeat(fn, count, args) {
-    count = parseInt(count);
+    count = parseInt(count, 10);
     while (0 < count--)
         fn.apply(this, args);
+};
+
+var toggleCase = function toggleCase(str) {
+    if (str[0].toUpperCase() === str[0])
+        return str.toLowerCase();
+    else
+        return str.toUpperCase();
+};
+
+var ensureScrollMargin = function(editor) {
+	var renderer = editor.renderer
+	var pos = renderer.$cursorLayer.getPixelPosition();
+
+	var top = pos.top;
+	
+	var margin = HMARGIN * renderer.layerConfig.lineHeight;
+	if (2 * margin > renderer.$size.scrollerHeight)
+		margin = renderer.$size.scrollerHeight / 2
+
+	if (renderer.scrollTop > top - margin) {
+		renderer.session.setScrollTop(top - margin);
+	}
+
+	if (renderer.scrollTop + renderer.$size.scrollerHeight < top + margin + renderer.lineHeight) {
+		renderer.session.setScrollTop(top + margin + renderer.lineHeight - renderer.$size.scrollerHeight);
+	}
 };
 
 var actions = {
     "z": {
         param: true,
         fn: function(editor, range, count, param) {
-            switch (param) {
+			switch (param) {
                 case "z":
-                    editor.centerSelection();
+                    editor.alignCursor(null, 0.5);
                     break;
                 case "t":
-                    editor.scrollToRow(editor.getCursorPosition().row);
+                    editor.alignCursor(null, 0);
+                    break;
+                case "b":
+					editor.alignCursor(null, 1);
                     break;
             }
         }
@@ -81,21 +106,24 @@ var actions = {
     "r": {
         param: true,
         fn: function(editor, range, count, param) {
-            param = util.toRealChar(param);
             if (param && param.length) {
                 repeat(function() { editor.insert(param); }, count || 1);
                 editor.navigateLeft();
             }
         }
     },
-    // "~" HACK
-    "shift-`": {
+    "~": {
         fn: function(editor, range, count) {
             repeat(function() {
-                var pos = editor.getCursorPosition();
-                var line = editor.session.getLine(pos.row);
-                var ch = line[pos.column];
-                editor.insert(toggleCase(ch));
+                var range = editor.selection.getRange();
+				if (range.isEmpty())
+					range.end.column++
+				var text = editor.session.getTextRange(range)
+				var toggled = text.toUpperCase()
+				if (toggled == text)
+					editor.navigateRight()
+				else
+					editor.session.replace(range, toggled); 
             }, count || 1);
         }
     },
@@ -103,46 +131,58 @@ var actions = {
         fn: function(editor, range, count, param) {
             editor.selection.selectWord();
             editor.findNext();
-            var cursor = editor.selection.getCursor();
-            var range  = editor.session.getWordRange(cursor.row, cursor.column);
-            editor.selection.setSelectionRange(range, true);
+			ensureScrollMargin(editor);
+			var r = editor.selection.getRange();
+			editor.selection.setSelectionRange(r, true);
         }
     },
     "#": {
         fn: function(editor, range, count, param) {
             editor.selection.selectWord();
             editor.findPrevious();
-            var cursor = editor.selection.getCursor();
-            var range  = editor.session.getWordRange(cursor.row, cursor.column);
-            editor.selection.setSelectionRange(range, true);
+			ensureScrollMargin(editor);
+			var r = editor.selection.getRange();
+			editor.selection.setSelectionRange(r, true);
         }
     },
     "n": {
         fn: function(editor, range, count, param) {
-            editor.findNext(editor.getLastSearchOptions());
-            editor.selection.clearSelection();
-            //editor.navigateWordLeft();
+            var options = editor.getLastSearchOptions();
+            options.backwards = false;
+
+            editor.selection.moveCursorRight();
+			editor.selection.clearSelection();
+            editor.findNext(options);
+			
+            ensureScrollMargin(editor);
+            var r = editor.selection.getRange();
+			r.end.row = r.start.row;
+			r.end.column = r.start.column
+			editor.selection.setSelectionRange(r, true);
         }
     },
-    "shift-n": {
+    "N": {
         fn: function(editor, range, count, param) {
-            editor.findPrevious(editor.getLastSearchOptions());
-            editor.selection.clearSelection();
-            //editor.navigateWordLeft();
+            var options = editor.getLastSearchOptions();
+            options.backwards = true;
+
+            editor.findPrevious(options);
+            ensureScrollMargin(editor);
+            var r = editor.selection.getRange();
+			r.end.row = r.start.row;
+			r.end.column = r.start.column
+			editor.selection.setSelectionRange(r, true);
         }
     },
     "v": {
         fn: function(editor, range, count, param) {
             editor.selection.selectRight();
-            util.onVisualMode = true;
-            util.onVisualLineMode = false;
-            var cursor = document.getElementsByClassName("ace_cursor")[0];
-            cursor.style.display = "none";
-        }
+            util.visualMode(editor, false);
+        },
+		acceptsMotion: true
     },
-    "shift-v": {
+    "V": {
         fn: function(editor, range, count, param) {
-            util.onVisualLineMode = true;
             //editor.selection.selectLine();
             //editor.selection.selectLeft();
             var row = editor.getCursorPosition().row;
@@ -150,9 +190,12 @@ var actions = {
             editor.selection.moveCursorTo(row, 0);
             editor.selection.selectLineEnd();
             editor.selection.visualLineStart = row;
-        }
+			
+            util.visualMode(editor, true);
+        },
+		acceptsMotion: true
     },
-    "shift-y": {
+    "Y": {
         fn: function(editor, range, count, param) {
             util.copyLine(editor);
         }
@@ -177,7 +220,7 @@ var actions = {
             editor.selection.clearSelection();
         }
     },
-    "shift-p": {
+    "P": {
         fn: function(editor, range, count, param) {
             var defaultReg = registers._default;
             editor.setOverwrite(false);
@@ -195,7 +238,7 @@ var actions = {
             editor.selection.clearSelection();
         }
     },
-    "shift-j": {
+    "J": {
         fn: function(editor, range, count, param) {
             var pos = editor.getCursorPosition();
 
@@ -251,9 +294,10 @@ var actions = {
     },
     ".": {
         fn: function(editor, range, count, param) {
-            var previous = inputBuffer.previous;
             util.onInsertReplaySequence = inputBuffer.lastInsertCommands;
-            inputBuffer.exec(editor, previous.action, previous.param);
+            var previous = inputBuffer.previous;
+            if (previous) // If there is a previous action
+                inputBuffer.exec(editor, previous.action, previous.param);
         }
     }
 };
@@ -271,11 +315,6 @@ var inputBuffer = exports.inputBuffer = {
     lastInsertCommands: [],
 
     push: function(editor, char, keyId) {
-        if (char && char.length > 1) { // There is a modifier key
-            if (!char[char.length - 1].match(/[A-za-z]/) && keyId) // It is a letter
-                char = keyId;
-        }
-
         this.idle = false;
         var wObj = this.waitingForParam;
         if (wObj) {
@@ -332,6 +371,9 @@ var inputBuffer = exports.inputBuffer = {
             else {
                 this.exec(editor, actionObj);
             }
+			
+			if (actions[char].acceptsMotion)
+				this.idle = false;
         }
         else if (this.operator) {
             this.exec(editor, { operator: this.operator }, char);
@@ -356,7 +398,7 @@ var inputBuffer = exports.inputBuffer = {
         var o = action.operator;
         var a = action.action;
 
-        if(o) {
+        if (o) {
             this.previous = {
                 action: action,
                 param: param
@@ -476,12 +518,12 @@ exports.coreCommands = {
     }
 };
 
-var handleCursorMove = exports.onCursorMove = function(editor) {
-    if(util.currentMode === 'insert' || handleCursorMove.running)
+var handleCursorMove = exports.onCursorMove = function(editor, e) {
+    if (util.currentMode === 'insert' || handleCursorMove.running)
         return;
     else if(!editor.selection.isEmpty()) {
         handleCursorMove.running = true;
-        if(util.onVisualLineMode) {
+        if (util.onVisualLineMode) {
             var originRow = editor.selection.visualLineStart;
             var cursorRow = editor.getCursorPosition().row;
             if(originRow <= cursorRow) {
@@ -500,6 +542,11 @@ var handleCursorMove = exports.onCursorMove = function(editor) {
         return;
     }
     else {
+		if (e && (util.onVisualLineMode || util.onVisualMode)) {
+			editor.selection.clearSelection();
+			util.normalMode(editor)
+		}
+		
         handleCursorMove.running = true;
         var pos = editor.getCursorPosition();
         var lineLen = editor.session.getLine(pos.row).length;
@@ -509,41 +556,41 @@ var handleCursorMove = exports.onCursorMove = function(editor) {
         handleCursorMove.running = false;
     }
 };
-
-function toggleCase(ch) {
-    if(ch.toUpperCase() === ch)
-        return ch.toLowerCase();
-    else
-        return ch.toUpperCase();
-}
-
 });
 
 define("ace/keyboard/vim/maps/util",[], function(require, exports, module) {
 var registers = require("ace/keyboard/vim/registers");
 
+var dom = require("ace/lib/dom");
+dom.importCssString('.insert-mode. ace_cursor{\
+	border-left: 2px solid #333333;\
+}\
+.ace_dark.insert-mode .ace_cursor{\
+	border-left: 2px solid #eeeeee;\
+}\
+.normal-mode .ace_cursor{\
+	border: 0!important;\
+	background-color: red;\
+    opacity: 0.5;\
+}', 'vimMode')
+
 module.exports = {
     onVisualMode: false,
     onVisualLineMode: false,
     currentMode: 'normal',
+	noMode: function(editor) {
+		editor.unsetStyle('insert-mode');
+		editor.unsetStyle('normal-mode');
+		if (editor.commands.recording)
+            editor.commands.toggleRecording();
+	},
     insertMode: function(editor) {
-		var isDarkTheme = editor.container.className.indexOf("ace_dark") != -1;
-
 		this.currentMode = 'insert';
 		// Switch editor to insert mode
-		editor.unsetStyle('insert-mode');
+		editor.setStyle('insert-mode');
+		editor.unsetStyle('normal-mode');
 
-		var cursor = document.getElementsByClassName("ace_cursor")[0];
-		if (cursor) {
-			cursor.style.display = null;
-			cursor.style.backgroundColor = null;
-			cursor.style.opacity = null;
-			cursor.style.border = null;
-			cursor.style.borderLeftColor = isDarkTheme? "#eeeeee" : "#333333";
-			cursor.style.borderLeftStyle = "solid";
-			cursor.style.borderLeftWidth = "2px";
-		}
-
+		
 		editor.setOverwrite(false);
 		editor.keyBinding.$data.buffer = "";
 		editor.keyBinding.$data.state = "insertMode";
@@ -565,16 +612,9 @@ module.exports = {
         // Switch editor to normal mode
         this.currentMode = 'normal';
 
+        editor.unsetStyle('insert-mode');
         editor.setStyle('normal-mode');
         editor.clearSelection();
-
-        var cursor = document.getElementsByClassName("ace_cursor")[0];
-        if (cursor) {
-            cursor.style.display = null;
-            cursor.style.backgroundColor = "red";
-            cursor.style.opacity = ".5";
-            cursor.style.border = "0";
-        }
 
         var pos;
         if (!editor.getOverwrite()) {
@@ -582,13 +622,12 @@ module.exports = {
             if (pos.column > 0)
                 editor.navigateLeft();
         }
-        editor.setOverwrite(true);
         editor.keyBinding.$data.buffer = "";
         editor.keyBinding.$data.state = "start";
         this.onVisualMode = false;
         this.onVisualLineMode = false;
         // Save recorded keystrokes
-        if(editor.commands.recording) {
+        if (editor.commands.recording) {
             editor.commands.toggleRecording();
             return editor.commands.macro;
         }
@@ -596,17 +635,36 @@ module.exports = {
             return [];
         }
     },
+	visualMode: function(editor, lineMode) {
+		if (
+			(this.onVisualLineMode && lineMode)
+			|| (this.onVisualMode && !lineMode)
+		) {
+			this.normalMode(editor);
+			return;
+		}
+		
+		editor.setStyle('insert-mode');
+        editor.unsetStyle('normal-mode');
+		
+		if (lineMode) {
+			this.onVisualLineMode = true;
+		} else {
+			this.onVisualMode = true;
+			this.onVisualLineMode = false;
+		}
+	},
     getRightNthChar: function(editor, cursor, char, n) {
         var line = editor.getSession().getLine(cursor.row);
         var matches = line.substr(cursor.column + 1).split(char);
 
-        return n < matches.length ? matches.slice(0, n).join(char).length : 0;
+        return n < matches.length ? matches.slice(0, n).join(char).length : null;
     },
     getLeftNthChar: function(editor, cursor, char, n) {
         var line = editor.getSession().getLine(cursor.row);
         var matches = line.substr(0, cursor.column).split(char);
 
-        return n < matches.length ? matches.slice(-1 * n).join(char).length + 2 : 0;
+        return n < matches.length ? matches.slice(-1 * n).join(char).length : null;
     },
     toRealChar: function(char) {
         if (char.length === 1)
@@ -632,31 +690,10 @@ module.exports = {
 
 define("ace/keyboard/vim/keyboard",[], function(require, exports, module) {
 
-"never use strict";
 
-var StateHandler = require("ace/keyboard/state_handler").StateHandler;
+var keyUtil  = require("ace/lib/keys");
 var cmds = require("ace/keyboard/vim/commands");
 var coreCommands = cmds.coreCommands;
-
-var matchChar = function(buffer, hashId, key, symbolicName, keyId) {
-    // If no command keys are pressed, then catch the input.
-    // If only the shift key is pressed and a character key, then
-    // catch that input as well.
-    // Otherwise, we let the input got through.
-    var matched = ((hashId === 0) || (((hashId === 1) || (hashId === 4)) && key.length === 1));
-    //console.log("INFO", arguments)
-
-    if (matched) {
-        if (keyId) {
-            keyId = String.fromCharCode(parseInt(keyId.replace("U+", "0x"), 10));
-        }
-
-        coreCommands.builder.exec = function(editor) {
-            cmds.inputBuffer.push.call(cmds.inputBuffer, editor, symbolicName, keyId);
-        }
-    }
-    return matched;
-};
 
 var inIdleState = function() {
     if (cmds.inputBuffer.idle) {
@@ -666,56 +703,80 @@ var inIdleState = function() {
 };
 
 var states = exports.states = {
-    start: [ // normal mode
-        {
-            key: "esc",
-            exec: coreCommands.stop,
+    start: { // normal mode
+        'esc': {
+            command: coreCommands.stop,
             then: "start"
         },
-        {
-            regex: "^i$",
+        'i': {
             match: inIdleState,
-            exec: coreCommands.start,
+            command: coreCommands.start,
             then: "insertMode"
         },
-        {
-            regex: "^shift-i$",
+        'I': {
             match: inIdleState,
-            exec: coreCommands.startBeginning,
+            command: coreCommands.startBeginning,
             then: "insertMode"
         },
-        {
-            regex: "^a$",
+        'a': {
             match: inIdleState,
-            exec: coreCommands.append,
+            command: coreCommands.append,
             then: "insertMode"
         },
-        {
-            regex: "^shift-a$",
+        'A': {
             match: inIdleState,
-            exec: coreCommands.appendEnd,
+            command: coreCommands.appendEnd,
             then: "insertMode"
-        },
-        {
-            // The rest of input will be processed here
-            match: matchChar,
-            exec: coreCommands.builder
         }
-    ],
-    insertMode: [
-        {
-            key: "esc",
-            exec: coreCommands.stop,
+    },
+    insertMode: {
+        "esc": {
+            command: coreCommands.stop,
             then: "start"
         },
-        {
-            key: "backspace",
-            exec: "backspace"
+        "ctrl-[": {
+            command: coreCommands.stop,
+            then: "start"
+        },
+        "backspace": {
+            command: "backspace"
         }
-    ]
+    }
 };
 
-exports.handler = new StateHandler(states);
+exports.handler = {
+	handleKeyboard: function(data, hashId, key, keyCode, e) {
+        // ignore command keys (shift, ctrl etc.)
+        // Otherwise "shift-" is added to the buffer, and later on "shift-g"
+        // which results in "shift-shift-g" which doesn't make sense.
+        if (hashId != 0 && (key == "" || key == String.fromCharCode(0)))
+            return null;
+
+		if (hashId == 1)
+			key = 'ctrl-' + key;
+				
+		var c = states[data.state||'start'][key]
+		if (c && (!c.match || c.match())){
+			data.state = c.then
+			return c
+		}
+
+		if (data.state == 'start') {
+			if (hashId == -1 || hashId == 1) {
+				return {exec: function(editor) {
+					cmds.inputBuffer.push(editor, key);
+				}}
+				return {isSuccessCode: true, stopEvent: true}
+			} // wait for input 
+			else if (key.length === 1 && (hashId == 0 || hashId === 4)) {
+				return {isSuccessCode: true, stopEvent: false}
+			}
+		}
+    }
+}
+
+
+
 });
 
 "never use strict"
@@ -731,40 +792,264 @@ var keepScrollPosition = function(editor, fn) {
     fn && fn.call(editor);
     editor.renderer.scrollToRow(editor.getCursorPosition().row - diff);
 };
+function Motion(getRange, type){
+	if (type == 'extend')
+		var extend = true
+	else
+		var reverse = type
+
+	this.nav = function(editor) {
+		var r = getRange(editor);
+		if (!r)
+			return
+		if (!r.end)
+			var a = r
+		else if (reverse)
+			var a = r.start
+		else
+			var a = r.end
+		
+		editor.clearSelection()
+		editor.moveCursorTo(a.row, a.column);
+	}
+	this.sel = function(editor){
+		var r = getRange(editor);
+		if (!r)
+			return
+		if (extend)
+			return editor.selection.setSelectionRange(r);
+
+		if (!r.end)
+			var a = r
+		else if (reverse)
+			var a = r.start
+		else
+			var a = r.end
+
+		editor.selection.selectTo(a.row, a.column);
+	}
+}
+
+var nonWordRe = /[\s.\/\\()\"'-:,.;<>~!@#$%^&*|+=\[\]{}`~?]/
+var wordSeparatorRe = /[.\/\\()\"'-:,.;<>~!@#$%^&*|+=\[\]{}`~?]/
+var whiteRe = /\s/
+var StringStream = function(editor, cursor) {
+    var sel = editor.selection
+	this.range = sel.getRange()
+	cursor = cursor || sel.selectionLead
+	this.row = cursor.row;
+	this.col = cursor.column;
+	var line = editor.session.getLine(this.row);
+	var maxRow = editor.session.getLength()
+	this.ch = line[this.col] || '\n'
+	this.skippedLines = 0
+
+	this.next = function() {
+		this.ch = line[++this.col] || this.handleNewLine(1)
+        //this.debug()
+        return this.ch
+	}
+	this.prev = function() {
+		this.ch = line[--this.col] || this.handleNewLine(-1)
+        //this.debug()
+        return this.ch
+	}
+    this.peek = function(dir) {
+		var ch = line[this.col + dir]
+		if (ch)
+			return ch
+		if (dir == -1)
+			return '\n'
+		if (this.col == line.length - 1)
+			return '\n'
+		return editor.session.getLine(this.row + 1)[0] || '\n'
+	}
+
+	this.handleNewLine = function(dir) {
+		if (dir == 1){
+			if (this.col == line.length)
+				return '\n'
+			if (this.row == maxRow - 1)
+				return ''
+			this.col = 0
+			this.row ++
+			line = editor.session.getLine(this.row)
+			this.skippedLines++
+			return line[0] || '\n'
+		}
+		if (dir == -1) {
+			if (this.row == 0)
+				return ''
+			this.row --
+			line = editor.session.getLine(this.row)
+			this.col = line.length;
+			this.skippedLines--
+			return '\n'
+		}
+	}
+	this.debug = function() {
+		console.log(line.substring(0, this.col)+'|'+this.ch+'\''+this.col+'\''+line.substr(this.col+1))
+	}
+}
+
+var Search = require("ace/search").Search
+Search = new Search
+
+function find(editor, needle, dir) {
+	search.$options.needle = needle
+	search.$options.backwards = dir == -1
+	return search.find(editor.session)
+}
+var lang = require("ace/lib/lang");
+var Range = require("ace/range").Range;
+
+    var moveCursorWordRight = function(editor) {
+		var sel = editor.selection
+    	var range = sel.getRange()
+        var row = sel.selectionLead.row;
+        var col = sel.selectionLead.column;
+        var line = editor.session.getLine(row);
+        var ch = line[col]
+
+        var fold;
+        if (fold = this.session.getFoldAt(row, column, 1)) {
+            this.moveCursorTo(fold.end.row, fold.end.column);
+            return;
+        } else if (column == line.length) {
+            this.moveCursorRight();
+            return;
+        }
+        else if (match = this.session.nonTokenRe.exec(rightOfCursor)) {
+            column += this.session.nonTokenRe.lastIndex;
+            this.session.nonTokenRe.lastIndex = 0;
+        }
+        else if (match = this.session.tokenRe.exec(rightOfCursor)) {
+            column += this.session.tokenRe.lastIndex;
+            this.session.tokenRe.lastIndex = 0;
+        }
+
+    };
+
+    this.moveCursorWordLeft = function() {
+        var row = this.selectionLead.row;
+        var column = this.selectionLead.column;
+
+        var fold;
+        if (fold = this.session.getFoldAt(row, column, -1)) {
+            this.moveCursorTo(fold.start.row, fold.start.column);
+            return;
+        }
+
+        if (column == 0) {
+            this.moveCursorLeft();
+            return;
+        }
+
+        var str = this.session.getFoldStringAt(row, column, -1);
+        if (str == null) {
+            str = this.doc.getLine(row).substring(0, column)
+        }
+        var leftOfCursor = lang.stringReverse(str);
+
+        var match;
+        this.session.nonTokenRe.lastIndex = 0;
+        this.session.tokenRe.lastIndex = 0;
+
+        if (match = this.session.nonTokenRe.exec(leftOfCursor)) {
+            column -= this.session.nonTokenRe.lastIndex;
+            this.session.nonTokenRe.lastIndex = 0;
+        }
+        else if (match = this.session.tokenRe.exec(leftOfCursor)) {
+            column -= this.session.tokenRe.lastIndex;
+            this.session.tokenRe.lastIndex = 0;
+        }
+
+        this.moveCursorTo(row, column);
+    };
+
 
 module.exports = {
-    "w": {
-        nav: function(editor) {
-            editor.navigateWordRight();
-        },
-        sel: function(editor) {
-            editor.selection.selectWordRight();
-        }
-    },
-	"shift-w": {
-        nav: function(editor) {
-            editor.navigateWordRight();
-        },
-        sel: function(editor) {
-            editor.selection.selectWordRight();
-        }
-    },
-    "b": {
-        nav: function(editor) {
-            editor.navigateWordLeft();
-        },
-        sel: function(editor) {
-            editor.selection.selectWordLeft();
-        }
-    },
-	"shift-b": {
-        nav: function(editor) {
-            editor.navigateWordLeft();
-        },
-        sel: function(editor) {
-            editor.selection.selectWordLeft();
-        }
-    },
+    "w": new Motion(function(editor) {
+		var str = new StringStream(editor)
+
+		if (str.ch && wordSeparatorRe.test(str.ch)) {
+			while (str.ch && wordSeparatorRe.test(str.ch))
+				str.next()
+		} else {
+			while (str.ch && !nonWordRe.test(str.ch))
+				str.next()			
+		}
+		while (str.ch && whiteRe.test(str.ch) && str.skippedLines < 2)
+			str.next()
+
+		str.skippedLines == 2 && str.prev()
+		return {column: str.col, row: str.row}
+	}),
+	"W": new Motion(function(editor) {
+		var str = new StringStream(editor)
+		while(str.ch && !(whiteRe.test(str.ch) && !whiteRe.test(str.peek(1))) && str.skippedLines < 2)
+			str.next()
+		if (str.skippedLines == 2)
+			str.prev()
+		else
+			str.next()
+
+		return {column: str.col, row: str.row}
+	}),
+    "b": new Motion(function(editor) {
+		var str = new StringStream(editor)
+
+		str.prev()
+		while (str.ch && whiteRe.test(str.ch) && str.skippedLines > -2)
+			str.prev()
+		
+		if (str.ch && wordSeparatorRe.test(str.ch)) {
+			while (str.ch && wordSeparatorRe.test(str.ch))
+				str.prev()
+		} else {
+			while (str.ch && !nonWordRe.test(str.ch))
+				str.prev()			
+		}
+		str.ch && str.next();
+		return {column: str.col, row: str.row}
+	}),
+	"B": new Motion(function(editor) {
+		var str = new StringStream(editor)
+		str.prev()
+		while(str.ch && !(!whiteRe.test(str.ch) && whiteRe.test(str.peek(-1))) && str.skippedLines > -2)
+			str.prev()
+
+		if (str.skippedLines == -2)
+			str.next()
+
+		return {column: str.col, row: str.row}
+	}, true),
+    "e": new Motion(function(editor) {
+		var str = new StringStream(editor)
+
+		str.next()
+		while (str.ch && whiteRe.test(str.ch))
+			str.next()
+			
+		if (str.ch && wordSeparatorRe.test(str.ch)) {
+			while (str.ch && wordSeparatorRe.test(str.ch))
+				str.next()
+		} else {
+			while (str.ch && !nonWordRe.test(str.ch))
+				str.next()			
+		}
+		str.ch && str.prev()
+		return {column: str.col, row: str.row}
+	}),
+	"E": new Motion(function(editor) {
+		var str = new StringStream(editor)
+		str.next()
+		while(str.ch && !(!whiteRe.test(str.ch) && whiteRe.test(str.peek(1))))
+			str.next()
+
+		return {column: str.col, row: str.row}
+	}),
+
     "l": {
         nav: function(editor) {
             editor.navigateRight();
@@ -808,12 +1093,41 @@ module.exports = {
             editor.selection.selectDown();
         }
     },
+
     "i": {
         param: true,
         sel: function(editor, range, count, param) {
             switch (param) {
                 case "w":
-                    editor.selection.selectWord();
+					editor.selection.selectWord();
+					break;
+				case "W":
+                    editor.selection.selectAWord();
+					break;
+				case "(":
+				case "{":
+				case "[":
+					var cursor = editor.getCursorPosition()
+					var end = editor.session.$findClosingBracket(param, cursor, /paren/)
+					if (!end)
+						return
+					var start = editor.session.$findOpeningBracket(editor.session.$brackets[param], cursor, /paren/)
+					if (!start)
+						return
+					start.column ++;
+					editor.selection.setSelectionRange(Range.fromPoints(start, end))
+					break
+				case "'":
+				case "\"":
+				case "/":
+                    var end = find(editor, param, 1)
+					if (!end)
+						return
+					var start = find(editor, param, -1)
+					if (!start)
+						return
+					editor.selection.setSelectionRange(Range.fromPoints(start.end, end.start))
+					break
             }
         }
     },
@@ -822,10 +1136,40 @@ module.exports = {
         sel: function(editor, range, count, param) {
             switch (param) {
                 case "w":
+					editor.selection.selectAWord();
+					break;
+				case "W":
                     editor.selection.selectAWord();
+					break;
+				case "(":
+				case "{":
+				case "[":
+					var cursor = editor.getCursorPosition()
+					var end = editor.session.$findClosingBracket(param, cursor, /paren/)
+					if (!end)
+						return
+					var start = editor.session.$findOpeningBracket(editor.session.$brackets[param], cursor, /paren/)
+					if (!start)
+						return
+					end.column ++;
+					editor.selection.setSelectionRange(Range.fromPoints(start, end))
+					break
+				case "'":
+				case "\"":
+				case "/":
+                    var end = find(editor, param, 1)
+					if (!end)
+						return
+					var start = find(editor, param, -1)
+					if (!start)
+						return
+					end.column ++;
+					editor.selection.setSelectionRange(Range.fromPoints(start.start, end.end))
+					break
             }
         }
     },
+
     "f": {
         param: true,
         nav: function(editor, range, count, param) {
@@ -850,7 +1194,7 @@ module.exports = {
             }
         }
     },
-    "shift-f": {
+    "F": {
         param: true,
         nav: function(editor, range, count, param) {
             count = parseInt(count, 10) || 1;
@@ -860,7 +1204,7 @@ module.exports = {
 
             if (typeof column === "number") {
                 ed.selection.clearSelection(); // Why does it select in the first place?
-                ed.moveCursorTo(cursor.row, cursor.column - column + 1);
+                ed.moveCursorTo(cursor.row, cursor.column - column - 1);
             }
         },
         sel: function(editor, range, count, param) {
@@ -870,7 +1214,7 @@ module.exports = {
             var column = util.getLeftNthChar(editor, cursor, param, count);
 
             if (typeof column === "number") {
-                ed.moveCursorTo(cursor.row, cursor.column - column + 1);
+                ed.moveCursorTo(cursor.row, cursor.column - column - 1);
             }
         }
     },
@@ -898,6 +1242,31 @@ module.exports = {
             }
         }
     },
+    "T": {
+        param: true,
+        nav: function(editor, range, count, param) {
+            count = parseInt(count, 10) || 1;
+            var ed = editor;
+            var cursor = ed.getCursorPosition();
+            var column = util.getLeftNthChar(editor, cursor, param, count);
+
+            if (typeof column === "number") {
+                ed.selection.clearSelection(); // Why does it select in the first place?
+                ed.moveCursorTo(cursor.row, -column + cursor.column);
+            }
+        },
+        sel: function(editor, range, count, param) {
+            count = parseInt(count, 10) || 1;
+            var ed = editor;
+            var cursor = ed.getCursorPosition();
+            var column = util.getLeftNthChar(editor, cursor, param, count);
+
+            if (typeof column === "number") {
+                ed.moveCursorTo(cursor.row, -column + cursor.column);
+            }
+        }
+    },
+
     "^": {
         nav: function(editor) {
             editor.navigateLineStart();
@@ -924,7 +1293,7 @@ module.exports = {
             ed.selectTo(ed.selection.selectionLead.row, 0);
         }
     },
-    "shift-g": {
+    "G": {
         nav: function(editor, range, count, param) {
             count = parseInt(count, 10);
             if (!count && count !== 0) { // Stupid JS
@@ -940,25 +1309,6 @@ module.exports = {
             editor.selection.selectTo(count, 0);
         }
     },
-    "ctrl-d": {
-        nav: function(editor, range, count, param) {
-            editor.selection.clearSelection();
-            keepScrollPosition(editor, editor.gotoPageDown);
-        },
-        sel: function(editor, range, count, param) {
-            keepScrollPosition(editor, editor.selectPageDown);
-        }
-    },
-    "ctrl-u": {
-        nav: function(editor, range, count, param) {
-            editor.selection.clearSelection();
-            keepScrollPosition(editor, editor.gotoPageUp);
-
-        },
-        sel: function(editor, range, count, param) {
-            keepScrollPosition(editor, editor.selectPageUp);
-        }
-    },
     "g": {
         param: true,
         nav: function(editor, range, count, param) {
@@ -970,6 +1320,10 @@ module.exports = {
                     console.log("End of prev word");
                     break;
                 case "g":
+                    editor.gotoLine(count || 0);
+				case "u":
+                    editor.gotoLine(count || 0);
+				case "U":
                     editor.gotoLine(count || 0);
             }
         },
@@ -1000,7 +1354,7 @@ module.exports = {
             }
         }
     },
-    "shift-o": {
+    "O": {
         nav: function(editor, range, count, param) {
             var row = editor.getCursorPosition().row;
             count = count || 1;
@@ -1021,18 +1375,42 @@ module.exports = {
             }
         }
     },
-    "%": {
-        nav: function(editor, range, count, param) {
-            var cursor = editor.getCursorPosition();
-            var match = editor.session.findMatchingBracket({
-                row: cursor.row,
-                column: cursor.column + 1
-            });
+    "%": new Motion(function(editor){
+		var brRe = /[\[\]{}()]/g;
+		var cursor = editor.getCursorPosition();
+		var ch = editor.session.getLine(cursor.row)[cursor.column]
+		if (!brRe.test(ch)){
+			var range = find(editor, brRe)
+			if (!range)
+				return
+			cursor = range.start
+		}
+		var match = editor.session.findMatchingBracket({
+			row: cursor.row,
+			column: cursor.column + 1
+		});
 
-            if (match)
-                editor.moveCursorTo(match.row, match.column);
+		return match
+	}),
+	"ctrl-d": {
+        nav: function(editor, range, count, param) {
+            editor.selection.clearSelection();
+            keepScrollPosition(editor, editor.gotoPageDown);
+        },
+        sel: function(editor, range, count, param) {
+            keepScrollPosition(editor, editor.selectPageDown);
         }
-    }
+    },
+    "ctrl-u": {
+        nav: function(editor, range, count, param) {
+            editor.selection.clearSelection();
+            keepScrollPosition(editor, editor.gotoPageUp);
+
+        },
+        sel: function(editor, range, count, param) {
+            keepScrollPosition(editor, editor.selectPageUp);
+        }
+    },
 };
 
 module.exports.backspace = module.exports.left = module.exports.h;
@@ -1104,7 +1482,10 @@ module.exports = {
 
                         break;
                     default:
+						console.log(param)
                         if (range) {
+							
+							//	range.end.column ++;
                             editor.session.remove(range);
                             util.insertMode(editor);
                         }
@@ -1275,223 +1656,5 @@ module.exports = {
     }
 };
 
-});
-
-define("ace/keyboard/state_handler",[], function(require, exports, module) {
-
-// If you're developing a new keymapping and want to get an idea what's going
-// on, then enable debugging.
-var DEBUG = false;
-
-function StateHandler(keymapping) {
-    this.keymapping = this.$buildKeymappingRegex(keymapping);
-}
-
-StateHandler.prototype = {
-    /**
-     * Build the RegExp from the keymapping as RegExp can't stored directly
-     * in the metadata JSON and as the RegExp used to match the keys/buffer
-     * need to be adapted.
-     */
-    $buildKeymappingRegex: function(keymapping) {
-        for (var state in keymapping) {
-            this.$buildBindingsRegex(keymapping[state]);
-        }
-        return keymapping;
-    },
-
-    $buildBindingsRegex: function(bindings) {
-        // Escape a given Regex string.
-        bindings.forEach(function(binding) {
-            if (binding.key) {
-                binding.key = new RegExp('^' + binding.key + '$');
-            } else if (Array.isArray(binding.regex)) {
-                if (!('key' in binding))
-                  binding.key = new RegExp('^' + binding.regex[1] + '$');
-                binding.regex = new RegExp(binding.regex.join('') + '$');
-            } else if (binding.regex) {
-                binding.regex = new RegExp(binding.regex + '$');
-            }
-        });
-    },
-
-    $composeBuffer: function(data, hashId, key, e) {
-        // Initialize the data object.
-        if (data.state == null || data.buffer == null) {
-            data.state = "start";
-            data.buffer = "";
-        }
-
-        var keyArray = [];
-        if (hashId & 1) keyArray.push("ctrl");
-        if (hashId & 8) keyArray.push("command");
-        if (hashId & 2) keyArray.push("option");
-        if (hashId & 4) keyArray.push("shift");
-        if (key)        keyArray.push(key);
-
-        var symbolicName = keyArray.join("-");
-        var bufferToUse = data.buffer + symbolicName;
-
-        // Don't add the symbolic name to the key buffer if the alt_ key is
-        // part of the symbolic name. If it starts with alt_, this means
-        // that the user hit an alt keycombo and there will be a single,
-        // new character detected after this event, which then will be
-        // added to the buffer (e.g. alt_j will result in ∆).
-        //
-        // We test for 2 and not for & 2 as we only want to exclude the case where
-        // the option key is pressed alone.
-        if (hashId != 2) {
-            data.buffer = bufferToUse;
-        }
-
-        var bufferObj = {
-            bufferToUse: bufferToUse,
-            symbolicName: symbolicName,
-        };
-
-        if (e) {
-            bufferObj.keyIdentifier = e.keyIdentifier
-        }
-
-        return bufferObj;
-    },
-
-    $find: function(data, buffer, symbolicName, hashId, key, keyIdentifier) {
-        // Holds the command to execute and the args if a command matched.
-        var result = {};
-
-        // Loop over all the bindings of the keymap until a match is found.
-        this.keymapping[data.state].some(function(binding) {
-            var match;
-
-            // Check if the key matches.
-            if (binding.key && !binding.key.test(symbolicName)) {
-                return false;
-            }
-
-            // Check if the regex matches.
-            if (binding.regex && !(match = binding.regex.exec(buffer))) {
-                return false;
-            }
-
-            // Check if the match function matches.
-            if (binding.match && !binding.match(buffer, hashId, key, symbolicName, keyIdentifier)) {
-                return false;
-            }
-
-            // Check for disallowed matches.
-            if (binding.disallowMatches) {
-                for (var i = 0; i < binding.disallowMatches.length; i++) {
-                    if (!!match[binding.disallowMatches[i]]) {
-                        return false;
-                    }
-                }
-            }
-
-            // If there is a command to execute, then figure out the
-            // command and the arguments.
-            if (binding.exec) {
-                result.command = binding.exec;
-
-                // Build the arguments.
-                if (binding.params) {
-                    var value;
-                    result.args = {};
-                    binding.params.forEach(function(param) {
-                        if (param.match != null && match != null) {
-                            value = match[param.match] || param.defaultValue;
-                        } else {
-                            value = param.defaultValue;
-                        }
-
-                        if (param.type === 'number') {
-                            value = parseInt(value);
-                        }
-
-                        result.args[param.name] = value;
-                    });
-                }
-                data.buffer = "";
-            }
-
-            // Handle the 'then' property.
-            if (binding.then) {
-                data.state = binding.then;
-                data.buffer = "";
-            }
-
-            // If no command is set, then execute the "null" fake command.
-            if (result.command == null) {
-                result.command = "null";
-            }
-
-            if (DEBUG) {
-                console.log("KeyboardStateMapper#find", binding);
-            }
-            return true;
-        });
-
-        if (result.command) {
-            return result;
-        } else {
-            data.buffer = "";
-            return false;
-        }
-    },
-
-    /**
-     * This function is called by keyBinding.
-     */
-    handleKeyboard: function(data, hashId, key, keyCode, e) {
-        // If we pressed any command key but no other key, then ignore the input.
-        // Otherwise "shift-" is added to the buffer, and later on "shift-g"
-        // which results in "shift-shift-g" which doesn't make sense.
-        if (hashId != 0 && (key == "" || key == String.fromCharCode(0))) {
-            return null;
-        }
-
-        // Compute the current value of the keyboard input buffer.
-        var r = this.$composeBuffer(data, hashId, key, e);
-        var buffer = r.bufferToUse;
-        var symbolicName = r.symbolicName;
-        var keyId = r.keyIdentifier;
-
-        r = this.$find(data, buffer, symbolicName, hashId, key, keyId);
-        if (DEBUG) {
-            console.log("KeyboardStateMapper#match", buffer, symbolicName, r);
-        }
-
-        return r;
-    }
-}
-
-/**
- * This is a useful matching function and therefore is defined here so that
- * users of KeyboardStateMapper can use it.
- *
- * @return boolean
- *          If no command key (Command|Option|Shift|Ctrl) is pressed, it
- *          returns true. If the only the Shift key is pressed + a character
- *          true is returned as well. Otherwise, false is returned.
- *          Summing up, the function returns true whenever the user typed
- *          a normal character on the keyboard and no shortcut.
- */
-exports.matchCharacterOnly = function(buffer, hashId, key, symbolicName) {
-    // If no command keys are pressed, then catch the input.
-    if (hashId == 0) {
-        return true;
-    }
-    // If only the shift key is pressed and a character key, then
-    // catch that input as well.
-    else if ((hashId == 4) && key.length == 1) {
-        return true;
-    }
-    // Otherwise, we let the input got through.
-    else {
-        return false;
-    }
-};
-
-exports.StateHandler = StateHandler;
 });
 

@@ -208,7 +208,7 @@ exports.launch = function(env, options) {
     editor.setShowPrintMargin(false);
     editor.setHighlightSelectedWord(options.highlightselectedword);
     editor.renderer.setHScrollBarAlwaysVisible(false);
-	editor.setBehavioursEnabled(true);
+	editor.setBehavioursEnabled(options.autopair);
 
     // not needed in acebug
     editor.textInput.onContextMenu = function() {};
