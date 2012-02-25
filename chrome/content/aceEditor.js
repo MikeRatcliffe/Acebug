@@ -102,6 +102,30 @@ Firebug.Ace = {
             return Firebug.largeCommandLineEditor;
         };
         Firebug.ConsolePanel.prototype.detach = this.detach
+		
+		Firebug.ScriptPanel.prototype.initializeNode_1=Firebug.ScriptPanel.prototype.initializeNode
+
+		//  ctrl+space for script panel
+		Firebug.ScriptPanel.prototype.initializeNode=function(node) {
+			this.initializeNode_1(node)
+			node.addEventListener("keypress", this.onKeyPress, false)
+		}
+
+		Firebug.ScriptPanel.prototype.onKeyPress = function(e) {
+			if (e.which==32 && (e.ctrlKey || e.altKey || e.metaKey)) {
+				var text = e.view.getSelection().toString()
+				var context =  Firebug.currentContext
+				var popup = Firebug.CommandLine.Popup
+			
+				if(!popup.isVisible()){
+					popup.toggle(context);
+				}
+				Firebug.largeCommandLineEditor.$useConsoleDir = e.shiftKey
+				Firebug.CommandLine.enter(context, text)
+				var tbox = Firebug.CommandLine.getSingleRowCommandLine(Firebug.currentContext)
+				tbox.value = text
+			}
+		}
     },
 
     detach: function(oldChrome, newChrome) {
@@ -396,7 +420,7 @@ Firebug.largeCommandLineEditor = {
 		}
 		this.commandHistory.appendToHistory(expr);
 
-		var goodOrBad = Firebug.Console.log.bind(Firebug.Console);
+		var goodOrBad = Firebug.largeCommandLineEditor.logSuccess
 		this.evaluate(Firebug.largeCommandLineEditor.jsOrCoffee(expr), context, null, null, goodOrBad, goodOrBad);
 	},
 
