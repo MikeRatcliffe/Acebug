@@ -397,6 +397,9 @@ var inputBuffer = exports.inputBuffer = {
         var m = action.motion;
         var o = action.operator;
         var a = action.action;
+		
+		if (!param)
+			param = action.param;
 
         if (o) {
             this.previous = {
@@ -512,9 +515,6 @@ exports.coreCommands = {
             util.insertMode(editor);
             setPreviousCommand(appendEnd);
         }
-    },
-    builder: {
-        exec: function builder(editor) {}
     }
 };
 
@@ -695,53 +695,23 @@ var keyUtil  = require("ace/lib/keys");
 var cmds = require("ace/keyboard/vim/commands");
 var coreCommands = cmds.coreCommands;
 
-var inIdleState = function() {
-    if (cmds.inputBuffer.idle) {
-        return true;
-    }
-    return false;
-};
 
-var states = exports.states = {
-    start: { // normal mode
-        'esc': {
-            command: coreCommands.stop,
-            then: "start"
-        },
-        'i': {
-            match: inIdleState,
-            command: coreCommands.start,
-            then: "insertMode"
-        },
-        'I': {
-            match: inIdleState,
-            command: coreCommands.startBeginning,
-            then: "insertMode"
-        },
-        'a': {
-            match: inIdleState,
-            command: coreCommands.append,
-            then: "insertMode"
-        },
-        'A': {
-            match: inIdleState,
-            command: coreCommands.appendEnd,
-            then: "insertMode"
-        }
-    },
-    insertMode: {
-        "esc": {
-            command: coreCommands.stop,
-            then: "start"
-        },
-        "ctrl-[": {
-            command: coreCommands.stop,
-            then: "start"
-        },
-        "backspace": {
-            command: "backspace"
-        }
-    }
+var startCommands = { 
+	"ctrl-space": {
+		command: coreCommands.start
+	},
+	'i': {
+		command: coreCommands.start
+	},
+	'I': {
+		command: coreCommands.startBeginning,
+	},
+	'a': {
+		command: coreCommands.append
+	},
+	'A': {
+		command: coreCommands.appendEnd
+	}
 };
 
 exports.handler = {
@@ -754,22 +724,26 @@ exports.handler = {
 
 		if (hashId == 1)
 			key = 'ctrl-' + key;
-				
-		var c = states[data.state||'start'][key]
-		if (c && (!c.match || c.match())){
-			data.state = c.then
-			return c
-		}
 
 		if (data.state == 'start') {
 			if (hashId == -1 || hashId == 1) {
+				if (cmds.inputBuffer.idle && startCommands[key])
+					return startCommands[key];
+				
 				return {exec: function(editor) {
-					cmds.inputBuffer.push(editor, key);
-				}}
-				return {isSuccessCode: true, stopEvent: true}
+						cmds.inputBuffer.push(editor, key);
+					}
+				}
 			} // wait for input 
-			else if (key.length === 1 && (hashId == 0 || hashId === 4)) {
+			else if (key.length === 1 && (hashId == 0 || hashId === 4)) { //no modifier || shift
 				return {isSuccessCode: true, stopEvent: false}
+			} else if (key == 'esc') {
+				return {command: coreCommands.stop}
+			}
+		} else {
+			if (key == 'esc' || key == 'ctrl-[') {
+				data.state = 'start'
+				return {command: coreCommands.stop}
 			}
 		}
     }
@@ -893,7 +867,7 @@ var StringStream = function(editor, cursor) {
 }
 
 var Search = require("ace/search").Search
-Search = new Search
+var search = new Search
 
 function find(editor, needle, dir) {
 	search.$options.needle = needle
@@ -1594,7 +1568,7 @@ module.exports = {
             count: 1
         }
     },
-    "shift-x": {
+    "X": {
         operator: {
             char: "d",
             count: 1
@@ -1604,7 +1578,7 @@ module.exports = {
             count: 1
         }
     },
-    "shift-d": {
+    "D": {
         operator: {
             char: "d",
             count: 1
@@ -1614,7 +1588,7 @@ module.exports = {
             count: 1
         }
     },
-    "shift-c": {
+    "C": {
         operator: {
             char: "c",
             count: 1
@@ -1634,15 +1608,12 @@ module.exports = {
             count: 1
         }
     },
-    "shift-s": {
+    "S": {
         operator: {
             char: "c",
             count: 1
         },
-        motion: {
-            char: "l",
-            count: 1
-        }
+        param: "c"
     }
 };
 });
