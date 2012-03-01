@@ -31,7 +31,7 @@ function makeReq(href) {
 }
 
 function getThemeNames() {
-    var str = makeReq('chrome://acebug/content/ace++/res/ace');
+    var str = makeReq('chrome://acebug/content/ace++/res/ace/');
     var themeNames = str.match(/theme-.*\.js/g).map(function(x) {
         return x.slice(6, -3);
     });

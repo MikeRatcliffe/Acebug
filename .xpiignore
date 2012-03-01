@@ -1,2 +1,2 @@
-exclude chrome/content/ace++/(boot|consoleOutputMode|edit-protocol-editor|editApp|fbeditor-devel|log-view).js
-exclude chrome/content/ace++/(log-view|simple-editor).html
+exclude chrome/content/ace\+\+/(0|boot|consoleOutputMode|edit-protocol-editor|editApp|fbeditor-devel|log-view).js
+exclude chrome/content/ace\+\+/(log-view|simple-editor).html
