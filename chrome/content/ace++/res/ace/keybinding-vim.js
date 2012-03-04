@@ -55,7 +55,6 @@ exports.searchStore = {
 };
 
 var repeat = function repeat(fn, count, args) {
-    count = parseInt(count, 10);
     while (0 < count--)
         fn.apply(this, args);
 };
@@ -240,24 +239,24 @@ var actions = {
     },
     "J": {
         fn: function(editor, range, count, param) {
-            var pos = editor.getCursorPosition();
+			var session = editor.session
+			range = editor.getSelectionRange();
+            var pos = {row: range.start.row, column: range.start.column};
+			count = count || range.end.row - range.start.row;
+			var maxRow = Math.min(pos.row + (count || 1), session.getLength() - 1);
+        
+			range.start.column = session.getLine(pos.row).length;
+			range.end.column = session.getLine(maxRow).length;
+			range.end.row = maxRow;
+			
+			var text = ""
+			for (var i = pos.row; i < maxRow; i++) {
+				var nextLine = session.getLine(i + 1);
+				text += " " + /^\s*(.*)$/.exec(nextLine)[1] || "";
+			}
 
-            if (editor.session.getLength() === pos.row + 1)
-                return;
-
-            var nextLine = editor.session.getLine(pos.row + 1);
-            var cleanLine = /^\s*(.*)$/.exec(nextLine)[1];
-
-            editor.navigateDown();
-            editor.removeLines();
-
-            if (editor.session.getLength() > editor.getCursorPosition().row + 1)
-                editor.navigateUp();
-
-            editor.navigateLineEnd();
-            editor.insert(" " + (cleanLine || ""));
+			session.replace(range, text);
             editor.moveCursorTo(pos.row, pos.column);
-
         }
     },
     "u": {
@@ -390,7 +389,7 @@ var inputBuffer = exports.inputBuffer = {
     getCount: function() {
         var count = this.currentCount;
         this.currentCount = "";
-        return count;
+        return count && parseInt(count, 10);
     },
 
     exec: function(editor, action, param) {
@@ -426,7 +425,7 @@ var inputBuffer = exports.inputBuffer = {
         else if (m) {
             var run = function(fn) {
                 if (fn && typeof fn === "function") { // There should always be a motion
-                    if (m.count)
+                    if (m.count && !motionObj.handlesCount)
                         repeat(fn, m.count, [editor, null, m.count, param]);
                     else
                         fn(editor, null, m.count, param);
@@ -697,9 +696,6 @@ var coreCommands = cmds.coreCommands;
 
 
 var startCommands = { 
-	"ctrl-space": {
-		command: coreCommands.start
-	},
 	'i': {
 		command: coreCommands.start
 	},
@@ -729,7 +725,7 @@ exports.handler = {
 			if (hashId == -1 || hashId == 1) {
 				if (cmds.inputBuffer.idle && startCommands[key])
 					return startCommands[key];
-				
+
 				return {exec: function(editor) {
 						cmds.inputBuffer.push(editor, key);
 					}
@@ -1146,11 +1142,11 @@ module.exports = {
 
     "f": {
         param: true,
+		handlesCount: true,
         nav: function(editor, range, count, param) {
-            count = parseInt(count, 10) || 1;
             var ed = editor;
             var cursor = ed.getCursorPosition();
-            var column = util.getRightNthChar(editor, cursor, param, count);
+            var column = util.getRightNthChar(editor, cursor, param, count || 1);
 
             if (typeof column === "number") {
                 ed.selection.clearSelection(); // Why does it select in the first place?
@@ -1158,10 +1154,9 @@ module.exports = {
             }
         },
         sel: function(editor, range, count, param) {
-            count = parseInt(count, 10) || 1;
             var ed = editor;
             var cursor = ed.getCursorPosition();
-            var column = util.getRightNthChar(editor, cursor, param, count);
+            var column = util.getRightNthChar(editor, cursor, param, count || 1);
 
             if (typeof column === "number") {
                 ed.moveCursorTo(cursor.row, column + cursor.column + 1);
@@ -1170,6 +1165,7 @@ module.exports = {
     },
     "F": {
         param: true,
+		handlesCount: true,
         nav: function(editor, range, count, param) {
             count = parseInt(count, 10) || 1;
             var ed = editor;
@@ -1182,10 +1178,9 @@ module.exports = {
             }
         },
         sel: function(editor, range, count, param) {
-            count = parseInt(count, 10) || 1;
             var ed = editor;
             var cursor = ed.getCursorPosition();
-            var column = util.getLeftNthChar(editor, cursor, param, count);
+            var column = util.getLeftNthChar(editor, cursor, param, count || 1);
 
             if (typeof column === "number") {
                 ed.moveCursorTo(cursor.row, cursor.column - column - 1);
@@ -1194,11 +1189,11 @@ module.exports = {
     },
     "t": {
         param: true,
+		handlesCount: true,
         nav: function(editor, range, count, param) {
-            count = parseInt(count, 10) || 1;
             var ed = editor;
             var cursor = ed.getCursorPosition();
-            var column = util.getRightNthChar(editor, cursor, param, count);
+            var column = util.getRightNthChar(editor, cursor, param, count || 1);
 
             if (typeof column === "number") {
                 ed.selection.clearSelection(); // Why does it select in the first place?
@@ -1206,10 +1201,9 @@ module.exports = {
             }
         },
         sel: function(editor, range, count, param) {
-            count = parseInt(count, 10) || 1;
             var ed = editor;
             var cursor = ed.getCursorPosition();
-            var column = util.getRightNthChar(editor, cursor, param, count);
+            var column = util.getRightNthChar(editor, cursor, param, count || 1);
 
             if (typeof column === "number") {
                 ed.moveCursorTo(cursor.row, column + cursor.column);
@@ -1218,11 +1212,11 @@ module.exports = {
     },
     "T": {
         param: true,
+		handlesCount: true,
         nav: function(editor, range, count, param) {
-            count = parseInt(count, 10) || 1;
             var ed = editor;
             var cursor = ed.getCursorPosition();
-            var column = util.getLeftNthChar(editor, cursor, param, count);
+            var column = util.getLeftNthChar(editor, cursor, param, count || 1);
 
             if (typeof column === "number") {
                 ed.selection.clearSelection(); // Why does it select in the first place?
@@ -1230,10 +1224,9 @@ module.exports = {
             }
         },
         sel: function(editor, range, count, param) {
-            count = parseInt(count, 10) || 1;
             var ed = editor;
             var cursor = ed.getCursorPosition();
-            var column = util.getLeftNthChar(editor, cursor, param, count);
+            var column = util.getLeftNthChar(editor, cursor, param, count || 1);
 
             if (typeof column === "number") {
                 ed.moveCursorTo(cursor.row, -column + cursor.column);
@@ -1269,14 +1262,12 @@ module.exports = {
     },
     "G": {
         nav: function(editor, range, count, param) {
-            count = parseInt(count, 10);
             if (!count && count !== 0) { // Stupid JS
                 count = editor.session.getLength();
             }
             editor.gotoLine(count);
         },
         sel: function(editor, range, count, param) {
-            count = parseInt(count, 10);
             if (!count && count !== 0) { // Stupid JS
                 count = editor.session.getLength();
             }
@@ -1405,66 +1396,66 @@ var registers = require("ace/keyboard/vim/registers");
 
 module.exports = {
     "d": {
-            selFn: function(editor, range, count, param) {
-                registers._default.text = editor.getCopyText();
-                registers._default.isLine = util.onVisualLineMode;
-                if(util.onVisualLineMode)
-                    editor.removeLines();
-                else
-                    editor.session.remove(range);
-                util.normalMode(editor);
-            },
-            fn: function(editor, range, count, param) {
-                count = parseInt(count || 1, 10);
-                switch (param) {
-                    case "d":
-                        registers._default.text = "";
-                        registers._default.isLine = true;
-                        for (var i=0; i<count; i++) {
-                            editor.selection.selectLine();
-                            registers._default.text += editor.getCopyText();
-                            var selRange = editor.getSelectionRange();
-                            editor.session.remove(selRange);
-                            editor.selection.clearSelection();
-                        }
-                        registers._default.text = registers._default.text.replace(/\n$/, "");
-                        break;
-                    default:
-                        if (range) {
-                            editor.selection.setSelectionRange(range);
-                            registers._default.text = editor.getCopyText();
-                            registers._default.isLine = false;
-                            editor.session.remove(range);
-                            editor.selection.clearSelection();
-                        }
-                }
-            }
+		selFn: function(editor, range, count, param) {
+			registers._default.text = editor.getCopyText();
+			registers._default.isLine = util.onVisualLineMode;
+			if(util.onVisualLineMode)
+				editor.removeLines();
+			else
+				editor.session.remove(range);
+			util.normalMode(editor);
+		},
+		fn: function(editor, range, count, param) {
+            count = count || 1;
+			switch (param) {
+				case "d":
+					registers._default.text = "";
+					registers._default.isLine = true;
+					for (var i = 0; i < count; i++) {
+						editor.selection.selectLine();
+						registers._default.text += editor.getCopyText();
+						var selRange = editor.getSelectionRange();
+						editor.session.remove(selRange);
+						editor.selection.clearSelection();
+					}
+					registers._default.text = registers._default.text.replace(/\n$/, "");
+					break;
+				default:
+					if (range) {
+						editor.selection.setSelectionRange(range);
+						registers._default.text = editor.getCopyText();
+						registers._default.isLine = false;
+						editor.session.remove(range);
+						editor.selection.clearSelection();
+					}
+			}
+		}
     },
     "c": {
-            selFn: function(editor, range, count, param) {
-                editor.session.remove(range);
-                util.insertMode(editor);
-            },
-            fn: function(editor, range, count, param) {
-                count = parseInt(count || 1, 10);
-                switch (param) {
-                    case "c":
-                        for (var i=0; i < count; i++) {
-                            editor.removeLines();
-                            util.insertMode(editor);
-                        }
+		selFn: function(editor, range, count, param) {
+			editor.session.remove(range);
+			util.insertMode(editor);
+		},
+		fn: function(editor, range, count, param) {
+            count = count || 1;
+			switch (param) {
+				case "c":
+					for (var i = 0; i < count; i++) {
+						editor.removeLines();
+						util.insertMode(editor);
+					}
 
-                        break;
-                    default:
-						console.log(param)
-                        if (range) {
-							
-							//	range.end.column ++;
-                            editor.session.remove(range);
-                            util.insertMode(editor);
-                        }
-                }
-            }
+					break;
+				default:
+					console.log(param)
+					if (range) {
+						
+						//	range.end.column ++;
+						editor.session.remove(range);
+						util.insertMode(editor);
+					}
+			}
+		}
     },
     "y": {
         selFn: function(editor, range, count, param) {
@@ -1474,7 +1465,7 @@ module.exports = {
             util.normalMode(editor);
         },
         fn: function(editor, range, count, param) {
-            count = parseInt(count || 1, 10);
+            count = count || 1;
             switch (param) {
                 case "y":
                     var pos = editor.getCursorPosition();
@@ -1501,7 +1492,7 @@ module.exports = {
     },
     ">": {
         selFn: function(editor, range, count, param) {
-            count = parseInt(count || 1, 10);
+            count = count || 1;
             for (var i = 0; i < count; i++) {
                 editor.indent();
             }
@@ -1527,14 +1518,14 @@ module.exports = {
     },
     "<": {
         selFn: function(editor, range, count, param) {
-            count = parseInt(count || 1, 10);
+            count = count || 1;
             for (var i = 0; i < count; i++) {
                 editor.blockOutdent();
             }
             util.normalMode(editor);
         },
         fn: function(editor, range, count, param) {
-            count = parseInt(count || 1, 10);
+            count = count || 1;
             switch (param) {
                 case "<":
                     var pos = editor.getCursorPosition();

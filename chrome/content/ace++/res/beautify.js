@@ -570,8 +570,13 @@ function js_beautify(js_source_text, options) {
 
         if (c === '<' && input.substring(parser_pos - 1, parser_pos + 3) === '<!--') {
             parser_pos += 3;
+            c = '<!--';
+            while (input[parser_pos] != '\n' && parser_pos < input_length) {
+                c += input[parser_pos];
+                parser_pos++;
+            }
             flags.in_html_comment = true;
-            return ['<!--', 'TK_COMMENT'];
+            return [c, 'TK_COMMENT'];
         }
 
         if (c === '-' && flags.in_html_comment && input.substring(parser_pos - 1, parser_pos + 2) === '-->') {
@@ -706,6 +711,9 @@ function js_beautify(js_source_text, options) {
             if (last_text === ';' || last_type === 'TK_START_BLOCK') {
                 print_newline();
             } else if (last_type === 'TK_END_EXPR' || last_type === 'TK_START_EXPR' || last_type === 'TK_END_BLOCK' || last_text === '.') {
+                if (wanted_newline) {
+                    print_newline();
+                }
                 // do nothing on (( and )( and ][ and ]( and .(
             } else if (last_type !== 'TK_WORD' && last_type !== 'TK_OPERATOR') {
                 print_single_space();

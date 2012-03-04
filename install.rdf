@@ -7,7 +7,7 @@
     <em:name>Acebug</em:name>
     <em:description>Syntax highlighting for the Firebug command line using Ace. Firebug 1.7X.0a10 or above must be installed in order to use this extension.</em:description>
     <em:id>acebug@mozilla.org</em:id>
-    <em:version>1.9.1</em:version>
+    <em:version>1.9.2</em:version>
     <em:type>2</em:type>
     <em:creator>Harutyun Amirjanyan &amp; Michael Ratcliffe</em:creator>
     <em:iconURL>chrome://acebug/content/acebug.png</em:iconURL>

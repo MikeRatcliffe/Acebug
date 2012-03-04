@@ -2812,7 +2812,7 @@ require("ace/commands/default_commands");
 
 var KeyBinding = function(editor) {
     this.$editor = editor;
-    this.$data = { };
+    this.$data = {editor: this.$editor};
     this.$handlers = [this.$editor.commands];
 };
 
@@ -2820,7 +2820,7 @@ var KeyBinding = function(editor) {
     this.setKeyboardHandler = function(keyboardHandler) {
         if (this.$handlers[this.$handlers.length - 1] == keyboardHandler)
             return;
-        this.$data = { };
+        this.$data = {editor: this.$editor};
         for (var i = 0; i < this.$handlers.length; i++)
             this.$handlers[i].detach && this.$handlers[i].detach(this.$editor);
         
@@ -2886,9 +2886,8 @@ var KeyBinding = function(editor) {
     };
 
     this.onTextInput = function(text, pasted) {
-        var success = false;
-        if (!pasted && text.length == 1)
-            success = this.$callKeyboardHandlers(-1, text);
+        if (!pasted)
+            var success = this.$callKeyboardHandlers(-1, text);
         if (!success)
             this.$editor.commands.exec("insertstring", this.$editor, text);
     };
@@ -5964,9 +5963,9 @@ var keys = require("ace/lib/keys");
 var useragent = require("ace/lib/useragent");
 var dom = require("ace/lib/dom");
 
-exports.addListener = function(elem, type, callback) {
+exports.addListener = function(elem, type, callback, capture) {
     if (elem.addEventListener) {
-        return elem.addEventListener(type, callback, false);
+        return elem.addEventListener(type, callback, capture || false);
     }
     if (elem.attachEvent) {
         var wrapper = function() {
@@ -7659,8 +7658,6 @@ define("ace/css/editor.css",[], "\
     color: transparent;\
 \
     border: 1px solid black;\
-    border-radius: 2px;\
-    -webkit-border-radius: 2px;\
     border-radius: 2px;\
     \
     cursor: pointer;\
