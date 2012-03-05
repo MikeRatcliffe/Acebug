@@ -5,8 +5,9 @@ FBL.ns(function() {
 // ************************************************************************************************
 // Constants
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
+var Cc = Components.classes;
+var Ci = Components.interfaces;
+var Str
 
 /***********************************************************/
 var $ACESTR = function(name) {
@@ -398,8 +399,9 @@ Firebug.Ace = {
 
 Firebug.largeCommandLineEditor = {
 	hook: function(){
-		Components.utils.import("resource://gre/modules/reflect.jsm")		
-		Firebug.CommandLine.enter = this.onLineEditorEnterOverride		
+		Components.utils.import("resource://gre/modules/reflect.jsm")
+		Firebug.CommandLine.enter = this.onLineEditorEnterOverride	
+		Str = Firebug.require("firebug/lib/string")		
 	},
 	onLineEditorEnterOverride: function (context, command) {
 		var expr = command ? command : this.acceptCompletionOrReturnIt(context);
@@ -411,26 +413,27 @@ Firebug.largeCommandLineEditor = {
 			Firebug.Console.log(Locale.$STR("console.JSDisabledInFirefoxPrefs"), context, "info");
 			return;
 		}
-		if (!Firebug.commandEditor || context.panelName != "console") {
+		
+		if (!Firebug.commandEditor || context.panelName != "console")
 			this.clear(context);
-			Firebug.Console.log(">>> " + expr, context, "command", FirebugReps.Text);
-		} else {
-			var shortExpr = Str.cropString(Str.stripNewLines(expr), 100);
-			Firebug.Console.log(">>> " + shortExpr, context, "command", FirebugReps.Text);
-		}
+		
 		this.commandHistory.appendToHistory(expr);
-
+		
+		expr = Firebug.largeCommandLineEditor.jsOrCoffee(expr)
+		var shortExpr = Str.cropString(Str.stripNewLines(expr), 100);
+		Firebug.Console.log(">>> " + shortExpr, context, "command", Firebug.Reps.Text);
+		
 		var goodOrBad = Firebug.largeCommandLineEditor.logSuccess
-		this.evaluate(Firebug.largeCommandLineEditor.jsOrCoffee(expr), context, null, null, goodOrBad, goodOrBad);
+		this.evaluate(expr, context, null, null, goodOrBad, goodOrBad);
 	},
 
 	jsOrCoffee: function(v) {	
 		try {
-			Reflect.parse("sd+")    
+			Reflect.parse(v)
 			return v
 		} catch(e) {
 			try {
-				return this.coffeeScriptCompiler.compile(v, {bare:true})
+				return this.coffeeScriptCompiler.compile(v, {bare:true}).replace(/^\s*var[^;]+;/, '')
 			} catch(e) {
 				return v
 			}
