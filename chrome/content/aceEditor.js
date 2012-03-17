@@ -630,6 +630,9 @@ Firebug.largeCommandLineEditor = {
     setErrorLocation: function(context){
         Firebug.CommandLine.evaluate('++++', context, context.thisValue, null,
             dump, function(error) {
+				// happens when stopped in debugger
+				if (!error.source)
+					return
                 var source = error.source.split('++++')
                 context.errorLocation={
                     fileName: error.fileName,
@@ -666,20 +669,30 @@ Firebug.largeCommandLineEditor = {
         Firebug.Console.log(e);
     },
     logError: function(error) {
-        var loc = Firebug.currentContext.errorLocation
-        var self = Firebug.largeCommandLineEditor;
-        var source = (error.source||'').slice(loc.before, loc.after);
-        if (loc.fileName == error.fileName || source == self.lastEvaledCode) {
-            var cellStart = self.cell.bodyStart;
-            var lineNumber = error.lineNumber - loc.lineNumber;
-            var lines = source.split('\n');
-            var line = lines[lineNumber]||lines[lineNumber-1];
+        try {
+			var loc = Firebug.currentContext.errorLocation
+			var self = Firebug.largeCommandLineEditor;
+			if (loc) {
+				var source = (error.source||'').slice(loc.before, loc.after);
+				var detailedInfo = loc.fileName == error.fileName || source == self.lastEvaledCode
+			}
+		
+			if (!detailedInfo){
+				Firebug.Console.log(error, null, "errorMessage");
+				return
+			}
+			
+			var cellStart = self.cell.bodyStart;
+			var lineNumber = error.lineNumber - loc.lineNumber;
+			var lines = source.split('\n');
+			var line = lines[lineNumber]||lines[lineNumber-1];
 			error.source = source
-            Firebug.Console.log(
+			Firebug.Console.log(
 				error.toString() + ' `' + line + '` @'+(lineNumber+cellStart), null, "errorMessage"
 			);
-        } else
+        } catch (e) {
             Firebug.Console.log(error, null, "errorMessage");
+		}
     },
     logCoffeeError: function(error) {
 		var lineNumber = error.row+this.cell.bodyStart
@@ -706,7 +719,7 @@ Firebug.largeCommandLineEditor = {
 			"/**press ctrl+space inside ()**/\n#>>\n";
 		if (option == "2")
 			this.setValue(help);
-		else if (option == "1") {			
+		else if (option == "1") {
 			var file = Firebug.Ace.getUserFile('autosave');
 			if (file.exists())
 				var val = readEntireFile(file);
