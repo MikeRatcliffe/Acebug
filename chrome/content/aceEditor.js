@@ -10,9 +10,11 @@ var Ci = Components.interfaces;
 var Str
 
 /***********************************************************/
-var $ACESTR = function(name) {
-    return FBL.$STR(name, "strings_acebug");
-};
+var $strBundle = document.getElementById("strings_acebug")
+var $ACESTR = function(name) {return FBL.$STR(name, $strBundle)};
+
+if (Firebug.CommandEditor)
+	Firebug.CommandEditor.initialize=function(){} 
 
 Firebug.Ace = {
     dispatchName: "Ace",
@@ -78,28 +80,12 @@ Firebug.Ace = {
 
     // firebug hook
     hookIntoFirebug: function(chrome, ondetach) {
-        var fName = "getCommandLineLarge"
-        if (Firebug.CommandLine.getCommandEditor &&
-            !chrome.getCommandEditorPatched
-            ) {
-			dump(12, chrome.getCommandEditorPatched)
-           chrome.getCommandEditorPatched = true
-
-            // required for 1.8 compatibility
-            // see http://code.google.com/p/fbug/source/detail?r=11301
-            fName = "getCommandEditor"
-
-            let oldEl = chrome.$("fbLargeCommandBox")
-            let newEl = chrome.$("fbCommandEditorBox")
-            let toolbar = chrome.$("fbCommandToolbar")
-            newEl.parentNode.removeChild(newEl)
-            oldEl.appendChild(toolbar)
-            oldEl.id = "fbCommandEditorBox"
-        }
-		if (ondetach)
-			return
-
-        Firebug.CommandLine[fName] = function() {
+		try{if (Firebug.CommandEditor) {
+			Firebug.CommandEditor.editor && Firebug.CommandEditor.shutdown()
+			var node = document.getElementById("fbCommandEditor");			
+			node && node.parentNode.removeChild(node)
+		}}catch(e){Cu.reportError(e)}
+        Firebug.CommandLine.getCommandEditor = function() {
             return Firebug.largeCommandLineEditor;
         };
         Firebug.ConsolePanel.prototype.detach = this.detach
@@ -113,7 +99,7 @@ Firebug.Ace = {
 		}
 
 		Firebug.ScriptPanel.prototype.onKeyPress = function(e) {
-			if (e.which==32 && (e.ctrlKey || e.altKey || e.metaKey)) {
+			if ((e.which==32||e.which==13) && (e.ctrlKey || e.altKey || e.metaKey)) {
 				var text = e.view.getSelection().toString()
 				var context =  Firebug.currentContext
 				var popup = Firebug.CommandLine.Popup
@@ -401,7 +387,12 @@ Firebug.largeCommandLineEditor = {
 	hook: function(){
 		Components.utils.import("resource://gre/modules/reflect.jsm")
 		Firebug.CommandLine.enter = this.onLineEditorEnterOverride	
-		Str = Firebug.require("firebug/lib/string")		
+		Str = Firebug.require("firebug/lib/string")
+		// 1.10 compatibility
+		if (!Firebug.CommandLine.acceptCompletionOrReturnIt)
+			Firebug.CommandLine.acceptCompletionOrReturnIt = function(context){
+				return this.getCommandLine(context).value
+			}
 	},
 	onLineEditorEnterOverride: function (context, command) {
 		var expr = command ? command : this.acceptCompletionOrReturnIt(context);

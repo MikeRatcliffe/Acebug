@@ -51,7 +51,7 @@
     </hbox>
 
     <deck id="fbSidePanelDeck" persist="width,height">
-        <vbox id="fbLargeCommandBox">
+        <vbox id="fbCommandEditorBox">
             <iframe id="fbAceBrowser" type="content" flex="1"
                      tooltip="fbTooltip" contextmenu="fbContextMenu"
                      src="chrome://acebug/content/ace++/fbeditor.html"

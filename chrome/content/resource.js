@@ -1,9 +1,9 @@
 /* See license.txt for terms of usage */
 
 FBL.ns(function() { with (FBL) {
-var $ACESTR = function(name) {
-    return FBL.$STR(name, "strings_acebug");
-};
+
+var $strBundle = document.getElementById("strings_acebug")
+var $ACESTR = function(name) {return FBL.$STR(name, $strBundle)};
 
 /*Firebug.currentContext.getPanel('net')
 //Firebug.getp

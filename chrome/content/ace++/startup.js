@@ -289,7 +289,7 @@ exports.launch = function(env, options) {
     };
 
     editor.autocompletionKeySet = new HashHandler({
-        startAutocompleter: 'Ctrl-Space',
+        startAutocompleter: 'Ctrl-Space|Cmd-Space|Shift-Space',
         complete: 'Return',
         completeAndReplace: 'Shift-Return',
         dotComplete: 'Ctrl-.|Alt-.',
