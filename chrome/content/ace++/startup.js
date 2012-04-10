@@ -222,6 +222,7 @@ exports.launch = function(env, options) {
     window.onresize = onResize;
     onResize();
 	
+	require("ace/multi_select").MultiSelect(editor);
 	/**************************** drag&drop *****************************************************/
     event.addListener(container, "dragover", function(e) {
         return event.preventDefault(e);
@@ -485,5 +486,38 @@ exports.launch = function(env, options) {
 	}
 	editor.on('gutterclick', onGutterClick)
 
+	// linux clipboard
+	if (require("ace/lib/useragent").isLinux) {
+		var cpState
+		var onSelChange = function() {
+			editor.selection.removeEventListener("changeSelection", onSelChange)
+			cpState = "sel"
+		}
+		var listenForSelChange = function() {
+			editor.selection.on("changeSelection", onSelChange)
+		}
+		editor.on("changeSession", onSelChange)
+		editor.on("focus", listenForSelChange)
+		editor.on("blur", function() {
+			cpState = ""
+			gClipboardHelper.copyString(editor.getCopyText(),"primary")  
+		})
+		editor.on("mousedown", function(e) {
+			if (e.getButton() == 1) {
+				editor.focus()
+				var str = cpState ? editor.getCopyText() : gClipboardHelper.getData(true)
+				if (e.inSelection()) {
+					editor.selection.clearSelection()
+					if (cpState) {
+						cpState = ""
+						listenForSelChange()
+						gClipboardHelper.copyString(str, "primary")  
+					}
+				}
+				editor.session.insert(e.getDocumentPosition(), str)
+				e.stop()
+			}
+		})
+	}
 };
 });

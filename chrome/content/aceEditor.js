@@ -30,6 +30,9 @@ Firebug.Ace = {
 
         this.win1.startAcebugAutocompleter =
         this.win2.startAcebugAutocompleter = this.startAutocompleter;
+		
+		this.win1.gClipboardHelper =
+        this.win2.gClipboardHelper = gClipboardHelper;
 
         //set Firebug.Ace on wrapped window so that Firebug.getElementPanel can access it
         win1Wrapped.document.getElementById('editor').ownerPanel = this;
@@ -808,12 +811,15 @@ var acebugPrefObserver = {
 var gClipboardHelper = Firebug.Ace.gClipboardHelper = {
     cbHelperService: Cc["@mozilla.org/widget/clipboardhelper;1"].getService(Ci.nsIClipboardHelper),
 
-    copyString: function(str) {
+    copyString: function(str, primaryCb) {
         if (str)
-            this.cbHelperService.copyString(str);
+			if (primaryCb)
+				this.cbHelperService.copyStringToClipboard(str, 0);
+			else
+				this.cbHelperService.copyString(str);
     },
 
-    getData: function() {
+    getData: function(primaryCb) {
         try{
             var pastetext,
                 clip = Cc["@mozilla.org/widget/clipboard;1"].getService(Ci.nsIClipboard),
@@ -822,7 +828,7 @@ var gClipboardHelper = Firebug.Ace.gClipboardHelper = {
                 strLength={};
 
             trans.addDataFlavor("text/unicode");
-            clip.getData(trans,1);
+            clip.getData(trans,primaryCb?0:1);
             trans.getTransferData("text/unicode",str,strLength);
             str = str.value.QueryInterface(Components.interfaces.nsISupportsString);
             pastetext = str.data.substring(0, strLength.value/2) || "";
