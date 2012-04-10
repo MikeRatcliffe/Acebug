@@ -64,11 +64,11 @@ exports.cssText = "\
   color: rgba(255, 255, 255, 0.25);\
 }\
 \
-.ace-twilight .ace_keyword {\
+.ace-twilight .ace_keyword, .ace-twilight .ace_meta {\
   color:#CDA869;\
 }\
 \
-.ace-twilight .ace_constant {\
+.ace-twilight .ace_constant, .ace-twilight .ace_constant.ace_other {\
   color:#CF6A4C;\
 }\
 \
@@ -87,6 +87,10 @@ color:#D2A8A1;\
   color:#9B859D;\
 }\
 \
+.ace-twilight .ace_support.ace_constant {\
+  color:#CF6A4C;\
+}\
+\
 .ace-twilight .ace_fold {\
     background-color: #AC885B;\
     border-color: #F8F8F8;\
@@ -94,6 +98,14 @@ color:#D2A8A1;\
 \
 .ace-twilight .ace_support.ace_function {\
   color:#DAD085;\
+}\
+\
+.ace-twilight .ace_storage {\
+  color:#F9EE98;\
+}\
+\
+.ace-twilight .ace_variable {\
+  color:#AC885B;\
 }\
 \
 .ace-twilight .ace_string {\
@@ -137,7 +149,7 @@ color:#5F5A60;\
   color:#F9EE98;\
 }";
 
-var dom = require("ace/lib/dom");
-dom.importCssString(exports.cssText, exports.cssClass);
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
 });
 

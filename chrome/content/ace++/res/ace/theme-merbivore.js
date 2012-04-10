@@ -64,11 +64,11 @@ exports.cssText = "\
   color: #404040;\
 }\
 \
-.ace-merbivore .ace_keyword {\
+.ace-merbivore .ace_keyword, .ace-merbivore .ace_meta {\
   color:#FC6F09;\
 }\
 \
-.ace-merbivore .ace_constant {\
+.ace-merbivore .ace_constant, .ace-merbivore .ace_constant.ace_other {\
   color:#1EDAFB;\
 }\
 \
@@ -89,12 +89,20 @@ exports.cssText = "\
 background-color:#990000;\
 }\
 \
+.ace-merbivore .ace_support.ace_constant {\
+  color:#8DFF0A;\
+}\
+\
 .ace-merbivore .ace_fold {\
     background-color: #FC6F09;\
     border-color: #E6E1DC;\
 }\
 \
 .ace-merbivore .ace_support.ace_function {\
+  color:#FC6F09;\
+}\
+\
+.ace-merbivore .ace_storage {\
   color:#FC6F09;\
 }\
 \
@@ -119,7 +127,7 @@ color:#AD2EA4;\
     text-decoration:underline;\
 }";
 
-var dom = require("ace/lib/dom");
-dom.importCssString(exports.cssText, exports.cssClass);
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
 });
 

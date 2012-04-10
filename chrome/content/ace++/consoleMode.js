@@ -313,10 +313,3 @@ oop.inherits(Mode, TextMode);
 exports.Mode = Mode;
 });
 
-
-initConsoleMode = function(editor){
-	var consoleMode = require('ace/mode/consoleMode').Mode
-	console.log(editor)
-	editor.session.setMode(new consoleMode);
-}
-

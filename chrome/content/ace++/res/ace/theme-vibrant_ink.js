@@ -64,11 +64,11 @@ exports.cssText = "\
   color: #404040;\
 }\
 \
-.ace-vibrant-ink .ace_keyword {\
+.ace-vibrant-ink .ace_keyword, .ace-vibrant-ink .ace_meta {\
   color:#FF6600;\
 }\
 \
-.ace-vibrant-ink .ace_constant {\
+.ace-vibrant-ink .ace_constant, .ace-vibrant-ink .ace_constant.ace_other {\
   color:#339999;\
 }\
 \
@@ -93,6 +93,14 @@ background-color:#000000;\
 \
 .ace-vibrant-ink .ace_support.ace_function {\
   color:#FFCC00;\
+}\
+\
+.ace-vibrant-ink .ace_variable {\
+  color:#FFCC00;\
+}\
+\
+.ace-vibrant-ink .ace_variable.ace_parameter {\
+  font-style:italic;\
 }\
 \
 .ace-vibrant-ink .ace_string {\
@@ -120,7 +128,7 @@ color:#99CC99;\
     text-decoration:underline;\
 }";
 
-var dom = require("ace/lib/dom");
-dom.importCssString(exports.cssText, exports.cssClass);
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
 });
 

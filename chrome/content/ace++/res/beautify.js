@@ -215,13 +215,15 @@ function js_beautify(js_source_text, options) {
     }
 
     function is_expression(mode) {
-        return mode === '[EXPRESSION]' || mode === '[INDENTED-EXPRESSION]' || mode === '(EXPRESSION)';
+        return in_array(mode, ['[EXPRESSION]', '(EXPRESSION)', '(FOR-EXPRESSION)', '(COND-EXPRESSION)']);
     }
 
     function restore_mode() {
         do_block_just_closed = flags.mode === 'DO_BLOCK';
         if (flag_store.length > 0) {
+            var mode = flags.mode;
             flags = flag_store.pop();
+            flags.previous_mode = mode;
         }
     }
 
@@ -232,6 +234,11 @@ function js_beautify(js_source_text, options) {
             }
         }
         return true;
+    }
+
+    function is_special_word(word)
+    {
+        return in_array(word, ['case', 'return', 'do', 'if', 'throw', 'else']);
     }
 
     function in_array(what, arr) {
@@ -457,7 +464,8 @@ function js_beautify(js_source_text, options) {
         if (c === "'" || // string
         c === '"' || // string
         (c === '/' &&
-            ((last_type === 'TK_WORD' && in_array(last_text, ['return', 'do', 'else'])) ||
+            ((last_type === 'TK_WORD' && is_special_word(last_text)) ||
+                (last_text === ')' && in_array(flags.previous_mode, ['(COND-EXPRESSION)', '(FOR-EXPRESSION)'])) ||
                 (last_type === 'TK_COMMENT' || last_type === 'TK_START_EXPR' || last_type === 'TK_START_BLOCK' || last_type === 'TK_END_BLOCK' || last_type === 'TK_OPERATOR' || last_type === 'TK_EQUALS' || last_type === 'TK_EOF' || last_type === 'TK_SEMICOLON')))) { // regexp
             var sep = c;
             var esc = false;
@@ -705,7 +713,13 @@ function js_beautify(js_source_text, options) {
 
 
             } else {
-                set_mode('(EXPRESSION)');
+                if (last_word === 'for') {
+                    set_mode('(FOR-EXPRESSION)');
+                } else if (in_array(last_word, ['if', 'while'])) {
+                    set_mode('(COND-EXPRESSION)');
+                } else {
+                    set_mode('(EXPRESSION)');
+                }
             }
 
             if (last_text === ';' || last_type === 'TK_START_BLOCK') {
@@ -774,7 +788,7 @@ function js_beautify(js_source_text, options) {
                     }
                 } else {
                     if (last_type !== 'TK_OPERATOR') {
-                        if (last_text === 'return' || last_text === '=') {
+                        if (last_text === '=' || (is_special_word(last_text) && last_text !== 'else')) {
                             print_single_space();
                         } else {
                             print_newline(true);
@@ -950,7 +964,7 @@ function js_beautify(js_source_text, options) {
                     // DONOTHING
                 } else if (token_text === 'function' && last_text == 'new') {
                     print_single_space();
-                } else if (last_text === 'return' || last_text === 'throw') {
+                } else if (is_special_word(last_text)) {
                     // no newline between 'return nnn'
                     print_single_space();
                 } else if (last_type !== 'TK_END_EXPR') {
@@ -1006,7 +1020,9 @@ function js_beautify(js_source_text, options) {
 
         case 'TK_STRING':
 
-            if (last_type == 'TK_STRING' || last_type === 'TK_START_BLOCK' || last_type === 'TK_END_BLOCK' || last_type === 'TK_SEMICOLON') {
+            if (last_type === 'TK_END_EXPR' && in_array(flags.previous_mode, ['(COND-EXPRESSION)', '(FOR-EXPRESSION)'])) {
+                print_single_space();
+            } else if (last_type == 'TK_STRING' || last_type === 'TK_START_BLOCK' || last_type === 'TK_END_BLOCK' || last_type === 'TK_SEMICOLON') {
                 print_newline();
             } else if (last_type === 'TK_WORD') {
                 print_single_space();
@@ -1051,7 +1067,7 @@ function js_beautify(js_source_text, options) {
                 }
             }
 
-            if (last_text === 'return' || last_text === 'throw') {
+            if (is_special_word(last_text)) {
                 // "return" had a special handling in TK_WORD. Now we need to return the favor
                 print_single_space();
                 print_token();
@@ -1216,7 +1232,7 @@ function js_beautify(js_source_text, options) {
             break;
 
         case 'TK_UNKNOWN':
-            if (last_text === 'return' || last_text === 'throw') {
+            if (is_special_word(last_text)) {
                 print_single_space();
             }
             print_token();
@@ -1486,7 +1502,7 @@ function style_html(html_source, options) {
   indent_size = options.indent_size || 4;
   indent_character = options.indent_char || ' ';
   brace_style = options.brace_style || 'collapse';
-  max_char = options.max_char || '70';
+  max_char = options.max_char == 0 ? Infinity : options.max_char || 70;
   unformatted = options.unformatted || ['a'];
 
   function Parser() {

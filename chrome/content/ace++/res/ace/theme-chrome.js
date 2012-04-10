@@ -10,7 +10,6 @@ exports.cssText = ".ace-chrome .ace_editor {\
 }\
 \
 .ace-chrome .ace_gutter {\
-  width: 50px;\
   background: #e8e8e8;\
   color: #333;\
   overflow : hidden;\
@@ -19,10 +18,6 @@ exports.cssText = ".ace-chrome .ace_editor {\
 .ace-chrome .ace_gutter-layer {\
   width: 100%;\
   text-align: right;\
-}\
-\
-.ace-chrome .ace_gutter-layer .ace_gutter-cell {\
-  padding-right: 6px;\
 }\
 \
 .ace-chrome .ace_print_margin {\
@@ -42,13 +37,9 @@ exports.cssText = ".ace-chrome .ace_editor {\
   border-left: 0px;\
   border-bottom: 1px solid black;\
 }\
-        \
+\
 .ace-chrome .ace_line .ace_invisible {\
   color: rgb(191, 191, 191);\
-}\
-\
-.ace-chrome .ace_line .ace_keyword {\
-  color: blue;\
 }\
 \
 .ace-chrome .ace_line .ace_constant.ace_buildin {\
@@ -84,12 +75,12 @@ exports.cssText = ".ace-chrome .ace_editor {\
   color: rgb(109, 121, 222);\
 }\
 \
+.ace-chrome .ace_variable.ace_parameter {\
+  font-style:italic;\
+color:#FD971F;\
+}\
 .ace-chrome .ace_line .ace_keyword.ace_operator {\
   color: rgb(104, 118, 135);\
-}\
-\
-.ace-chrome .ace_line .ace_string {\
-  color: #1919a6;\
 }\
 \
 .ace-chrome .ace_line .ace_comment {\
@@ -158,6 +149,8 @@ exports.cssText = ".ace-chrome .ace_editor {\
   border: 1px solid rgb(200, 200, 250);\
 }\
 \
+.ace-chrome .ace_storage,\
+.ace-chrome .ace_line .ace_keyword,\
 .ace-chrome .ace_meta.ace_tag {\
   color: rgb(147, 15, 128);\
 }\
@@ -166,6 +159,7 @@ exports.cssText = ".ace-chrome .ace_editor {\
   color: rgb(255, 0, 0)\
 }\
 \
+.ace-chrome .ace_line .ace_string,\
 .ace-chrome .ace_entity.ace_other.ace_attribute-name{\
   color: #994409;\
 }";

@@ -82,9 +82,11 @@ Firebug.Ace = {
     hookIntoFirebug: function(chrome, ondetach) {
 		try{if (Firebug.CommandEditor) {
 			Firebug.CommandEditor.editor && Firebug.CommandEditor.shutdown()
-			var node = document.getElementById("fbCommandEditor");			
-			node && node.parentNode.removeChild(node)
 		}}catch(e){Cu.reportError(e)}
+		
+		var node = document.getElementById("fbCommandEditor");
+		node && node.parentNode.removeChild(node);
+		
         Firebug.CommandLine.getCommandEditor = function() {
             return Firebug.largeCommandLineEditor;
         };
