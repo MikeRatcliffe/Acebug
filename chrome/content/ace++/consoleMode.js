@@ -1,5 +1,5 @@
 var coffeeScriptCompiler
-define('ace/mode/consoleMode', function(require, exports, module) {
+define("ace/mode/consoleMode", function(require, exports, module) {
 
 var oop = require("ace/lib/oop");
 var TextMode = require("ace/mode/text").Mode;

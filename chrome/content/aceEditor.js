@@ -450,7 +450,7 @@ Firebug.largeCommandLineEditor = {
         editor.session.autocompletionType = 'console';
 
         // set mode which allows cells and, js+coffeescript combination
-        Firebug.Ace.win2.initConsoleMode(editor)
+        Firebug.Ace.win2.editor.session.setMode("ace/mode/consoleMode")
 
 
         // clean up preload handlers
