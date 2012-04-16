@@ -518,6 +518,32 @@ exports.launch = function(env, options) {
 				e.stop()
 			}
 		})
+		
 	}
-};
-});
+	
+	void function addGutterHighlight() {
+		var div = div||editor.renderer.content.insertBefore(document.createElement("div"), editor.renderer.$textLayer.element)
+		var divH
+		editor.renderer.$gutter.addEventListener("mouseover", function(e){
+			var config = editor.renderer.layerConfig
+			if(e.target.classList.contains("ace_gutter-cell")||e.target.parentNode.classList.contains("ace_gutter-cell")){
+				div.style.top=(e.target.getBoundingClientRect().top	+ config.offset)+"px"
+			}
+			if (divH != config.lineHeight){
+				divH = config.lineHeight
+				div.style.height=divH+"px"
+			}
+		})
+		editor.renderer.$gutter.addEventListener("mouseout", function(e){
+			div.style.top="-100px"
+		})
+
+		
+		div.style.width="100%"
+		div.style.position="absolute"
+		div.style.border="solid 2px rgba(100,200,120,0.2)"
+		div.style.MozBoxSizing="border-box"
+		div.style.top="-100px"
+		div.style.zIndex="1"
+	}();
+}});

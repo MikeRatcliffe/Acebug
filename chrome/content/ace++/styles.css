@@ -126,14 +126,13 @@ separator{
     border-bottom: 1px solid #A1A1CF;
 }
 /********************************* breakpoints *****************************************/
-/*.sourceRow.hovered {
+.sourceRow-hovered {
     background-color: #EEEEEE;
 }
 
 .ace_gutter-cell.ace_breakpoint{
 	background: url("chrome://firebug/skin/breakpoint.png") no-repeat;
 }
-
 
 .ace_gutter-cell[exe_line="true"] {
     outline: 1px solid #D9D9B6;
@@ -171,7 +170,13 @@ separator{
 .ace_gutter-cell[breakpoint="true"][exe_line="true"][disabledBreakpoint="true"] > .sourceLine {
     background-image: url(chrome://firebug/skin/breakpointDisabledExe.png);
 }
-*/
+.ace_highlight {
+	position: absolute;
+	outline: 1px solid #D9D9B6;
+	margin-right: 1px;
+	background-color: lightgoldenrodyellow;
+} 
+
 /************************* console mode ****************************/
 .ace_cellHead{
 	background:rgba(120,50,100,0.1);
