@@ -198,7 +198,7 @@ Firebug.Ace = {
             },
             "-",
             {
-                label: $ACESTR("acebug options"),
+                label: "Acebug Options",
                 command: function() {
                     openDialog('chrome://acebug/content/options.xul','','resizable,centerscreen')
                 }
@@ -760,6 +760,10 @@ var acebugPrefObserver = {
         var env2 = Firebug.Ace.win2.env;
 
         switch (aData) {
+            case "fontsize":
+                env1 && env1.editor.setFontSize(this._branch.getCharPref(aData));
+                env2 && env2.editor.setFontSize(this._branch.getCharPref(aData));
+            break;
             case "highlightactiveline":
                 env1 && env1.editor.setHighlightActiveLine(this._branch.getBoolPref(aData));
                 env2 && env2.editor.setHighlightActiveLine(this._branch.getBoolPref(aData));
@@ -882,8 +886,13 @@ var HTMLPanelEditor = function() {
     this.onInput = FBL.bind(this.onInput, this);
     this.session.on('change', this.onInput);
     this.session.owner = 'htmlEditor';
+    this.session.saveCmd = this.hide.bind(this);
     //
-    this.cmdID = "cmd_toggleHTMLEditing";
+    this.cmdID = "cmd_firebug_toggleHTMLEditing";
+    if (!Firebug.chrome.$(this.cmdID)) {
+        this.cmdID = this.cmdID.replace("firebug_", "")
+    }
+    
 };
 
 HTMLPanelEditor.prototype = {
@@ -1012,12 +1021,17 @@ var StyleSheetEditor = function() {
     this.aceWindow = Firebug.Ace.win1;
     this.editor = this.aceWindow.editor;
     this.session = this.aceWindow.createSession('', '.css');
+    this.session.saveCmd = this.hide.bind(this);
     this.onInput = FBL.bind(this.onInput, this);
     this.session.on('change', this.onInput);
+    
     this.session.owner = 'stylesheetEditor';
     this.session.autocompletionType = 'css';
 
-    this.cmdID = 'cmd_togglecssEditMode';
+    this.cmdID = 'cmd_firebug_togglecssEditMode';
+    if (!Firebug.chrome.$(this.cmdID)) {
+        this.cmdID = this.cmdID.replace("firebug_", "")
+    }
 };
 
 StyleSheetEditor.prototype = FBL.extend(HTMLPanelEditor.prototype, {

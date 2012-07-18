@@ -16,6 +16,7 @@
             <preference id="acebug-showinvisiblecharacters" name="extensions.acebug.showinvisiblecharacters" type="bool" />
             <preference id="acebug-softtabs" name="extensions.acebug.softtabs" type="bool" />
             <preference id="acebug-tabsize" name="extensions.acebug.tabsize" type="int" />
+            <preference id="acebug-fontsize" name="extensions.acebug.fontsize" type="string" />
             <preference id="acebug-wordwrap" name="extensions.acebug.wordwrap" type="bool" />
             <preference id="acebug-theme" name="extensions.acebug.theme" type="string" />
             <preference id="acebug-keybinding" name="extensions.acebug.keybinding" type="string" />
@@ -41,8 +42,10 @@
                     <checkbox id="abWordwrap" preference="acebug-wordwrap"
                         label="&acebug.options.wraptext;" />
                     <checkbox id="abSoftTabs" preference="acebug-softtabs"
-                        label="&acebug.options.spacesinsteadoftabs;" onclick="softTabsClicked(false);" />
+                        label="&acebug.options.spacesinsteadoftabs;" onclick="/*softTabsClicked(false);*/" />
                     <hbox>
+                        <label id="abFontSizeLbl" value="font size" control="abFontSize" />
+                        <textbox id="abFontSize" size="2" cols="2" preference="acebug-fontsize" />
                         <spacer flex="1" />
                         <label id="abTabSizeLbl" value="&acebug.options.tabsize;" control="abTabSize" />
                         <textbox id="abTabSize" size="2" cols="2" preference="acebug-tabsize" />

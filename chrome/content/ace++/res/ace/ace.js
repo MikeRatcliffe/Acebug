@@ -10679,8 +10679,8 @@ var Text = function(parentEl) {
         var replaceFunc = function(c, a, b, tabIdx, idx4) {
             if (a) {
 				return self.showInvisibles
-					? new Array(c.length+1).join("&#160;")
-					: "<span class='ace_invisible'>" + new Array(c.length+1).join(self.SPACE_CHAR) + "</span>";
+					? "<span class='ace_invisible'>" + new Array(c.length+1).join(self.SPACE_CHAR) + "</span>"
+					: new Array(c.length+1).join("&#160;");
             } else if (c == "&") {
                 return "&#38;";
             } else if (c == "<") {

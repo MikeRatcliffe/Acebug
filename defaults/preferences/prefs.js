@@ -7,5 +7,6 @@ pref("extensions.acebug.validateasyoutype", true);
 pref("extensions.acebug.softtabs", true);
 pref("extensions.acebug.tabsize", 4);
 pref("extensions.acebug.wordwrap", true);
+pref("extensions.acebug.fontsize", "12px");
 pref("extensions.acebug.theme", "ace/theme/textmate");
 pref("extensions.acebug.autopair", true);

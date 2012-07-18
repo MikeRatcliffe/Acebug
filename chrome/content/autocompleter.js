@@ -569,7 +569,11 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
             } else if (fu == 'require') {
                 descr = "loaded module";
 				var req = FBL.unwrapObject(this.object).require
-				var modules = req.modules || req.s.contexts._.loaded
+                if (req.s) {
+                    var modules = req.s.contexts._.loaded || req.s.contexts._.defined
+                } else {
+                    var modules = req.modules || FBL.unwrapObject(this.object).define.modules
+                }
                 for (var i in modules)
                     createItem(i);
             }
