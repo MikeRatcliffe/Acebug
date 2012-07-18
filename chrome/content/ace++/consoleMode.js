@@ -77,9 +77,10 @@ modes = {
 	js: new jsMode,
 	get coffee() {
 		var req  = window.require, def = window.define
-		require(["ace/mode/coffee", "res/coffee-script"], function(){
-			var cf = require("ace/mode/coffee").Mode
-			modes.coffee = new cf
+		require(["res/coffee-script"], function(){
+            var cf = require("ace/mode/coffee").Mode
+            modes.coffee = new cf
+			
 			coffeeScriptCompiler = this.CoffeeScript
 			// now that we have real coffee, highlight session
 			// relies on global editor
@@ -109,7 +110,11 @@ function testLang(lang, fullName){
 	}
 	return true
 }
-
+var states = {}
+var $getState = function(state, lang, isHeader){
+    var g = lang + state + isHeader
+    return states[g] || (states[g] = {state:state, lang:lang, isHeader:isHeader})
+}
 tk.getLineTokens = function(line, startState) {
 	var match,lang,isHeader = 0;
 	if (typeof startState == 'object') {
@@ -140,12 +145,12 @@ tk.getLineTokens = function(line, startState) {
 		}
 		ans = {
 			tokens : tok,
-			state : {state:"start", lang:lang, isHeader:isHeader + 1}
+			state : $getState("start", lang, isHeader + 1)
 		};
 	}
 	else {	
 		var ans = (modes[lang]||jsMode).$tokenizer.getLineTokens(line, startState)
-		ans.state = {lang: lang, state: ans.state}		
+		ans.state = $getState(ans.state, lang)
 	}
 	return ans
 };

@@ -10016,7 +10016,6 @@ var Gutter = function(parentEl) {
     this.update = function(config) {
         this.$config = config;
 
-        var emptyAnno = {className: "", text: []};
         var breakpoints = this.session.$breakpoints;
         var html = [];
         var i = config.firstRow;
@@ -10035,12 +10034,11 @@ var Gutter = function(parentEl) {
             if(i > lastRow)
                 break;
 
-            var annotation = this.$annotations[i] || emptyAnno;
+            var annotation = this.$annotations[i];
             html.push("<div class='ace_gutter-cell",
                 this.$decorations[i] || "",
                 breakpoints[i] ? " ace_breakpoint " + breakpoints[i] : " ",
-                annotation.className,
-                "' title='", annotation.text.join("\n"),
+                annotation ? (annotation.className + "' title='" + annotation.text.join("\n")) : "",
                 "' style='height:", this.session.getRowLength(i) * config.lineHeight, "px;'>", i);
 
             if (foldWidgets) {
