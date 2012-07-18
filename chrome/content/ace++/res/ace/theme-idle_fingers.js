@@ -2,7 +2,13 @@ define("ace/theme/idle_fingers",[], function(require, exports, module) {
 
 exports.isDark = true;
 exports.cssClass = "ace-idle-fingers";
-exports.cssText = "\
+exports.cssText = require('ace/theme/idle_fingers.css');
+
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/idle_fingers.css",[], "\
 .ace-idle-fingers .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
@@ -12,13 +18,13 @@ exports.cssText = "\
 }\
 \
 .ace-idle-fingers .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #3b3b3b;\
+  color: #fff;\
 }\
 \
 .ace-idle-fingers .ace_print_margin {\
   width: 1px;\
-  background: #e8e8e8;\
+  background: #3b3b3b;\
 }\
 \
 .ace-idle-fingers .ace_scroller {\
@@ -26,7 +32,6 @@ exports.cssText = "\
 }\
 \
 .ace-idle-fingers .ace_text-layer {\
-  cursor: text;\
   color: #FFFFFF;\
 }\
 \
@@ -38,13 +43,18 @@ exports.cssText = "\
   border-left: 0px;\
   border-bottom: 1px solid #91FF00;\
 }\
- \
+\
 .ace-idle-fingers .ace_marker-layer .ace_selection {\
   background: rgba(90, 100, 126, 0.88);\
 }\
 \
+.ace-idle-fingers.multiselect .ace_selection.start {\
+  box-shadow: 0 0 3px 0px #323232;\
+  border-radius: 2px;\
+}\
+\
 .ace-idle-fingers .ace_marker-layer .ace_step {\
-  background: rgb(198, 219, 174);\
+  background: rgb(102, 82, 0);\
 }\
 \
 .ace-idle-fingers .ace_marker-layer .ace_bracket {\
@@ -56,10 +66,14 @@ exports.cssText = "\
   background: #353637;\
 }\
 \
+.ace-idle-fingers .ace_gutter_active_line {\
+  background-color: #353637;\
+}\
+\
 .ace-idle-fingers .ace_marker-layer .ace_selected_word {\
   border: 1px solid rgba(90, 100, 126, 0.88);\
 }\
-       \
+\
 .ace-idle-fingers .ace_invisible {\
   color: #404040;\
 }\
@@ -69,6 +83,14 @@ exports.cssText = "\
 }\
 \
 .ace-idle-fingers .ace_constant, .ace-idle-fingers .ace_constant.ace_other {\
+  color:#6C99BB;\
+}\
+\
+.ace-idle-fingers .ace_constant.ace_character,  {\
+  color:#6C99BB;\
+}\
+\
+.ace-idle-fingers .ace_constant.ace_character.ace_escape,  {\
   color:#6C99BB;\
 }\
 \
@@ -121,10 +143,10 @@ color:#BC9458;\
 \
 .ace-idle-fingers .ace_collab.ace_user1 {\
   color:#323232;\
-background-color:#FFF980;   \
-}";
-
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText, exports.cssClass);
-});
+  background-color:#FFF980;\
+}\
+\
+.ace-idle-fingers .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWMwMjL6zzBz5sz/ABEUBGCqhK6UAAAAAElFTkSuQmCC) right repeat-y;\
+}");
 

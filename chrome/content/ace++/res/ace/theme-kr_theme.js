@@ -2,7 +2,13 @@ define("ace/theme/kr_theme",[], function(require, exports, module) {
 
 exports.isDark = true;
 exports.cssClass = "ace-kr-theme";
-exports.cssText = "\
+exports.cssText = require('ace/theme/kr_theme.css');
+
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/kr_theme.css",[], "\
 .ace-kr-theme .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
@@ -12,13 +18,13 @@ exports.cssText = "\
 }\
 \
 .ace-kr-theme .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #1c1917;\
+  color: #FCFFE0;\
 }\
 \
 .ace-kr-theme .ace_print_margin {\
   width: 1px;\
-  background: #e8e8e8;\
+  background: #1c1917;\
 }\
 \
 .ace-kr-theme .ace_scroller {\
@@ -26,7 +32,6 @@ exports.cssText = "\
 }\
 \
 .ace-kr-theme .ace_text-layer {\
-  cursor: text;\
   color: #FCFFE0;\
 }\
 \
@@ -38,13 +43,18 @@ exports.cssText = "\
   border-left: 0px;\
   border-bottom: 1px solid #FF9900;\
 }\
- \
+\
 .ace-kr-theme .ace_marker-layer .ace_selection {\
   background: rgba(170, 0, 255, 0.45);\
 }\
 \
+.ace-kr-theme.multiselect .ace_selection.start {\
+  box-shadow: 0 0 3px 0px #0B0A09;\
+  border-radius: 2px;\
+}\
+\
 .ace-kr-theme .ace_marker-layer .ace_step {\
-  background: rgb(198, 219, 174);\
+  background: rgb(102, 82, 0);\
 }\
 \
 .ace-kr-theme .ace_marker-layer .ace_bracket {\
@@ -56,10 +66,14 @@ exports.cssText = "\
   background: #38403D;\
 }\
 \
+.ace-kr-theme .ace_gutter_active_line {\
+  background-color : #38403D;\
+}\
+\
 .ace-kr-theme .ace_marker-layer .ace_selected_word {\
   border: 1px solid rgba(170, 0, 255, 0.45);\
 }\
-       \
+\
 .ace-kr-theme .ace_invisible {\
   color: rgba(255, 177, 111, 0.32);\
 }\
@@ -69,6 +83,14 @@ exports.cssText = "\
 }\
 \
 .ace-kr-theme .ace_constant, .ace-kr-theme .ace_constant.ace_other {\
+  color:rgba(210, 117, 24, 0.76);\
+}\
+\
+.ace-kr-theme .ace_constant.ace_character,  {\
+  color:rgba(210, 117, 24, 0.76);\
+}\
+\
+.ace-kr-theme .ace_constant.ace_character.ace_escape,  {\
   color:rgba(210, 117, 24, 0.76);\
 }\
 \
@@ -125,9 +147,9 @@ color:#706D5B;\
 \
 .ace-kr-theme .ace_markup.ace_list {\
   background-color:#0F0040;\
-}";
-
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText, exports.cssClass);
-});
+}\
+\
+.ace-kr-theme .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWPg5uL8zzBz5sz/AA1WA+hUYIqjAAAAAElFTkSuQmCC) right repeat-y;\
+}");
 

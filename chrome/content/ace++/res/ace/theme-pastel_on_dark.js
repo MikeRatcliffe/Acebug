@@ -2,7 +2,13 @@ define("ace/theme/pastel_on_dark",[], function(require, exports, module) {
 
 exports.isDark = true;
 exports.cssClass = "ace-pastel-on-dark";
-exports.cssText = "\
+exports.cssText = require('ace/theme/pastel_on_dark.css');
+
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/pastel_on_dark.css",[], "\
 .ace-pastel-on-dark .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
@@ -12,13 +18,13 @@ exports.cssText = "\
 }\
 \
 .ace-pastel-on-dark .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #353030;\
+  color: #8F938F;\
 }\
 \
 .ace-pastel-on-dark .ace_print_margin {\
   width: 1px;\
-  background: #e8e8e8;\
+  background: #353030;\
 }\
 \
 .ace-pastel-on-dark .ace_scroller {\
@@ -26,7 +32,6 @@ exports.cssText = "\
 }\
 \
 .ace-pastel-on-dark .ace_text-layer {\
-  cursor: text;\
   color: #8F938F;\
 }\
 \
@@ -38,13 +43,18 @@ exports.cssText = "\
   border-left: 0px;\
   border-bottom: 1px solid #A7A7A7;\
 }\
- \
+\
 .ace-pastel-on-dark .ace_marker-layer .ace_selection {\
   background: rgba(221, 240, 255, 0.20);\
 }\
 \
+.ace-pastel-on-dark.multiselect .ace_selection.start {\
+  box-shadow: 0 0 3px 0px #2C2828;\
+  border-radius: 2px;\
+}\
+\
 .ace-pastel-on-dark .ace_marker-layer .ace_step {\
-  background: rgb(198, 219, 174);\
+  background: rgb(102, 82, 0);\
 }\
 \
 .ace-pastel-on-dark .ace_marker-layer .ace_bracket {\
@@ -56,10 +66,14 @@ exports.cssText = "\
   background: rgba(255, 255, 255, 0.031);\
 }\
 \
+.ace-pastel-on-dark .ace_gutter_active_line {\
+  background-color: rgba(255, 255, 255, 0.031);\
+}\
+\
 .ace-pastel-on-dark .ace_marker-layer .ace_selected_word {\
   border: 1px solid rgba(221, 240, 255, 0.20);\
 }\
-       \
+\
 .ace-pastel-on-dark .ace_invisible {\
   color: rgba(255, 255, 255, 0.25);\
 }\
@@ -73,6 +87,14 @@ exports.cssText = "\
 }\
 \
 .ace-pastel-on-dark .ace_constant, .ace-pastel-on-dark .ace_constant.ace_other {\
+  color:#4FB7C5;\
+}\
+\
+.ace-pastel-on-dark .ace_constant.ace_character,  {\
+  color:#4FB7C5;\
+}\
+\
+.ace-pastel-on-dark .ace_constant.ace_character.ace_escape,  {\
   color:#4FB7C5;\
 }\
 \
@@ -135,9 +157,9 @@ color:#D2A8A1;\
 \
 .ace-pastel-on-dark .ace_markup.ace_underline {\
     text-decoration:underline;\
-}";
-
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText, exports.cssClass);
-});
+}\
+\
+.ace-pastel-on-dark .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWPQ0dD4z9DR0fEfAA+vBBPqhbn1AAAAAElFTkSuQmCC) right repeat-y;\
+}");
 

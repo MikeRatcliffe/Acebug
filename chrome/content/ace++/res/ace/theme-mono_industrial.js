@@ -2,7 +2,13 @@ define("ace/theme/mono_industrial",[], function(require, exports, module) {
 
 exports.isDark = true;
 exports.cssClass = "ace-mono-industrial";
-exports.cssText = "\
+exports.cssText = require('ace/theme/mono_industrial.css');
+
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/mono_industrial.css",[], "\
 .ace-mono-industrial .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
@@ -12,8 +18,8 @@ exports.cssText = "\
 }\
 \
 .ace-mono-industrial .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #1d2521;\
+  color: #fff;\
 }\
 \
 .ace-mono-industrial .ace_print_margin {\
@@ -26,7 +32,6 @@ exports.cssText = "\
 }\
 \
 .ace-mono-industrial .ace_text-layer {\
-  cursor: text;\
   color: #FFFFFF;\
 }\
 \
@@ -38,13 +43,18 @@ exports.cssText = "\
   border-left: 0px;\
   border-bottom: 1px solid #FFFFFF;\
 }\
- \
+\
 .ace-mono-industrial .ace_marker-layer .ace_selection {\
   background: rgba(145, 153, 148, 0.40);\
 }\
 \
+.ace-mono-industrial.multiselect .ace_selection.start {\
+  box-shadow: 0 0 3px 0px #222C28;\
+  border-radius: 2px;\
+}\
+\
 .ace-mono-industrial .ace_marker-layer .ace_step {\
-  background: rgb(198, 219, 174);\
+  background: rgb(102, 82, 0);\
 }\
 \
 .ace-mono-industrial .ace_marker-layer .ace_bracket {\
@@ -56,10 +66,14 @@ exports.cssText = "\
   background: rgba(12, 13, 12, 0.25);\
 }\
 \
+.ace-mono-industrial .ace_gutter_active_line {\
+  background-color: rgba(12, 13, 12, 0.25);\
+}\
+\
 .ace-mono-industrial .ace_marker-layer .ace_selected_word {\
   border: 1px solid rgba(145, 153, 148, 0.40);\
 }\
-       \
+\
 .ace-mono-industrial .ace_invisible {\
   color: rgba(102, 108, 104, 0.50);\
 }\
@@ -73,6 +87,14 @@ exports.cssText = "\
 }\
 \
 .ace-mono-industrial .ace_constant, .ace-mono-industrial .ace_constant.ace_other {\
+  color:#E98800;\
+}\
+\
+.ace-mono-industrial .ace_constant.ace_character,  {\
+  color:#E98800;\
+}\
+\
+.ace-mono-industrial .ace_constant.ace_character.ace_escape,  {\
   color:#E98800;\
 }\
 \
@@ -133,9 +155,9 @@ background-color:#151C19;\
 \
 .ace-mono-industrial .ace_markup.ace_underline {\
     text-decoration:underline;\
-}";
-
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText, exports.cssClass);
-});
+}\
+\
+.ace-mono-industrial .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWNQ0tH4zzBz5sz/ABAOBECKH+evAAAAAElFTkSuQmCC) right repeat-y;\
+}");
 

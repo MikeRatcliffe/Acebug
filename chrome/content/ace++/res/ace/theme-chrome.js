@@ -1,7 +1,14 @@
 define("ace/theme/chrome",[], function(require, exports, module) {
 
 exports.cssClass = "ace-chrome";
-exports.cssText = ".ace-chrome .ace_editor {\
+exports.cssText = require('ace/theme/chrome.css');
+
+var dom = require("ace/lib/dom");
+dom.importCssString(exports.cssText, exports.cssClass);
+
+});
+
+define("ace/theme/chrome.css",[], ".ace-chrome .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
 \
@@ -10,14 +17,9 @@ exports.cssText = ".ace-chrome .ace_editor {\
 }\
 \
 .ace-chrome .ace_gutter {\
-  background: #e8e8e8;\
+  background: #ebebeb;\
   color: #333;\
   overflow : hidden;\
-}\
-\
-.ace-chrome .ace_gutter-layer {\
-  width: 100%;\
-  text-align: right;\
 }\
 \
 .ace-chrome .ace_print_margin {\
@@ -26,7 +28,6 @@ exports.cssText = ".ace-chrome .ace_editor {\
 }\
 \
 .ace-chrome .ace_text-layer {\
-  cursor: text;\
 }\
 \
 .ace-chrome .ace_cursor {\
@@ -159,13 +160,16 @@ color:#FD971F;\
   color: rgb(255, 0, 0)\
 }\
 \
-.ace-chrome .ace_line .ace_string,\
+.ace-chrome .ace_line .ace_string{\
+  color: #1A1AA6;\
+}\
+\
 .ace-chrome .ace_entity.ace_other.ace_attribute-name{\
   color: #994409;\
-}";
-
-var dom = require("ace/lib/dom");
-dom.importCssString(exports.cssText, exports.cssClass);
-
-});
+}\
+\
+.ace-chrome .ace_indent-guide {\
+  background: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAE0lEQVQImWP4////f4bLly//BwAmVgd1/w11/gAAAABJRU5ErkJggg==\") right repeat-y;\
+}\
+");
 

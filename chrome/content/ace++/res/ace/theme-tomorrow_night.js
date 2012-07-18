@@ -2,7 +2,13 @@ define("ace/theme/tomorrow_night",[], function(require, exports, module) {
 
 exports.isDark = true;
 exports.cssClass = "ace-tomorrow-night";
-exports.cssText = "\
+exports.cssText = require('ace/theme/tomorrow_night.css');
+
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/tomorrow_night.css",[], "\
 .ace-tomorrow-night .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
@@ -12,13 +18,13 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #25282c;\
+  color: #C5C8C6;\
 }\
 \
 .ace-tomorrow-night .ace_print_margin {\
   width: 1px;\
-  background: #e8e8e8;\
+  background: #25282c;\
 }\
 \
 .ace-tomorrow-night .ace_scroller {\
@@ -26,7 +32,6 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night .ace_text-layer {\
-  cursor: text;\
   color: #C5C8C6;\
 }\
 \
@@ -38,13 +43,18 @@ exports.cssText = "\
   border-left: 0px;\
   border-bottom: 1px solid #AEAFAD;\
 }\
- \
+\
 .ace-tomorrow-night .ace_marker-layer .ace_selection {\
   background: #373B41;\
 }\
 \
+.ace-tomorrow-night.multiselect .ace_selection.start {\
+  box-shadow: 0 0 3px 0px #1D1F21;\
+  border-radius: 2px;\
+}\
+\
 .ace-tomorrow-night .ace_marker-layer .ace_step {\
-  background: rgb(198, 219, 174);\
+  background: rgb(102, 82, 0);\
 }\
 \
 .ace-tomorrow-night .ace_marker-layer .ace_bracket {\
@@ -56,10 +66,14 @@ exports.cssText = "\
   background: #282A2E;\
 }\
 \
+.ace-tomorrow-night .ace_gutter_active_line {\
+  background-color: #282A2E;\
+}\
+\
 .ace-tomorrow-night .ace_marker-layer .ace_selected_word {\
   border: 1px solid #373B41;\
 }\
-       \
+\
 .ace-tomorrow-night .ace_invisible {\
   color: #4B4E55;\
 }\
@@ -157,9 +171,9 @@ background-color:#B798BF;\
 \
 .ace-tomorrow-night .ace_markup.ace_heading {\
   color:#B5BD68;\
-}";
-
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText, exports.cssClass);
-});
+}\
+\
+.ace-tomorrow-night .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWOQlVf8z7Bq1ar/AA/hBFp7egmpAAAAAElFTkSuQmCC) right repeat-y;\
+}");
 

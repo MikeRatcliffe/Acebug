@@ -1,333 +1,329 @@
 define("ace/keyboard/emacs",[], function(require, exports, module) {
 
-var StateHandler = require("ace/keyboard/state_handler").StateHandler;
-var matchCharacterOnly =  require("ace/keyboard/state_handler").matchCharacterOnly;
+var dom = require("ace/lib/dom");
 
-var emacsState = {
-    start: [
-        {
-            key:    "ctrl-x",
-            then:   "c-x"
-        },
-        {
-            regex:  [ "(?:command-([0-9]*))*", "(down|ctrl-n)" ],
-            exec:   "golinedown",
-            params: [
-                {
-                    name: "times",
-                    match: 1,
-                    type: "number",
-                    defaultValue: 1
-                }
-            ]
-        },
-        {
-            regex: [ "(?:command-([0-9]*))*", "(right|ctrl-f)" ],
-            exec: "gotoright",
-            params: [
-                {
-                    name: "times",
-                    match: 1,
-                    type: "number",
-                    defaultValue: 1
-                }
-            ]
-        },
-        {
-            regex: [ "(?:command-([0-9]*))*", "(up|ctrl-p)" ],
-            exec: "golineup",
-            params: [
-                {
-                    name: "times",
-                    match: 1,
-                    type: "number",
-                    defaultValue: 1
-                }
-            ]
-        },
-        {
-            regex: [ "(?:command-([0-9]*))*", "(left|ctrl-b)" ],
-            exec: "gotoleft",
-            params: [
-                {
-                    name: "times",
-                    match: 1,
-                    type: "number",
-                    defaultValue: 1
-                }
-            ]
-        },
-        {
-            comment: "This binding matches all printable characters except numbers as long as they are no numbers and print them n times.",
-            regex:  [ "(?:command-([0-9]*))", "([^0-9]+)*" ],
-            match:  matchCharacterOnly,
-            exec:   "inserttext",
-            params: [
-                {
-                    name: "times",
-                    match: 1,
-                    type: "number",
-                    defaultValue: "1"
-                },
-                {
-                    name: "text",
-                    match: 2
-                }
-            ]
-        },
-        {
-            comment: "This binding matches numbers as long as there is no meta_number in the buffer.",
-            regex:  [ "(command-[0-9]*)*", "([0-9]+)" ],
-            match:  matchCharacterOnly,
-            disallowMatches:  [ 1 ],
-            exec:   "inserttext",
-            params: [
-                {
-                    name: "text",
-                    match: 2,
-                    type: "text"
-                }
-            ]
-        },
-        {
-            regex: [ "command-([0-9]*)", "(command-[0-9]|[0-9])" ],
-            comment: "Stops execution if the regex /meta_[0-9]+/ matches to avoid resetting the buffer."
-        }
-    ],
-    "c-x": [
-        {
-            key: "ctrl-g",
-            then: "start"
-        },
-        {
-            key: "ctrl-s",
-            exec: "save",
-            then: "start"
-        }
-    ]
+var screenToTextBlockCoordinates = function(pageX, pageY) {
+    var canvasPos = this.scroller.getBoundingClientRect();
+
+    var col = Math.floor(
+        (pageX + this.scrollLeft - canvasPos.left - this.$padding - dom.getPageScrollLeft()) / this.characterWidth
+    );
+    var row = Math.floor(
+        (pageY + this.scrollTop - canvasPos.top - dom.getPageScrollTop()) / this.lineHeight
+    );
+
+    return this.session.screenToDocumentPosition(row, col);
 };
 
-exports.handler = new StateHandler(emacsState);
+var HashHandler = require("ace/keyboard/hash_handler").HashHandler;
+exports.handler = new HashHandler();
 
+var initialized = false;
+exports.handler.attach = function(editor) {
+    if (!initialized) {
+        initialized = true;
+        dom.importCssString('\
+            .emacs-mode .ace_cursor{\
+                border: 2px rgba(50,250,50,0.8) solid!important;\
+                -moz-box-sizing: border-box!important;\
+                box-sizing: border-box!important;\
+                background-color: rgba(0,250,0,0.9);\
+                opacity: 0.5;\
+            }\
+            .emacs-mode .ace_cursor.ace_hidden{\
+                opacity: 1;\
+                background-color: transparent;\
+            }\
+            .emacs-mode .ace_cursor.ace_overwrite {\
+                opacity: 1;\
+                background-color: transparent;\
+                border-width: 0 0 2px 2px !important;\
+            }\
+            .emacs-mode .ace_text-layer {\
+                z-index: 4\
+            }\
+            .emacs-mode .ace_cursor-layer {\
+                z-index: 2\
+            }', 'emacsMode'
+        );
+    }
+
+    editor.renderer.screenToTextCoordinates = screenToTextBlockCoordinates;
+    editor.setStyle("emacs-mode");
+};
+
+exports.handler.detach = function(editor) {
+    delete editor.renderer.screenToTextCoordinates;
+    editor.unsetStyle("emacs-mode");
+};
+
+
+var keys = require("ace/lib/keys").KEY_MODS;
+var eMods = {
+    C: "ctrl", S: "shift", M: "alt"
+};
+["S-C-M", "S-C", "S-M", "C-M", "S", "C", "M"].forEach(function(c) {
+    var hashId = 0;
+    c.split("-").forEach(function(c){
+        hashId = hashId | keys[eMods[c]];
+    });
+    eMods[hashId] = c.toLowerCase() + "-";
 });
 
-define("ace/keyboard/state_handler",[], function(require, exports, module) {
+exports.handler.bindKey = function(key, command) {
+    if (!key)
+        return;
 
-// If you're developing a new keymapping and want to get an idea what's going
-// on, then enable debugging.
-var DEBUG = false;
+    var ckb = this.commmandKeyBinding;
+    key.split("|").forEach(function(keyPart) {
+        keyPart = keyPart.toLowerCase();
+        ckb[keyPart] = command;
+        keyPart = keyPart.split(" ")[0];
+        if (!ckb[keyPart])
+            ckb[keyPart] = "null";
+    }, this);
+};
 
-function StateHandler(keymapping) {
-    this.keymapping = this.$buildKeymappingRegex(keymapping);
-}
 
-StateHandler.prototype = {
-    /**
-     * Build the RegExp from the keymapping as RegExp can't stored directly
-     * in the metadata JSON and as the RegExp used to match the keys/buffer
-     * need to be adapted.
-     */
-    $buildKeymappingRegex: function(keymapping) {
-        for (var state in keymapping) {
-            this.$buildBindingsRegex(keymapping[state]);
+exports.handler.handleKeyboard = function(data, hashId, key, keyCode) {
+    if (hashId == -1) {
+        if (data.count) {
+            var str = Array(data.count + 1).join(key);
+            data.count = null;
+            return {command: "insertstring", args: str};
         }
-        return keymapping;
-    },
+    }
 
-    $buildBindingsRegex: function(bindings) {
-        // Escape a given Regex string.
-        bindings.forEach(function(binding) {
-            if (binding.key) {
-                binding.key = new RegExp('^' + binding.key + '$');
-            } else if (Array.isArray(binding.regex)) {
-                if (!('key' in binding))
-                  binding.key = new RegExp('^' + binding.regex[1] + '$');
-                binding.regex = new RegExp(binding.regex.join('') + '$');
-            } else if (binding.regex) {
-                binding.regex = new RegExp(binding.regex + '$');
+    if (key == "\x00")
+        return;
+
+    var modifier = eMods[hashId];
+    if (modifier == "c-" || data.universalArgument) {
+        var count = parseInt(key[key.length - 1]);
+        if (count) {
+            data.count = count;
+            return {command: "null"};
+        }
+    }
+    data.universalArgument = false;
+
+    if (modifier)
+        key = modifier + key;
+
+    if (data.keyChain)
+        key = data.keyChain += " " + key;
+
+    var command = this.commmandKeyBinding[key];
+    data.keyChain = command == "null" ? key : "";
+
+    if (!command)
+        return;
+
+    if (command == "null")
+        return {command: "null"};
+
+    if (command == "universalArgument") {
+        data.universalArgument = true;
+        return {command: "null"};
+    }
+
+    if (typeof command != "string") {
+        var args = command.args;
+        command = command.command;
+    }
+
+    if (typeof command == "string") {
+        command = this.commands[command] || data.editor.commands.commands[command];
+    }
+
+    if (!command.readonly && !command.isYank)
+        data.lastCommand = null;
+
+    if (data.count) {
+        var count = data.count;
+        data.count = 0;
+        return {
+            args: args,
+            command: {
+                exec: function(editor, args) {
+                    for (var i = 0; i < count; i++)
+                        command.exec(editor, args);
+                }
             }
-        });
-    },
-
-    $composeBuffer: function(data, hashId, key, e) {
-        // Initialize the data object.
-        if (data.state == null || data.buffer == null) {
-            data.state = "start";
-            data.buffer = "";
-        }
-
-        var keyArray = [];
-        if (hashId & 1) keyArray.push("ctrl");
-        if (hashId & 8) keyArray.push("command");
-        if (hashId & 2) keyArray.push("option");
-        if (hashId & 4) keyArray.push("shift");
-        if (key)        keyArray.push(key);
-
-        var symbolicName = keyArray.join("-");
-        var bufferToUse = data.buffer + symbolicName;
-
-        // Don't add the symbolic name to the key buffer if the alt_ key is
-        // part of the symbolic name. If it starts with alt_, this means
-        // that the user hit an alt keycombo and there will be a single,
-        // new character detected after this event, which then will be
-        // added to the buffer (e.g. alt_j will result in ∆).
-        //
-        // We test for 2 and not for & 2 as we only want to exclude the case where
-        // the option key is pressed alone.
-        if (hashId != 2) {
-            data.buffer = bufferToUse;
-        }
-
-        var bufferObj = {
-            bufferToUse: bufferToUse,
-            symbolicName: symbolicName,
         };
+    }
 
-        if (e) {
-            bufferObj.keyIdentifier = e.keyIdentifier
-        }
+    return {command: command, args: args};
+};
 
-        return bufferObj;
+exports.emacsKeys = {
+    // movement
+    "Up|C-p"      : "golineup",
+    "Down|C-n"    : "golinedown",
+    "Left|C-b"    : "gotoleft",
+    "Right|C-f"   : "gotoright",
+    "C-Left|M-b"  : "gotowordleft",
+    "C-Right|M-f" : "gotowordright",
+    "Home|C-a"    : "gotolinestart",
+    "End|C-e"     : "gotolineend",
+    "C-Home|S-M-,": "gotostart",
+    "C-End|S-M-." : "gotoend",
+
+    // selection
+    "S-Up|S-C-p"      : "selectup",
+    "S-Down|S-C-n"    : "selectdown",
+    "S-Left|S-C-b"    : "selectleft",
+    "S-Right|S-C-f"   : "selectright",
+    "S-C-Left|S-M-b"  : "selectwordleft",
+    "S-C-Right|S-M-f" : "selectwordright",
+    "S-Home|S-C-a"    : "selecttolinestart",
+    "S-End|S-C-e"     : "selecttolineend",
+    "S-C-Home"        : "selecttostart",
+    "S-C-End"         : "selecttoend",
+
+    "C-l|M-s" : "centerselection",
+    "M-g": "gotoline",
+    "C-x C-p": "selectall",
+
+    // todo fix these
+    "C-Down": "gotopagedown",
+    "C-Up": "gotopageup",
+    "PageDown|C-v": "gotopagedown",
+    "PageUp|M-v": "gotopageup",
+    "S-C-Down": "selectpagedown",
+    "S-C-Up": "selectpageup",
+    "C-s": "findnext",
+    "C-r": "findprevious",
+    "M-C-s": "findnext",
+    "M-C-r": "findprevious",
+    "S-M-5": "replace",
+
+    // basic editing
+    "Backspace": "backspace",
+    "Delete|C-d": "del",
+    "Return|C-m": {command: "insertstring", args: "\n"}, // "newline"
+    "C-o": "splitline",
+
+    "M-d|C-Delete": {command: "killWord", args: "right"},
+    "C-Backspace|M-Backspace|M-Delete": {command: "killWord", args: "left"},
+    "C-k": "killLine",
+
+    "C-y|S-Delete": "yank",
+    "M-y": "yankRotate",
+    "C-g": "keyboardQuit",
+
+    "C-w": "killRegion",
+    "M-w": "killRingSave",
+
+    "C-Space": "setMark",
+    "C-x C-x": "exchangePointAndMark",
+
+    "C-t": "transposeletters",
+
+    "M-u": "touppercase",
+    "M-l": "tolowercase",
+    "M-/": "autocomplete",
+    "C-u": "universalArgument",
+    "M-;": "togglecomment",
+
+    "C-/|C-x u|S-C--|C-z": "undo",
+    "S-C-/|S-C-x u|C--|S-C-z": "redo", //infinite undo?
+    // vertical editing
+    "C-x r":  "selectRectangularRegion"
+
+    // todo
+    // "M-x" "C-x C-t" "M-t" "M-c" "F11" "C-M- "M-q"
+};
+
+
+exports.handler.bindKeys(exports.emacsKeys);
+
+exports.handler.addCommands({
+    selectRectangularRegion:  function(editor) {
+        editor.multiSelect.toggleBlockSelection();
     },
-
-    $find: function(data, buffer, symbolicName, hashId, key, keyIdentifier) {
-        // Holds the command to execute and the args if a command matched.
-        var result = {};
-
-        // Loop over all the bindings of the keymap until a match is found.
-        this.keymapping[data.state].some(function(binding) {
-            var match;
-
-            // Check if the key matches.
-            if (binding.key && !binding.key.test(symbolicName)) {
-                return false;
-            }
-
-            // Check if the regex matches.
-            if (binding.regex && !(match = binding.regex.exec(buffer))) {
-                return false;
-            }
-
-            // Check if the match function matches.
-            if (binding.match && !binding.match(buffer, hashId, key, symbolicName, keyIdentifier)) {
-                return false;
-            }
-
-            // Check for disallowed matches.
-            if (binding.disallowMatches) {
-                for (var i = 0; i < binding.disallowMatches.length; i++) {
-                    if (!!match[binding.disallowMatches[i]]) {
-                        return false;
-                    }
-                }
-            }
-
-            // If there is a command to execute, then figure out the
-            // command and the arguments.
-            if (binding.exec) {
-                result.command = binding.exec;
-
-                // Build the arguments.
-                if (binding.params) {
-                    var value;
-                    result.args = {};
-                    binding.params.forEach(function(param) {
-                        if (param.match != null && match != null) {
-                            value = match[param.match] || param.defaultValue;
-                        } else {
-                            value = param.defaultValue;
-                        }
-
-                        if (param.type === 'number') {
-                            value = parseInt(value);
-                        }
-
-                        result.args[param.name] = value;
-                    });
-                }
-                data.buffer = "";
-            }
-
-            // Handle the 'then' property.
-            if (binding.then) {
-                data.state = binding.then;
-                data.buffer = "";
-            }
-
-            // If no command is set, then execute the "null" fake command.
-            if (result.command == null) {
-                result.command = "null";
-            }
-
-            if (DEBUG) {
-                console.log("KeyboardStateMapper#find", binding);
-            }
-            return true;
-        });
-
-        if (result.command) {
-            return result;
-        } else {
-            data.buffer = "";
-            return false;
-        }
+    setMark:  function() {
     },
+    exchangePointAndMark: {
+        exec: function(editor) {
+            var range = editor.selection.getRange();
+            editor.selection.setSelectionRange(range, !editor.selection.isBackwards());
+        },
+        readonly: true,
+        multiselectAction: "forEach"
+    },
+    killWord: {
+        exec: function(editor, dir) {
+            editor.clearSelection();
+            if (dir == "left")
+                editor.selection.selectWordLeft();
+            else
+                editor.selection.selectWordRight();
 
-    /**
-     * This function is called by keyBinding.
-     */
-    handleKeyboard: function(data, hashId, key, keyCode, e) {
-        if (hashId == -1)
-            hashId = 0
-        // If we pressed any command key but no other key, then ignore the input.
-        // Otherwise "shift-" is added to the buffer, and later on "shift-g"
-        // which results in "shift-shift-g" which doesn't make sense.
-        if (hashId != 0 && (key == "" || key == String.fromCharCode(0))) {
-            return null;
-        }
+            var range = editor.getSelectionRange();
+            var text = editor.session.getTextRange(range);
+            exports.killRing.add(text);
 
-        // Compute the current value of the keyboard input buffer.
-        var r = this.$composeBuffer(data, hashId, key, e);
-        var buffer = r.bufferToUse;
-        var symbolicName = r.symbolicName;
-        var keyId = r.keyIdentifier;
+            editor.session.remove(range);
+            editor.clearSelection();
+        },
+        multiselectAction: "forEach"
+    },
+    killLine: function(editor) {
+        editor.selection.selectLine();
+        var range = editor.getSelectionRange();
+        var text = editor.session.getTextRange(range);
+        exports.killRing.add(text);
 
-        r = this.$find(data, buffer, symbolicName, hashId, key, keyId);
-        if (DEBUG) {
-            console.log("KeyboardStateMapper#match", buffer, symbolicName, r);
-        }
+        editor.session.remove(range);
+        editor.clearSelection();
+    },
+    yank: function(editor) {
+        editor.onPaste(exports.killRing.get());
+        editor.keyBinding.$data.lastCommand = "yank";
+    },
+    yankRotate: function(editor) {
+        if (editor.keyBinding.$data.lastCommand != "yank")
+            return;
 
-        return r;
+        editor.undo();
+        editor.onPaste(exports.killRing.rotate());
+        editor.keyBinding.$data.lastCommand = "yank";
+    },
+    killRegion: function(editor) {
+        exports.killRing.add(editor.getCopyText());
+        editor.cut();
+    },
+    killRingSave: function(editor) {
+        exports.killRing.add(editor.getCopyText());
     }
-}
+});
 
-/**
- * This is a useful matching function and therefore is defined here so that
- * users of KeyboardStateMapper can use it.
- *
- * @return boolean
- *          If no command key (Command|Option|Shift|Ctrl) is pressed, it
- *          returns true. If the only the Shift key is pressed + a character
- *          true is returned as well. Otherwise, false is returned.
- *          Summing up, the function returns true whenever the user typed
- *          a normal character on the keyboard and no shortcut.
- */
-exports.matchCharacterOnly = function(buffer, hashId, key, symbolicName) {
-    // If no command keys are pressed, then catch the input.
-    if (hashId == 0) {
-        return true;
-    }
-    // If only the shift key is pressed and a character key, then
-    // catch that input as well.
-    else if ((hashId == 4) && key.length == 1) {
-        return true;
-    }
-    // Otherwise, we let the input got through.
-    else {
-        return false;
+var commands = exports.handler.commands;
+commands.yank.isYank = true;
+commands.yankRotate.isYank = true;
+
+exports.killRing = {
+    $data: [],
+    add: function(str) {
+        str && this.$data.push(str);
+        if (this.$data.length > 30)
+            this.$data.shift();
+    },
+    get: function() {
+        return this.$data[this.$data.length - 1] || "";
+    },
+    pop: function() {
+        if (this.$data.length > 1)
+            this.$data.pop();
+        return this.get();
+    },
+    rotate: function() {
+        this.$data.unshift(this.$data.pop());
+        return this.get();
     }
 };
 
-exports.StateHandler = StateHandler;
+
 });
 

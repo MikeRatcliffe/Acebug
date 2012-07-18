@@ -2,7 +2,13 @@ define("ace/theme/clouds",[], function(require, exports, module) {
 
 exports.isDark = false;
 exports.cssClass = "ace-clouds";
-exports.cssText = "\
+exports.cssText = require('ace/theme/clouds.css');
+
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/clouds.css",[], "\
 .ace-clouds .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
@@ -12,7 +18,7 @@ exports.cssText = "\
 }\
 \
 .ace-clouds .ace_gutter {\
-  background: #e8e8e8;\
+  background: #ebebeb;\
   color: #333;\
 }\
 \
@@ -26,7 +32,6 @@ exports.cssText = "\
 }\
 \
 .ace-clouds .ace_text-layer {\
-  cursor: text;\
   color: #000000;\
 }\
 \
@@ -38,13 +43,18 @@ exports.cssText = "\
   border-left: 0px;\
   border-bottom: 1px solid #000000;\
 }\
- \
+\
 .ace-clouds .ace_marker-layer .ace_selection {\
   background: #BDD5FC;\
 }\
 \
+.ace-clouds.multiselect .ace_selection.start {\
+  box-shadow: 0 0 3px 0px #FFFFFF;\
+  border-radius: 2px;\
+}\
+\
 .ace-clouds .ace_marker-layer .ace_step {\
-  background: rgb(198, 219, 174);\
+  background: rgb(255, 255, 0);\
 }\
 \
 .ace-clouds .ace_marker-layer .ace_bracket {\
@@ -56,10 +66,14 @@ exports.cssText = "\
   background: #FFFBD1;\
 }\
 \
+.ace-clouds .ace_gutter_active_line {\
+  background-color : #dcdcdc;\
+}\
+\
 .ace-clouds .ace_marker-layer .ace_selected_word {\
   border: 1px solid #BDD5FC;\
 }\
-       \
+\
 .ace-clouds .ace_invisible {\
   color: #BFBFBF;\
 }\
@@ -111,9 +125,9 @@ exports.cssText = "\
 \
 .ace-clouds .ace_markup.ace_underline {\
     text-decoration:underline;\
-}";
-
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText, exports.cssClass);
-});
+}\
+\
+.ace-clouds .ace_indent-guide {\
+  background: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAE0lEQVQImWP4////f4bLly//BwAmVgd1/w11/gAAAABJRU5ErkJggg==\") right repeat-y;\
+}");
 

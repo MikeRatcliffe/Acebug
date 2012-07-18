@@ -67,10 +67,13 @@ exports.launch = function(env, options) {
 			var delta = e.data;
 			var range = delta.range;
 			var len, firstRow, f1;
+            
+            if (range.end.row == range.start.row)
+                return;
 			
 			if (delta.action == "insertText") {
 				len = range.end.row - range.start.row
-				firstRow = range.start.column == 0? range.start.row: range.start.row + 1;
+				firstRow = range.start.column == 0 ? range.start.row: range.start.row + 1;
 			} else if (delta.action == "insertLines") {
 				len = range.end.row - range.start.row;
 				firstRow = range.start.row;
@@ -203,6 +206,7 @@ exports.launch = function(env, options) {
     editor = env.editor = new Editor(new Renderer(container, options.theme));
     editor.setTheme(options.theme);
     editor.setSession(jsDoc);
+    editor.setFontSize(options.fontsize);
 
     editor.setShowInvisibles(options.showinvisiblecharacters);
     editor.setHighlightActiveLine(options.highlightactiveline);

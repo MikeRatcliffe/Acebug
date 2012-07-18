@@ -1,7 +1,15 @@
 define("ace/theme/eclipse",[], function(require, exports, module) {
 
 exports.isDark = false;
-exports.cssText = ".ace-eclipse .ace_editor {\
+exports.cssText = require('ace/theme/eclipse.css');
+
+exports.cssClass = "ace-eclipse";
+
+var dom = require("ace/lib/dom");
+dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/eclipse.css",[], ".ace-eclipse .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
 \
@@ -10,14 +18,14 @@ exports.cssText = ".ace-eclipse .ace_editor {\
 }\
 \
 .ace-eclipse .ace_gutter {\
-  background: rgb(227, 227, 227);\
+  background: #ebebeb;\
   border-right: 1px solid rgb(159, 159, 159);\
   color: rgb(136, 136, 136);\
 }\
 \
 .ace-eclipse .ace_print_margin {\
   width: 1px;\
-  background: #b1b4ba;\
+  background: #ebebeb;\
 }\
 \
 .ace-eclipse .ace_fold {\
@@ -25,11 +33,10 @@ exports.cssText = ".ace-eclipse .ace_editor {\
 }\
 \
 .ace-eclipse .ace_text-layer {\
-  cursor: text;\
 }\
 \
 .ace-eclipse .ace_cursor {\
-  border-left: 1px solid black;\
+  border-left: 2px solid black;\
 }\
 \
 .ace-eclipse .ace_line .ace_storage,\
@@ -97,14 +104,15 @@ exports.cssText = ".ace-eclipse .ace_editor {\
 .ace-eclipse .ace_entity.ace_other.ace_attribute-name {\
   color:rgb(127, 0, 127);\
 }\
+.ace-eclipse .ace_marker-layer .ace_step {\
+  background: rgb(255, 255, 0);\
+}\
 \
 .ace-eclipse .ace_marker-layer .ace_active_line {\
   background: rgb(232, 242, 254);\
-}";
-
-exports.cssClass = "ace-eclipse";
-
-var dom = require("ace/lib/dom");
-dom.importCssString(exports.cssText, exports.cssClass);
-});
+}\
+\
+.ace-eclipse .ace_indent-guide {\
+  background: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAE0lEQVQImWP4////f4bLly//BwAmVgd1/w11/gAAAABJRU5ErkJggg==\") right repeat-y;\
+}");
 

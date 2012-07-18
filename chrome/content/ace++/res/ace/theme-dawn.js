@@ -2,7 +2,13 @@ define("ace/theme/dawn",[], function(require, exports, module) {
 
 exports.isDark = false;
 exports.cssClass = "ace-dawn";
-exports.cssText = "\
+exports.cssText = require('ace/theme/dawn.css');
+
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/dawn.css",[], "\
 .ace-dawn .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
@@ -12,7 +18,7 @@ exports.cssText = "\
 }\
 \
 .ace-dawn .ace_gutter {\
-  background: #e8e8e8;\
+  background: #ebebeb;\
   color: #333;\
 }\
 \
@@ -26,7 +32,6 @@ exports.cssText = "\
 }\
 \
 .ace-dawn .ace_text-layer {\
-  cursor: text;\
   color: #080808;\
 }\
 \
@@ -38,13 +43,18 @@ exports.cssText = "\
   border-left: 0px;\
   border-bottom: 1px solid #000000;\
 }\
- \
+\
 .ace-dawn .ace_marker-layer .ace_selection {\
   background: rgba(39, 95, 255, 0.30);\
 }\
 \
+.ace-dawn.multiselect .ace_selection.start {\
+  box-shadow: 0 0 3px 0px #F9F9F9;\
+  border-radius: 2px;\
+}\
+\
 .ace-dawn .ace_marker-layer .ace_step {\
-  background: rgb(198, 219, 174);\
+  background: rgb(255, 255, 0);\
 }\
 \
 .ace-dawn .ace_marker-layer .ace_bracket {\
@@ -56,10 +66,14 @@ exports.cssText = "\
   background: rgba(36, 99, 180, 0.12);\
 }\
 \
+.ace-dawn .ace_gutter_active_line {\
+  background-color : #dcdcdc;\
+}\
+\
 .ace-dawn .ace_marker-layer .ace_selected_word {\
   border: 1px solid rgba(39, 95, 255, 0.30);\
 }\
-       \
+\
 .ace-dawn .ace_invisible {\
   color: rgba(75, 75, 126, 0.50);\
 }\
@@ -69,6 +83,14 @@ exports.cssText = "\
 }\
 \
 .ace-dawn .ace_constant, .ace-dawn .ace_constant.ace_other {\
+  color:#811F24;\
+}\
+\
+.ace-dawn .ace_constant.ace_character,  {\
+  color:#811F24;\
+}\
+\
+.ace-dawn .ace_constant.ace_character.ace_escape,  {\
   color:#811F24;\
 }\
 \
@@ -134,9 +156,9 @@ color:#5A525F;\
 \
 .ace-dawn .ace_markup.ace_list {\
   color:#693A17;\
-}";
-
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText, exports.cssClass);
-});
+}\
+\
+.ace-dawn .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAE0lEQVQImWP4+fPnf4ZVq1b9BwAkVQboFQv98gAAAABJRU5ErkJggg==) right repeat-y;\
+}");
 

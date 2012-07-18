@@ -2,7 +2,13 @@ define("ace/theme/tomorrow_night_bright",[], function(require, exports, module) 
 
 exports.isDark = true;
 exports.cssClass = "ace-tomorrow-night-bright";
-exports.cssText = "\
+exports.cssText = require('ace/theme/tomorrow_night_bright.css');
+
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/tomorrow_night_bright.css",[], "\
 .ace-tomorrow-night-bright .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
@@ -12,13 +18,13 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night-bright .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #1a1a1a;\
+  color: #DEDEDE;\
 }\
 \
 .ace-tomorrow-night-bright .ace_print_margin {\
   width: 1px;\
-  background: #e8e8e8;\
+  background: #1a1a1a;\
 }\
 \
 .ace-tomorrow-night-bright .ace_scroller {\
@@ -26,7 +32,6 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night-bright .ace_text-layer {\
-  cursor: text;\
   color: #DEDEDE;\
 }\
 \
@@ -38,13 +43,18 @@ exports.cssText = "\
   border-left: 0px;\
   border-bottom: 1px solid #9F9F9F;\
 }\
- \
+\
 .ace-tomorrow-night-bright .ace_marker-layer .ace_selection {\
   background: #424242;\
 }\
 \
+.ace-tomorrow-night-bright.multiselect .ace_selection.start {\
+  box-shadow: 0 0 3px 0px #000000;\
+  border-radius: 2px;\
+}\
+\
 .ace-tomorrow-night-bright .ace_marker-layer .ace_step {\
-  background: rgb(198, 219, 174);\
+  background: rgb(102, 82, 0);\
 }\
 \
 .ace-tomorrow-night-bright .ace_marker-layer .ace_bracket {\
@@ -56,10 +66,14 @@ exports.cssText = "\
   background: #2A2A2A;\
 }\
 \
+.ace-tomorrow-night-bright .ace_gutter_active_line {\
+  background-color: #2A2A2A;\
+}\
+\
 .ace-tomorrow-night-bright .ace_marker-layer .ace_selected_word {\
   border: 1px solid #424242;\
 }\
-       \
+\
 .ace-tomorrow-night-bright .ace_invisible {\
   color: #343434;\
 }\
@@ -157,9 +171,9 @@ background-color:#B798BF;\
 \
 .ace-tomorrow-night-bright .ace_markup.ace_heading {\
   color:#B9CA4A;\
-}";
-
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText, exports.cssClass);
-});
+}\
+\
+.ace-tomorrow-night-bright .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWNgYGD4z7Bq1ar/AAz9A/2naJQKAAAAAElFTkSuQmCC) right repeat-y;\
+}");
 

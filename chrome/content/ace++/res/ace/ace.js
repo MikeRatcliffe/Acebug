@@ -16,13 +16,29 @@ var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
 var CommandManager = require("ace/commands/command_manager").CommandManager;
 var defaultCommands = require("ace/commands/default_commands").commands;
 
+/**
+ * class Editor
+ *
+ * The main entry point into the Ace functionality. The `Editor` manages the `EditSession` (which manages `Document`s), as well as the `VirtualRenderer`, which draws everything to the screen. Event sessions dealing with the mouse and keyboard are bubbled up from `Document` to the `Editor`, which decides what to do with them.
+ *
+ **/
+
+/**
+ * new Editor(renderer, session)
+ * - renderer (VirtualRenderer): Associated `VirtualRenderer` that draws everything
+ * - session (EditSession): The `EditSession` to refer to
+ *
+ * Creates a new `Editor` object.
+ *
+ **/
 var Editor = function(renderer, session) {
     var container = renderer.getContainerElement();
     this.container = container;
     this.renderer = renderer;
-    
+
     this.commands = new CommandManager(useragent.isMac ? "mac" : "win", defaultCommands);
     this.textInput  = new TextInput(renderer.getTextAreaContainer(), this);
+    this.renderer.textarea = this.textInput.getElement();
     this.keyBinding = new KeyBinding(this);
 
     // TODO detect touch event support
@@ -45,14 +61,30 @@ var Editor = function(renderer, session) {
 
     oop.implement(this, EventEmitter);
 
+    /**
+     * Editor.setKeyboardHandler(keyboardHandler) 
+     * 
+     * Sets a new keyboard handler.
+     **/
     this.setKeyboardHandler = function(keyboardHandler) {
         this.keyBinding.setKeyboardHandler(keyboardHandler);
     };
 
+    /** related to: KeyBinding
+     * Editor.getKeyboardHandler() -> String
+     * 
+     * Returns the keyboard handler.
+     **/
     this.getKeyboardHandler = function() {
         return this.keyBinding.getKeyboardHandler();
     };
 
+    /**
+     * Editor.setSession(session) 
+     * - session (EditSession): The new session to use
+     *
+     * Sets a new editsession to use. This method also emits the `'changeSession'` event.
+     **/
     this.setSession = function(session) {
         if (this.session == session)
             return;
@@ -91,7 +123,7 @@ var Editor = function(renderer, session) {
         this.$onTokenizerUpdate = this.onTokenizerUpdate.bind(this);
         session.addEventListener("tokenizerUpdate", this.$onTokenizerUpdate);
 
-        this.$onChangeTabSize = this.renderer.updateText.bind(this.renderer);
+        this.$onChangeTabSize = this.renderer.onChangeTabSize.bind(this.renderer);
         session.addEventListener("changeTabSize", this.$onChangeTabSize);
 
         this.$onChangeWrapLimit = this.onChangeWrapLimit.bind(this);
@@ -152,30 +184,94 @@ var Editor = function(renderer, session) {
         });
     };
 
+    /**
+     * Editor.getSession() -> EditSession
+     * 
+     * Returns the current session being used.
+     **/
     this.getSession = function() {
         return this.session;
     };
 
+    /** related to: Document.setValue
+     * Editor.setValue(val [,dontSelect]) -> String
+     * - val (String): The new value to set for the document
+     * - cursorPos (number): 0: selectAll, -1 document start, 1 end
+     *
+     * Sets the current document to `val`.
+     **/
+    this.setValue = function(val, cursorPos) {
+        this.session.doc.setValue(val);
+
+        if (!cursorPos)
+            this.selectAll();
+        else if (cursorPos == 1)
+            this.navigateFileEnd();
+        else if (cursorPos == -1)
+            this.navigateFileStart();
+
+        return val;
+    };
+
+    /** related to: EditSession.getValue
+     * Editor.getValue() -> String
+     *
+     * Returns the current session's content.
+     **/
+    this.getValue = function() {
+        return this.session.getValue();
+    };
+
+    /**
+     * Editor.getSelection() -> String
+     * 
+     * Returns the currently highlighted selection.
+     **/
     this.getSelection = function() {
         return this.selection;
     };
 
-    this.resize = function() {
-        this.renderer.onResize();
+    /** related to: VirtualRenderer.onResize
+     * Editor.resize() 
+     * 
+     * {:VirtualRenderer.onResize}
+     **/
+    this.resize = function(force) {
+        this.renderer.onResize(force);
     };
 
+    /**
+     * Editor.setTheme(theme) 
+     * 
+     * {:VirtualRenderer.setTheme}
+     **/
     this.setTheme = function(theme) {
         this.renderer.setTheme(theme);
     };
 
+    /** related to: VirtualRenderer.getTheme
+     * Editor.getTheme() -> String
+     * 
+     * {:VirtualRenderer.getTheme}
+     **/
     this.getTheme = function() {
         return this.renderer.getTheme();
     };
 
+    /** related to: VirtualRenderer.setStyle
+     * Editor.setStyle(style) 
+     * 
+     * {:VirtualRenderer.setStyle}
+     **/
     this.setStyle = function(style) {
         this.renderer.setStyle(style);
     };
 
+    /** related to: VirtualRenderer.unsetStyle
+     * Editor.unsetStyle(style) 
+     * 
+     * {:VirtualRenderer.unsetStyle}
+     **/
     this.unsetStyle = function(style) {
         this.renderer.unsetStyle(style);
     };
@@ -193,6 +289,10 @@ var Editor = function(renderer, session) {
         this.renderer.updateFontSize();
     };
 
+    /** internal, hide
+     * Editor.$highlightBrackets() 
+     *  
+     **/
     this.$highlightBrackets = function() {
         if (this.session.$bracketHighlight) {
             this.session.removeMarker(this.session.$bracketHighlight);
@@ -217,6 +317,11 @@ var Editor = function(renderer, session) {
         }, 10);
     };
 
+    /**
+     * Editor.focus() 
+     * 
+     * Brings the current `textInput` into focus.
+     **/
     this.focus = function() {
         // Safari needs the timeout
         // iOS and Firefox need it called immediately
@@ -228,26 +333,63 @@ var Editor = function(renderer, session) {
         this.textInput.focus();
     };
 
+    /**
+     * Editor.isFocused() -> Boolean
+     * 
+     * Returns true if the current `textInput` is in focus.
+     **/
     this.isFocused = function() {
         return this.textInput.isFocused();
     };
 
+    /**
+     * Editor.blur() 
+     * 
+     * Blurs the current `textInput`.
+     **/
     this.blur = function() {
         this.textInput.blur();
     };
 
+    /**
+     * Editor@onFocus()
+     * 
+     * Emitted once the editor comes into focus.
+     **/
     this.onFocus = function() {
+        if (this.$isFocused)
+            return;
+        this.$isFocused = true;
         this.renderer.showCursor();
         this.renderer.visualizeFocus();
         this._emit("focus");
     };
 
+    /**
+     * Editor@onBlur()
+     * 
+     * Emitted once the editor has been blurred.
+     **/
     this.onBlur = function() {
+        if (!this.$isFocused)
+            return;
+        this.$isFocused = false;
         this.renderer.hideCursor();
         this.renderer.visualizeBlur();
         this._emit("blur");
     };
 
+    this.$cursorChange = function() {
+        this.renderer.updateCursor();
+    };
+
+    /**
+     * Editor@onDocumentChange(e) 
+     * - e (Object): Contains a single property, `data`, which has the delta of changes
+     *
+     * Emitted whenever the document is changed. 
+     * 
+     **/
     this.onDocumentChange = function(e) {
         var delta = e.data;
         var range = delta.range;
@@ -262,60 +404,92 @@ var Editor = function(renderer, session) {
         this._emit("change", e);
 
         // update cursor because tab characters can influence the cursor position
-        this.onCursorChange();
+        this.$cursorChange();
     };
 
+    /**
+     * Editor@onTokenizerUpdate(e)
+     * - e (Object): Contains a single property, `data`, which indicates the changed rows
+     * 
+     * Emitted when the a tokenizer is updated.
+     **/
     this.onTokenizerUpdate = function(e) {
         var rows = e.data;
         this.renderer.updateLines(rows.first, rows.last);
     };
 
+    /**
+     * Editor@onScrollTopChange() 
+     * 
+     * Emitted when the scroll top changes.
+     **/
     this.onScrollTopChange = function() {
         this.renderer.scrollToY(this.session.getScrollTop());
     };
 
+    /**
+     * Editor@onScrollLeftChange() 
+     * 
+     * Emitted when the scroll left changes.
+     **/
     this.onScrollLeftChange = function() {
         this.renderer.scrollToX(this.session.getScrollLeft());
     };
 
+    /**
+     * Editor@onCursorChange() 
+     * 
+     * Emitted when the cursor changes.
+     **/
     this.onCursorChange = function() {
-        this.renderer.updateCursor();
+        this.$cursorChange();
 
         if (!this.$blockScrolling) {
             this.renderer.scrollCursorIntoView();
         }
 
-        // move text input over the cursor
-        // this is required for iOS and IME
-        this.renderer.moveTextAreaToCursor(this.textInput.getElement());
-
         this.$highlightBrackets();
         this.$updateHighlightActiveLine();
     };
 
+    /** internal, hide
+     * Editor.$updateHighlightActiveLine()
+     * 
+     * 
+     **/
     this.$updateHighlightActiveLine = function() {
         var session = this.getSession();
 
-        if (session.$highlightLineMarker) {
+        if (session.$highlightLineMarker)
             session.removeMarker(session.$highlightLineMarker);
-        }
+
         session.$highlightLineMarker = null;
 
-        if (this.getHighlightActiveLine() && (this.getSelectionStyle() != "line" || !this.selection.isMultiLine())) {
-            var cursor = this.getCursorPosition(),
-                foldLine = this.session.getFoldLine(cursor.row);
-            var range;
-            if (foldLine) {
-                range = new Range(foldLine.start.row, 0, foldLine.end.row + 1, 0);
-            } else {
-                range = new Range(cursor.row, 0, cursor.row+1, 0);
+        if (this.$highlightActiveLine) {
+            var cursor = this.getCursorPosition();
+            var foldLine = this.session.getFoldLine(cursor.row);
+
+            if ((this.getSelectionStyle() != "line" || !this.selection.isMultiLine())) {
+                var range;
+                if (foldLine) {
+                    range = new Range(foldLine.start.row, 0, foldLine.end.row + 1, 0);
+                } else {
+                    range = new Range(cursor.row, 0, cursor.row+1, 0);
+                }
+                session.$highlightLineMarker = session.addMarker(range, "ace_active_line", "background");
             }
-            session.$highlightLineMarker = session.addMarker(range, "ace_active_line", "background");
         }
     };
 
+
+    /**
+     * Editor@onSelectionChange(e) 
+     * - e (Object): Contains a single property, `data`, which has the delta of changes
+     * 
+     * Emitted when a selection has changed.
+     **/
     this.onSelectionChange = function(e) {
-        var session = this.getSession();
+        var session = this.session;
 
         if (session.$selectionMarker) {
             session.removeMarker(session.$selectionMarker);
@@ -330,38 +504,110 @@ var Editor = function(renderer, session) {
             this.$updateHighlightActiveLine();
         }
 
-        if (this.$highlightSelectedWord)
-            this.session.getMode().highlightSelection(this);
+        var re = this.$highlightSelectedWord && this.$getSelectionHighLightRegexp()
+        this.session.highlight(re);
     };
 
+    this.$getSelectionHighLightRegexp = function() {
+        var session = this.session;
+
+        var selection = this.getSelectionRange();
+        if (selection.isEmpty() || selection.isMultiLine())
+            return;
+
+        var startOuter = selection.start.column - 1;
+        var endOuter = selection.end.column + 1;
+        var line = session.getLine(selection.start.row);
+        var lineCols = line.length;
+        var needle = line.substring(Math.max(startOuter, 0),
+                                    Math.min(endOuter, lineCols));
+
+        // Make sure the outer characters are not part of the word.
+        if ((startOuter >= 0 && /^[\w\d]/.test(needle)) ||
+            (endOuter <= lineCols && /[\w\d]$/.test(needle)))
+            return;
+
+        needle = line.substring(selection.start.column, selection.end.column);
+        if (!/^[\w\d]+$/.test(needle))
+            return;
+
+        var re = this.$search.$assembleRegExp({
+            wholeWord: true,
+            caseSensitive: true,
+            needle: needle
+        });
+
+        return re;
+    };
+
+    /**
+     * Editor@onChangeFrontMarker() 
+     * 
+     * Emitted when a front marker changes.
+     **/
     this.onChangeFrontMarker = function() {
         this.renderer.updateFrontMarkers();
     };
 
+    /**
+     * Editor@onChangeBackMarker() 
+     * 
+     * Emitted when a back marker changes.
+     **/
     this.onChangeBackMarker = function() {
         this.renderer.updateBackMarkers();
     };
 
+    /**
+     * Editor@onChangeBreakpoint() 
+     * 
+     * Emitted when a breakpoint changes.
+     **/
     this.onChangeBreakpoint = function() {
-        this.renderer.setBreakpoints(this.session.getBreakpoints());
+        this.renderer.updateBreakpoints();
     };
 
+    /**
+     * Editor@onChangeAnnotation() 
+     * 
+     * Emitted when an annotation changes.
+     **/
     this.onChangeAnnotation = function() {
         this.renderer.setAnnotations(this.session.getAnnotations());
     };
 
+    /**
+     * Editor@onChangeMode() 
+     * 
+     * Emitted when the mode changes.
+     **/
     this.onChangeMode = function() {
         this.renderer.updateText();
     };
 
+    /**
+     * Editor@onChangeWrapLimit() 
+     * 
+     * Emitted when the wrap limit changes.
+     **/
     this.onChangeWrapLimit = function() {
         this.renderer.updateFull();
     };
 
+    /**
+     * Editor@onChangeWrapMode() 
+     * 
+     * Emitted when the wrap mode changes.
+     **/
     this.onChangeWrapMode = function() {
         this.renderer.onResize(true);
     };
 
+    /**
+     * Editor@onChangeFold() 
+     * 
+     * Emitted when the code folds change.
+     **/
     this.onChangeFold = function() {
         // Update the active line marker as due to folding changes the current
         // line range on the screen might have changed.
@@ -370,6 +616,11 @@ var Editor = function(renderer, session) {
         this.renderer.updateFull();
     };
 
+    /**
+     * Editor.getCopyText() -> String
+     * 
+     * Returns the string of text currently highlighted.
+     **/
     this.getCopyText = function() {
         var text = "";
         if (!this.selection.isEmpty())
@@ -379,19 +630,40 @@ var Editor = function(renderer, session) {
         return text;
     };
 
-    this.onCut = function() {
-        if (this.$readOnly)
-            return;
-
-        var range = this.getSelectionRange();
-        this._emit("cut", range);
-
-        if (!this.selection.isEmpty()) {
-            this.session.remove(range);
-            this.clearSelection();
-        }
+    /**
+     * Editor.onCopy() 
+     * 
+     * Called whenever a text "copy" happens.
+     **/
+    this.onCopy = function() {
+        this.commands.exec("copy", this);
     };
 
+    /**
+     * Editor.onCut() 
+     * 
+     * called whenever a text "cut" happens.
+     **/
+    this.onCut = function() {
+        this.commands.exec("cut", this);
+    };
+
+    /**
+     * Editor.onPaste() 
+     * 
+     * called whenever a text "paste" happens.
+     **/
+    this.onPaste = function(text) {
+        this._emit("paste", text);
+        this.insert(text);
+    };
+
+    /**
+     * Editor.insert(text) 
+     * - text (String): The new text to add
+     * 
+     * Inserts `text` into wherever the cursor is pointing.
+     **/
     this.insert = function(text) {
         var session = this.session;
         var mode = session.getMode();
@@ -484,46 +756,103 @@ var Editor = function(renderer, session) {
             mode.autoOutdent(lineState, session, cursor.row);
     };
 
-    this.onTextInput = function(text, pasted) {
-        if (pasted)
-            this._emit("paste", text);
-
-        this.keyBinding.onTextInput(text, pasted);
+    /**
+     * Editor@onTextInput(text, pasted) 
+     * - text (String): The text entered
+     * - pasted (Boolean): Identifies whether the text was pasted (`true`) or not
+     *
+     * Emitted when text is entered.
+     **/
+    this.onTextInput = function(text) {
+        this.keyBinding.onTextInput(text);
     };
 
+    /**
+     * Editor@onCommandKey(e, hashId, keyCode) 
+     * 
+     * Emitted when the command-key is pressed.
+     **/
     this.onCommandKey = function(e, hashId, keyCode) {
         this.keyBinding.onCommandKey(e, hashId, keyCode);
     };
 
+    /** related to: EditSession.setOverwrite
+     * Editor.setOverwrite(overwrite) 
+     * - overwrite (Boolean): Defines wheter or not to set overwrites
+     * 
+     * Pass in `true` to enable overwrites in your session, or `false` to disable. If overwrites is enabled, any text you enter will type over any text after it. If the value of `overwrite` changes, this function also emites the `changeOverwrite` event.
+     *
+     **/
     this.setOverwrite = function(overwrite) {
         this.session.setOverwrite(overwrite);
     };
 
+    /** related to: EditSession.getOverwrite
+     * Editor.getOverwrite() -> Boolean
+     * 
+     * Returns `true` if overwrites are enabled; `false` otherwise.
+     **/
     this.getOverwrite = function() {
         return this.session.getOverwrite();
     };
 
+    /** related to: EditSession.toggleOverwrite
+     * Editor.toggleOverwrite() 
+     * 
+     * Sets the value of overwrite to the opposite of whatever it currently is.
+     **/
     this.toggleOverwrite = function() {
         this.session.toggleOverwrite();
     };
 
+    /**
+     * Editor.setScrollSpeed(speed) 
+     * - speed (Number): A value indicating the new speed
+     * 
+     * Sets how fast the mouse scrolling should do.
+     *
+     **/
     this.setScrollSpeed = function(speed) {
         this.$mouseHandler.setScrollSpeed(speed);
     };
 
+    /**
+     * Editor.getScrollSpeed() -> Number
+     * 
+     * Returns the value indicating how fast the mouse scroll speed is.
+     **/
     this.getScrollSpeed = function() {
         return this.$mouseHandler.getScrollSpeed();
     };
 
+    /**
+     * Editor.setDragDelay(dragDelay) 
+     * - dragDelay (Number): A value indicating the new delay
+     * 
+     * Sets the delay (in milliseconds) of the mouse drag.
+     *
+     **/
     this.setDragDelay = function(dragDelay) {
         this.$mouseHandler.setDragDelay(dragDelay);
     };
 
+    /**
+     * Editor.getDragDelay() -> Number
+     * 
+     * Returns the current mouse drag delay.
+     **/
     this.getDragDelay = function() {
         return this.$mouseHandler.getDragDelay();
     };
 
     this.$selectionStyle = "line";
+    /**
+     * Editor.setSelectionStyle(style) 
+     * - style (String): The new selection style
+     *
+     * Indicates how selections should occur. By default, selections are set to "line". This function also emits the `'changeSelectionStyle'` event.
+     * 
+     **/
     this.setSelectionStyle = function(style) {
         if (this.$selectionStyle == style) return;
 
@@ -532,83 +861,199 @@ var Editor = function(renderer, session) {
         this._emit("changeSelectionStyle", {data: style});
     };
 
+    /**
+     * Editor.getSelectionStyle() -> String
+     * 
+     * Returns the current selection style.
+     **/
     this.getSelectionStyle = function() {
         return this.$selectionStyle;
     };
 
     this.$highlightActiveLine = true;
+
+    /**
+     * Editor.setHighlightActiveLine(shouldHighlight) 
+     * - shouldHighlight (Boolean): Set to `true` to highlight the current line
+     *
+     * Determines whether or not the current line should be highlighted.
+     *
+     **/
     this.setHighlightActiveLine = function(shouldHighlight) {
-        if (this.$highlightActiveLine == shouldHighlight) return;
+        if (this.$highlightActiveLine == shouldHighlight)
+            return;
 
         this.$highlightActiveLine = shouldHighlight;
         this.$updateHighlightActiveLine();
     };
 
+    /**
+     * Editor.getHighlightActiveLine() -> Boolean
+     * 
+     * Returns `true` if current lines are always highlighted.
+     **/
     this.getHighlightActiveLine = function() {
         return this.$highlightActiveLine;
     };
 
+    this.$highlightGutterLine = true;
+    this.setHighlightGutterLine = function(shouldHighlight) {
+        if (this.$highlightGutterLine == shouldHighlight)
+            return;
+
+        this.renderer.setHighlightGutterLine(shouldHighlight);
+        this.$highlightGutterLine = shouldHighlight;
+    };
+
+    this.getHighlightGutterLine = function() {
+        return this.$highlightGutterLine;
+    };
+
     this.$highlightSelectedWord = true;
+    /**
+     * Editor.setHighlightSelectedWord(shouldHighlight)
+     * - shouldHighlight (Boolean): Set to `true` to highlight the currently selected word
+     *
+     * Determines if the currently selected word should be highlighted.
+     **/
     this.setHighlightSelectedWord = function(shouldHighlight) {
         if (this.$highlightSelectedWord == shouldHighlight)
             return;
 
         this.$highlightSelectedWord = shouldHighlight;
-        if (shouldHighlight)
-            this.session.getMode().highlightSelection(this);
-        else
-            this.session.getMode().clearSelectionHighlight(this);
+        this.$onSelectionChange();
     };
 
+    /**
+     * Editor.getHighlightSelectedWord() -> Boolean
+     *
+     * Returns `true` if currently highlighted words are to be highlighted.
+     **/
     this.getHighlightSelectedWord = function() {
         return this.$highlightSelectedWord;
     };
 
-    this.setShowInvisibles = function(showInvisibles) {
-        if (this.getShowInvisibles() == showInvisibles)
-            return;
+    this.setAnimatedScroll = function(shouldAnimate){
+        this.renderer.setAnimatedScroll(shouldAnimate);
+    };
 
+    this.getAnimatedScroll = function(){
+        return this.renderer.getAnimatedScroll();
+    };
+
+    /**
+     * Editor.setShowInvisibles(showInvisibles) 
+     * - showInvisibles (Boolean): Specifies whether or not to show invisible characters
+     * 
+     * If `showInvisibiles` is set to `true`, invisible characters&mdash;like spaces or new lines&mdash;are show in the editor.
+     **/
+    this.setShowInvisibles = function(showInvisibles) {
         this.renderer.setShowInvisibles(showInvisibles);
     };
 
+    /**
+     * Editor.getShowInvisibles() -> Boolean
+     * 
+     * Returns `true` if invisible characters are being shown.
+     **/
     this.getShowInvisibles = function() {
         return this.renderer.getShowInvisibles();
     };
 
+    this.setDisplayIndentGuides = function(display) {
+        this.renderer.setDisplayIndentGuides(display);
+    };
+
+    this.getDisplayIndentGuides = function() {
+        return this.renderer.getDisplayIndentGuides();
+    };
+
+    /**
+     * Editor.setShowPrintMargin(showPrintMargin) 
+     * - showPrintMargin (Boolean): Specifies whether or not to show the print margin
+     * 
+     * If `showPrintMargin` is set to `true`, the print margin is shown in the editor.
+     **/
     this.setShowPrintMargin = function(showPrintMargin) {
         this.renderer.setShowPrintMargin(showPrintMargin);
     };
 
+    /**
+     * Editor.getShowPrintMargin() -> Boolean
+     * 
+     * Returns `true` if the print margin is being shown.
+     **/
     this.getShowPrintMargin = function() {
         return this.renderer.getShowPrintMargin();
     };
 
+    /**
+     * Editor.setPrintMarginColumn(showPrintMargin) 
+     * - showPrintMargin (Number): Specifies the new print margin
+     *
+     * Sets the column defining where the print margin should be.
+     * 
+     **/
     this.setPrintMarginColumn = function(showPrintMargin) {
         this.renderer.setPrintMarginColumn(showPrintMargin);
     };
 
+    /**
+     * Editor.getPrintMarginColumn() -> Number
+     * 
+     * Returns the column number of where the print margin is.
+     **/
     this.getPrintMarginColumn = function() {
         return this.renderer.getPrintMarginColumn();
     };
 
     this.$readOnly = false;
+    /**
+     * Editor.setReadOnly(readOnly) 
+     * - readOnly (Boolean): Specifies whether the editor can be modified or not
+     * 
+     * If `readOnly` is true, then the editor is set to read-only mode, and none of the content can change.
+     **/
     this.setReadOnly = function(readOnly) {
         this.$readOnly = readOnly;
     };
 
+    /**
+     * Editor.getReadOnly() -> Boolean
+     * 
+     * Returns `true` if the editor is set to read-only mode.
+     **/
     this.getReadOnly = function() {
         return this.$readOnly;
     };
 
     this.$modeBehaviours = true;
+
+    /**
+     * Editor.setBehavioursEnabled() 
+     * - enabled (Boolean): Enables or disables behaviors
+     * 
+     * Specifies whether to use behaviors or not. ["Behaviors" in this case is the auto-pairing of special characters, like quotation marks, parenthesis, or brackets.]{: #BehaviorsDef}
+     **/
     this.setBehavioursEnabled = function (enabled) {
         this.$modeBehaviours = enabled;
     };
 
+    /**
+     * Editor.getBehavioursEnabled() -> Boolean
+     * 
+     * Returns `true` if the behaviors are currently enabled. {:BehaviorsDef}
+     **/
     this.getBehavioursEnabled = function () {
         return this.$modeBehaviours;
     };
 
+    /**
+     * Editor.setShowFoldWidgets(show) 
+     * - show (Boolean): Specifies whether the fold widgets are shown
+     * 
+     * Indicates whether the fold widgets are shown or not.
+     **/
     this.setShowFoldWidgets = function(show) {
         var gutter = this.renderer.$gutterLayer;
         if (gutter.getShowFoldWidgets() == show)
@@ -618,14 +1063,34 @@ var Editor = function(renderer, session) {
         this.$showFoldWidgets = show;
         this.renderer.updateFull();
     };
-    
+
+    /**
+     * Editor.getShowFoldWidgets() -> Boolean
+     * 
+     * Returns `true` if the fold widgets are shown.
+     **/
     this.getShowFoldWidgets = function() {
         return this.renderer.$gutterLayer.getShowFoldWidgets();
     };
 
+    this.setFadeFoldWidgets = function(show) {
+        this.renderer.setFadeFoldWidgets(show);
+    };
+
+    this.getFadeFoldWidgets = function() {
+        return this.renderer.getFadeFoldWidgets();
+    };
+
+    /**
+     * Editor.remove(dir) 
+     * - dir (String): The direction of the deletion to occur, either "left" or "right"
+     * 
+     * Removes words of text from the editor. A "word" is defined as a string of characters bookended by whitespace.
+     *
+     **/
     this.remove = function(dir) {
         if (this.selection.isEmpty()){
-            if(dir == "left")
+            if (dir == "left")
                 this.selection.selectLeft();
             else
                 this.selection.selectRight();
@@ -644,6 +1109,11 @@ var Editor = function(renderer, session) {
         this.clearSelection();
     };
 
+    /**
+     * Editor.removeWordRight() 
+     * 
+     * Removes the word directly to the right of the current selection.
+     **/
     this.removeWordRight = function() {
         if (this.selection.isEmpty())
             this.selection.selectWordRight();
@@ -652,6 +1122,11 @@ var Editor = function(renderer, session) {
         this.clearSelection();
     };
 
+    /**
+     * Editor.removeWordLeft() 
+     * 
+     * Removes the word directly to the left of the current selection.
+     **/
     this.removeWordLeft = function() {
         if (this.selection.isEmpty())
             this.selection.selectWordLeft();
@@ -660,6 +1135,11 @@ var Editor = function(renderer, session) {
         this.clearSelection();
     };
 
+    /**
+     * Editor.removeToLineStart() 
+     * 
+     * Removes all the words to the left of the current selection, until the start of the line.
+     **/
     this.removeToLineStart = function() {
         if (this.selection.isEmpty())
             this.selection.selectLineStart();
@@ -668,6 +1148,11 @@ var Editor = function(renderer, session) {
         this.clearSelection();
     };
 
+    /**
+     * Editor.removeToLineEnd() 
+     * 
+     * Removes all the words to the right of the current selection, until the end of the line.
+     **/
     this.removeToLineEnd = function() {
         if (this.selection.isEmpty())
             this.selection.selectLineEnd();
@@ -682,6 +1167,11 @@ var Editor = function(renderer, session) {
         this.clearSelection();
     };
 
+    /**
+     * Editor.splitLine() 
+     * 
+     * Splits the line at the current selection (by inserting an `'\n'`).
+     **/
     this.splitLine = function() {
         if (!this.selection.isEmpty()) {
             this.session.remove(this.getSelectionRange());
@@ -693,6 +1183,11 @@ var Editor = function(renderer, session) {
         this.moveCursorToPosition(cursor);
     };
 
+    /**
+     * Editor.transposeLetters() 
+     * 
+     * Transposes current line.
+     **/
     this.transposeLetters = function() {
         if (!this.selection.isEmpty()) {
             return;
@@ -726,11 +1221,11 @@ var Editor = function(renderer, session) {
         var text = this.session.getTextRange(range);
 		var up = text.toUpperCase();
 		var low = text.toLowerCase();
-		
+
 		var newText = dir == "up" ? up : low;
 		if (change && newText == text)
 			newText = dir == "up" ? low : up;
-		
+
         this.session.replace(range, newText);
         this.selection.setSelectionRange(originalRange);
     };
@@ -758,17 +1253,32 @@ var Editor = function(renderer, session) {
         }
     };
 
+    /** related to: EditSession.outdentRows
+     * Editor.blockOutdent() 
+     * 
+     * Outdents the current line.
+     **/
     this.blockOutdent = function() {
         var selection = this.session.getSelection();
         this.session.outdentRows(selection.getRange());
     };
 
+    /**
+     * Editor.toggleCommentLines() 
+     * 
+     * Given the currently selected range, this function either comments all lines or uncomments all lines (depending on whether it's commented or not).
+     **/
     this.toggleCommentLines = function() {
         var state = this.session.getState(this.getCursorPosition().row);
         var rows = this.$getSelectedRows();
         this.session.getMode().toggleCommentLines(state, this.session, rows.first, rows.last);
     };
 
+    /** related to: EditSession.remove
+     * Editor.removeLines() 
+     * 
+     * Removes all the lines in the current selection
+     **/
     this.removeLines = function() {
         var rows = this.$getSelectedRows();
         var range;
@@ -783,18 +1293,65 @@ var Editor = function(renderer, session) {
         this.clearSelection();
     };
 
+    this.duplicateSelection = function() {
+        var sel = this.selection;
+		var doc = this.session;
+		var range = sel.getRange();
+		if (range.isEmpty()) {
+			var row = range.start.row;
+			doc.duplicateLines(row, row);
+		} else {
+			var reverse = sel.isBackwards()
+			var point = sel.isBackwards() ? range.start : range.end;
+			var endPoint = doc.insert(point, doc.getTextRange(range), false);
+			range.start = point;
+			range.end = endPoint;
+			
+			sel.setSelectionRange(range, reverse)
+		}
+    };
+    
+    /** related to: EditSession.moveLinesDown
+     * Editor.moveLinesDown() -> Number
+     * + (Number): On success, it returns -1.
+     *
+     * Shifts all the selected lines down one row.
+     *
+     * 
+     *
+     **/
     this.moveLinesDown = function() {
         this.$moveLines(function(firstRow, lastRow) {
             return this.session.moveLinesDown(firstRow, lastRow);
         });
     };
 
+    /** related to: EditSession.moveLinesUp
+     * Editor.moveLinesUp() -> Number
+     * + (Number): On success, it returns -1.
+     *
+     * Shifts all the selected lines up one row.
+     *
+     *
+     **/
     this.moveLinesUp = function() {
         this.$moveLines(function(firstRow, lastRow) {
             return this.session.moveLinesUp(firstRow, lastRow);
         });
     };
 
+    /** related to: EditSession.moveText
+     * Editor.moveText(fromRange, toPosition) -> Range
+     * - fromRange (Range): The range of text you want moved within the document
+     * - toPosition (Object): The location (row and column) where you want to move the text to
+     * + (Range): The new range where the text was moved to.
+     *
+     * Moves a range of text from the given range to the given position. `toPosition` is an object that looks like this:
+     *
+     *    { row: newRowLocation, column: newColumnLocation }
+     * 
+     *
+     **/
     this.moveText = function(range, toPosition) {
         if (this.$readOnly)
             return null;
@@ -802,6 +1359,14 @@ var Editor = function(renderer, session) {
         return this.session.moveText(range, toPosition);
     };
 
+    /** related to: EditSession.duplicateLines
+     * Editor.copyLinesUp() -> Number
+     * + (Number): On success, returns 0.
+     *
+     * Copies all the selected lines up one row.
+     *
+     * 
+     **/
     this.copyLinesUp = function() {
         this.$moveLines(function(firstRow, lastRow) {
             this.session.duplicateLines(firstRow, lastRow);
@@ -809,6 +1374,15 @@ var Editor = function(renderer, session) {
         });
     };
 
+    /** related to: EditSession.duplicateLines
+     * Editor.copyLinesDown() -> Number
+     * + (Number): On success, returns the number of new rows added; in other words, `lastRow - firstRow + 1`.
+     *
+     * Copies all the selected lines down one row.
+     *
+     * 
+     *
+     **/
     this.copyLinesDown = function() {
         this.$moveLines(function(firstRow, lastRow) {
             return this.session.duplicateLines(firstRow, lastRow);
@@ -816,6 +1390,13 @@ var Editor = function(renderer, session) {
     };
 
 
+    /**
+     * Editor.$moveLines(mover) 
+     * - mover (Function): A method to call on each selected row
+     * 
+     * Executes a specific function, which can be anything that manipulates selected lines, such as copying them, duplicating them, or shifting them.
+     *
+     **/
     this.$moveLines = function(mover) {
         var rows = this.$getSelectedRows();
         var selection = this.selection;
@@ -830,7 +1411,7 @@ var Editor = function(renderer, session) {
             range.start.row += linesMoved;
             range.end.row += linesMoved;
             selection.setSelectionRange(range, reverse);
-        } 
+        }
         else {
             selection.setSelectionAnchor(rows.last+linesMoved+1, 0);
             selection.$moveSelection(function() {
@@ -839,6 +1420,14 @@ var Editor = function(renderer, session) {
         }
     };
 
+    /**
+     * Editor.$getSelectedRows() -> Object
+     * 
+     * Returns an object indicating the currently selected rows. The object looks like this:
+     *
+     * { first: range.start.row, last: range.end.row }
+     *
+     **/
     this.$getSelectedRows = function() {
         var range = this.getSelectionRange().collapseRows();
 
@@ -848,104 +1437,190 @@ var Editor = function(renderer, session) {
         };
     };
 
+    /** internal, hide
+     * Editor@onCompositionStart(text) 
+     * - text (String): The text being written
+     * 
+     * 
+     **/
     this.onCompositionStart = function(text) {
         this.renderer.showComposition(this.getCursorPosition());
     };
 
+    /** internal, hide
+     * Editor@onCompositionUpdate(text) 
+     * - text (String): The text being written
+     * 
+     * 
+     **/
     this.onCompositionUpdate = function(text) {
         this.renderer.setCompositionText(text);
     };
 
+    /** internal, hide
+     * Editor@onCompositionEnd() 
+     * 
+     * 
+     **/
     this.onCompositionEnd = function() {
         this.renderer.hideComposition();
     };
 
+    /** related to: VirtualRenderer.getFirstVisibleRow
+     * Editor.getFirstVisibleRow() -> Number
+     * 
+     * {:VirtualRenderer.getFirstVisibleRow}
+     **/
     this.getFirstVisibleRow = function() {
         return this.renderer.getFirstVisibleRow();
     };
 
+    /** related to: VirtualRenderer.getLastVisibleRow
+     * Editor.getLastVisibleRow() -> Number
+     * 
+     * {:VirtualRenderer.getLastVisibleRow}
+     **/
     this.getLastVisibleRow = function() {
         return this.renderer.getLastVisibleRow();
     };
 
+    /**
+     * Editor.isRowVisible(row) -> Boolean
+     * - row (Number): The row to check
+     * 
+     * Indicates if the row is currently visible on the screen.
+     **/
     this.isRowVisible = function(row) {
         return (row >= this.getFirstVisibleRow() && row <= this.getLastVisibleRow());
     };
 
+    /**
+     * Editor.isRowFullyVisible(row) -> Boolean
+     * - row (Number): The row to check
+     * 
+     * Indicates if the entire row is currently visible on the screen.
+     **/
     this.isRowFullyVisible = function(row) {
         return (row >= this.renderer.getFirstFullyVisibleRow() && row <= this.renderer.getLastFullyVisibleRow());
     };
 
+    /**
+     * Editor.$getVisibleRowCount() -> Number
+     * 
+     * Returns the number of currently visibile rows.
+     **/
     this.$getVisibleRowCount = function() {
         return this.renderer.getScrollBottomRow() - this.renderer.getScrollTopRow() + 1;
     };
 
-    this.$getPageDownRow = function() {
-        return this.renderer.getScrollBottomRow();
+    this.$moveByPage = function(dir, select) {
+        var renderer = this.renderer;
+        var config = this.renderer.layerConfig;
+        var rows = dir * Math.floor(config.height / config.lineHeight);
+
+        this.$blockScrolling++;
+        if (select == true) {
+            this.selection.$moveSelection(function(){
+                this.moveCursorBy(rows, 0);
+            });
+        } else if (select == false) {
+            this.selection.moveCursorBy(rows, 0);
+            this.selection.clearSelection();
+        }
+        this.$blockScrolling--;
+
+        var scrollTop = renderer.scrollTop;
+
+        renderer.scrollBy(0, rows * config.lineHeight);
+        if (select != null)
+            renderer.scrollCursorIntoView(null, 0.5);
+
+        renderer.animateScrolling(scrollTop);
     };
 
-    this.$getPageUpRow = function() {
-        var firstRow = this.renderer.getScrollTopRow();
-        var lastRow = this.renderer.getScrollBottomRow();
-
-        return firstRow - (lastRow - firstRow);
-    };
-
+    /**
+     * Editor.selectPageDown() 
+     * 
+     * Selects the text from the current position of the document until where a "page down" finishes.
+     **/
     this.selectPageDown = function() {
-        var row = this.$getPageDownRow() + Math.floor(this.$getVisibleRowCount() / 2);
-
-        this.scrollPageDown();
-
-        var selection = this.getSelection();
-        var leadScreenPos = this.session.documentToScreenPosition(selection.getSelectionLead());
-        var dest = this.session.screenToDocumentPosition(row, leadScreenPos.column);
-        selection.selectTo(dest.row, dest.column);
+        this.$moveByPage(1, true);
     };
 
+    /**
+     * Editor.selectPageUp() 
+     * 
+     * Selects the text from the current position of the document until where a "page up" finishes.
+     **/
     this.selectPageUp = function() {
-        var visibleRows = this.renderer.getScrollTopRow() - this.renderer.getScrollBottomRow();
-        var row = this.$getPageUpRow() + Math.round(visibleRows / 2);
-
-        this.scrollPageUp();
-
-        var selection = this.getSelection();
-        var leadScreenPos = this.session.documentToScreenPosition(selection.getSelectionLead());
-        var dest = this.session.screenToDocumentPosition(row, leadScreenPos.column);
-        selection.selectTo(dest.row, dest.column);
+        this.$moveByPage(-1, true);
     };
 
+    /**
+     * Editor.gotoPageDown() 
+     * 
+     * Shifts the document to wherever "page down" is, as well as moving the cursor position.
+     **/
     this.gotoPageDown = function() {
-        var row = this.$getPageDownRow();
-        var column = this.getCursorPositionScreen().column;
-
-        this.scrollToRow(row);
-        this.getSelection().moveCursorToScreen(row, column);
+       this.$moveByPage(1, false);
     };
 
+    /**
+     * Editor.gotoPageUp() 
+     * 
+     * Shifts the document to wherever "page up" is, as well as moving the cursor position.
+     **/
     this.gotoPageUp = function() {
-        var row = this.$getPageUpRow();
-        var column = this.getCursorPositionScreen().column;
-
-       this.scrollToRow(row);
-       this.getSelection().moveCursorToScreen(row, column);
+        this.$moveByPage(-1, false);
     };
 
+    /**
+     * Editor.scrollPageDown() 
+     * 
+     * Scrolls the document to wherever "page down" is, without changing the cursor position.
+     **/
     this.scrollPageDown = function() {
-        this.scrollToRow(this.$getPageDownRow());
+        this.$moveByPage(1);
     };
 
+    /**
+     * Editor.scrollPageUp() 
+     * 
+     * Scrolls the document to wherever "page up" is, without changing the cursor position.
+     **/
     this.scrollPageUp = function() {
-        this.renderer.scrollToRow(this.$getPageUpRow());
+        this.$moveByPage(-1);
     };
 
+    /** related to: VirtualRenderer.scrollToRow
+     * Editor.scrollToRow(row) 
+     * - row (Number): The row to move to
+     *
+     * Moves the editor to the specified row.
+     * 
+     **/
     this.scrollToRow = function(row) {
         this.renderer.scrollToRow(row);
     };
 
-    this.scrollToLine = function(line, center) {
-        this.renderer.scrollToLine(line, center);
+    /** related to: VirtualRenderer.scrollToLine
+     * Editor.scrollToLine(line, center) 
+     * - line (Number): The line to scroll to
+     * - center (Boolean): If `true` 
+     * - animate (Boolean): If `true` animates scrolling
+     * - callback (Function): Function to be called when the animation has finished
+     *
+     * TODO scrolls a to line, if center == true, puts line in middle of screen or attempts to)
+     **/
+    this.scrollToLine = function(line, center, animate, callback) {
+        this.renderer.scrollToLine(line, center, animate, callback);
     };
 
+    /**
+     * Editor.centerSelection() 
+     * 
+     * Attempts to center the current selection on the screen.
+     **/
     this.centerSelection = function() {
         var range = this.getSelectionRange();
         var pos = {
@@ -955,87 +1630,183 @@ var Editor = function(renderer, session) {
         this.renderer.alignCursor(pos, 0.5);
     };
 
+    /** related to: Selection.getCursor
+     * Editor.getCursorPosition() -> Object
+     * + (Object): This returns an object that looks something like this:<br/>
+     * ```{ row: currRow, column: currCol }```
+     *
+     * Gets the current position of the cursor.
+     *
+     *    
+     *
+     **/
     this.getCursorPosition = function() {
         return this.selection.getCursor();
     };
 
+    /** related to: EditSession.documentToScreenPosition
+     * Editor.getCursorPositionScreen() -> Number
+     * 
+     * Returns the screen position of the cursor.
+     **/
     this.getCursorPositionScreen = function() {
         return this.session.documentToScreenPosition(this.getCursorPosition());
     };
 
+    /** related to: Selection.getRange
+     * Editor.getSelectionRange() -> Range
+     * 
+     * {:Selection.getRange}
+     **/
     this.getSelectionRange = function() {
         return this.selection.getRange();
     };
 
 
+    /** related to: Selection.selectAll
+     * Editor.selectAll() 
+     * 
+     * Selects all the text in editor.
+     **/
     this.selectAll = function() {
         this.$blockScrolling += 1;
         this.selection.selectAll();
         this.$blockScrolling -= 1;
     };
 
+    /** related to: Selection.clearSelection
+     * Editor.clearSelection() 
+     * 
+     * {:Selection.clearSelection}
+     **/
     this.clearSelection = function() {
         this.selection.clearSelection();
     };
 
+    /** related to: Selection.moveCursorTo
+     * Editor.moveCursorTo(row, column) 
+     * - row (Number): The new row number
+     * - column (Number): The new column number
+     *
+     * Moves the cursor to the specified row and column. Note that this does not de-select the current selection.
+     *
+     **/
     this.moveCursorTo = function(row, column) {
         this.selection.moveCursorTo(row, column);
     };
 
+    /** related to: Selection.moveCursorToPosition
+     * Editor.moveCursorToPosition(pos) 
+     * - pos (Object): An object with two properties, row and column
+     * 
+     * Moves the cursor to the position indicated by `pos.row` and `pos.column`.
+     *
+     **/
     this.moveCursorToPosition = function(pos) {
         this.selection.moveCursorToPosition(pos);
     };
 
+    /** 
+     * Editor.jumpToMatching() 
+     * 
+     * Moves the cursor's row and column to the next matching bracket.
+     *
+     **/
     this.jumpToMatching = function(select) {
         var cursor = this.getCursorPosition();
-        var pos = this.session.findMatchingBracket(cursor);
-        if (!pos) {
-            cursor.column += 1;
-            pos = this.session.findMatchingBracket(cursor);
-        }
-        if (!pos) {
-            cursor.column -= 2;
-            pos = this.session.findMatchingBracket(cursor);
+
+        var range = this.session.getBracketRange(cursor);
+        if (!range) {
+            range = this.find({
+                needle: /[{}()\[\]]/g,
+                preventScroll:true,
+                start: {row: cursor.row, column: cursor.column - 1}
+            });
+            if (!range)
+                return;
+            var pos = range.start;
+            if (pos.row == cursor.row && Math.abs(pos.column - cursor.column) < 2)
+                range = this.session.getBracketRange(pos);
         }
         
+        pos = range && range.cursor || pos;
         if (pos) {
             if (select) {
-                this.selection.selectTo(pos.row, pos.column);
+                if (range && range.isEqual(this.getSelectionRange()))
+                    this.clearSelection();
+                else
+                    this.selection.selectTo(pos.row, pos.column);
             } else {
-            this.clearSelection();
-            this.moveCursorTo(pos.row, pos.column);
-        }
+                this.clearSelection();
+                this.moveCursorTo(pos.row, pos.column);
+            }
         }
     };
-    
-    this.gotoLine = function(lineNumber, column) {
+
+    /**
+     * Editor.gotoLine(lineNumber, column) 
+     * - lineNumber (Number): The line number to go to
+     * - column (Number): A column number to go to
+     * - animate (Boolean): If `true` animates scolling
+     *
+     * Moves the cursor to the specified line number, and also into the indiciated column.
+     * 
+     **/
+    this.gotoLine = function(lineNumber, column, animate) {
         this.selection.clearSelection();
         this.session.unfold({row: lineNumber - 1, column: column || 0});
 
         this.$blockScrolling += 1;
-        this.moveCursorTo(lineNumber-1, column || 0);
+        this.moveCursorTo(lineNumber - 1, column || 0);
         this.$blockScrolling -= 1;
-        if (!this.isRowFullyVisible(this.getCursorPosition().row))
-            this.scrollToLine(lineNumber, true);
+
+        if (!this.isRowFullyVisible(lineNumber - 1))
+            this.scrollToLine(lineNumber - 1, true, animate);
     };
 
+    /** related to: Editor.moveCursorTo
+     * Editor.navigateTo(row, column) 
+     * - row (Number): The new row number
+     * - column (Number): The new column number
+     *
+     * Moves the cursor to the specified row and column. Note that this does de-select the current selection.
+     *
+     **/
     this.navigateTo = function(row, column) {
         this.clearSelection();
         this.moveCursorTo(row, column);
     };
 
+    /**
+     * Editor.navigateUp(times) 
+     * - times (Number): The number of times to change navigation
+     * 
+     * Moves the cursor up in the document the specified number of times. Note that this does de-select the current selection.
+     **/
     this.navigateUp = function(times) {
         this.selection.clearSelection();
         times = times || 1;
         this.selection.moveCursorBy(-times, 0);
     };
 
+    /**
+     * Editor.navigateDown(times) 
+     * - times (Number): The number of times to change navigation
+     * 
+     * Moves the cursor down in the document the specified number of times. Note that this does de-select the current selection.
+     **/
     this.navigateDown = function(times) {
         this.selection.clearSelection();
         times = times || 1;
         this.selection.moveCursorBy(times, 0);
     };
 
+    /**
+     * Editor.navigateLeft(times) 
+     * - times (Number): The number of times to change navigation
+     * 
+     * Moves the cursor left in the document the specified number of times. Note that this does de-select the current selection.
+     **/
     this.navigateLeft = function(times) {
         if (!this.selection.isEmpty()) {
             var selectionStart = this.getSelectionRange().start;
@@ -1050,6 +1821,12 @@ var Editor = function(renderer, session) {
         this.clearSelection();
     };
 
+    /**
+     * Editor.navigateRight(times) 
+     * - times (Number): The number of times to change navigation
+     * 
+     * Moves the cursor right in the document the specified number of times. Note that this does de-select the current selection.
+     **/
     this.navigateRight = function(times) {
         if (!this.selection.isEmpty()) {
             var selectionEnd = this.getSelectionRange().end;
@@ -1064,70 +1841,130 @@ var Editor = function(renderer, session) {
         this.clearSelection();
     };
 
+    /**
+     * Editor.navigateLineStart() 
+     * 
+     * Moves the cursor to the start of the current line. Note that this does de-select the current selection.
+     **/
     this.navigateLineStart = function() {
         this.selection.moveCursorLineStart();
         this.clearSelection();
     };
 
+    /**
+     * Editor.navigateLineEnd() 
+     * 
+     * Moves the cursor to the end of the current line. Note that this does de-select the current selection.
+     **/
     this.navigateLineEnd = function() {
         this.selection.moveCursorLineEnd();
         this.clearSelection();
     };
 
+    /**
+     * Editor.navigateFileEnd() 
+     * 
+     * Moves the cursor to the end of the current file. Note that this does de-select the current selection.
+     **/
     this.navigateFileEnd = function() {
+        var scrollTop = this.renderer.scrollTop;
         this.selection.moveCursorFileEnd();
         this.clearSelection();
+        this.renderer.animateScrolling(scrollTop);
     };
 
+    /**
+     * Editor.navigateFileStart() 
+     * 
+     * Moves the cursor to the start of the current file. Note that this does de-select the current selection.
+     **/
     this.navigateFileStart = function() {
+        var scrollTop = this.renderer.scrollTop;
         this.selection.moveCursorFileStart();
         this.clearSelection();
+        this.renderer.animateScrolling(scrollTop);
     };
 
+    /**
+     * Editor.navigateWordRight() 
+     * 
+     * Moves the cursor to the word immediately to the right of the current position. Note that this does de-select the current selection.
+     **/
     this.navigateWordRight = function() {
         this.selection.moveCursorWordRight();
         this.clearSelection();
     };
 
+    /**
+     * Editor.navigateWordLeft() 
+     * 
+     * Moves the cursor to the word immediately to the left of the current position. Note that this does de-select the current selection.
+     **/
     this.navigateWordLeft = function() {
         this.selection.moveCursorWordLeft();
         this.clearSelection();
     };
 
+    /**
+     * Editor.replace(replacement, options) 
+     * - replacement (String): The text to replace with
+     * - options (Object): The [[Search `Search`]] options to use
+     *
+     * Replaces the first occurance of `options.needle` with the value in `replacement`.
+     **/
     this.replace = function(replacement, options) {
         if (options)
             this.$search.set(options);
 
         var range = this.$search.find(this.session);
+        var replaced = 0;
         if (!range)
-            return;
+            return replaced;
 
-        this.$tryReplace(range, replacement);
+        if (this.$tryReplace(range, replacement)) {
+            replaced = 1;
+        }
         if (range !== null) {
             this.selection.setSelectionRange(range);
             this.renderer.scrollSelectionIntoView(range.start, range.end);
         }
+
+        return replaced;
     };
 
+    /**
+     * Editor.replaceAll(replacement, options) 
+     * - replacement (String): The text to replace with
+     * - options (Object): The [[Search `Search`]] options to use
+     *
+     * Replaces all occurances of `options.needle` with the value in `replacement`.
+     **/
     this.replaceAll = function(replacement, options) {
         if (options) {
             this.$search.set(options);
         }
 
         var ranges = this.$search.findAll(this.session);
+        var replaced = 0;
         if (!ranges.length)
-            return;
+            return replaced;
+
+        this.$blockScrolling += 1;
 
         var selection = this.getSelectionRange();
         this.clearSelection();
         this.selection.moveCursorTo(0, 0);
 
-        this.$blockScrolling += 1;
-        for (var i = ranges.length - 1; i >= 0; --i)
-            this.$tryReplace(ranges[i], replacement);
+        for (var i = ranges.length - 1; i >= 0; --i) {
+            if(this.$tryReplace(ranges[i], replacement)) {
+                replaced++;
+            }
+        }
 
         this.selection.setSelectionRange(selection);
         this.$blockScrolling -= 1;
+
+        return replaced;
     };
 
     this.$tryReplace = function(range, replacement) {
@@ -1141,57 +1978,125 @@ var Editor = function(renderer, session) {
         }
     };
 
+    /** related to: Search.getOptions
+     * Editor.getLastSearchOptions() -> Object
+     * 
+     * {:Search.getOptions} For more information on `options`, see [[Search `Search`]].
+     **/
     this.getLastSearchOptions = function() {
         return this.$search.getOptions();
     };
 
-    this.find = function(needle, options) {
-        this.clearSelection();
-        options = options || {};
-        options.needle = needle;
-        this.$search.set(options);
-        this.$find();
-    };
+    /** related to: Search.find
+     * Editor.find(needle, options)
+     * - needle (String): The text to search for (optional)
+     * - options (Object): An object defining various search properties
+     * - animate (Boolean): If `true` animate scrolling
+     *
+     * Attempts to find `needle` within the document. For more information on `options`, see [[Search `Search`]].
+     **/
+    this.find = function(needle, options, animate) {
+        if (!options)
+            options = {};
 
-    this.findNext = function(options) {
-        options = options || {};
-        if (typeof options.backwards == "undefined")
-            options.backwards = false;
-        this.$search.set(options);
-        this.$find();
-    };
+        if (typeof needle == "string" || needle instanceof RegExp)
+            options.needle = needle;
+        else if (typeof needle == "object")
+            oop.mixin(options, needle);
 
-    this.findPrevious = function(options) {
-        options = options || {};
-        if (typeof options.backwards == "undefined")
-            options.backwards = true;
-        this.$search.set(options);
-        this.$find();
-    };
-
-    this.$find = function(backwards) {
-        if (!this.selection.isEmpty())
-            this.$search.set({needle: this.session.getTextRange(this.getSelectionRange())});
-
-        if (typeof backwards != "undefined")
-            this.$search.set({backwards: backwards});
-
-        var range = this.$search.find(this.session);
-        if (range) {
-            this.session.unfold(range);
-            this.selection.setSelectionRange(range); 
-            this.renderer.scrollSelectionIntoView(range.start, range.end);
+        var range = this.selection.getRange();
+        if (options.needle == null) {
+            needle = this.session.getTextRange(range)
+                || this.$search.$options.needle;
+            if (!needle) {
+                range = this.session.getWordRange(range.start.row, range.start.column);
+                needle = this.session.getTextRange(range);
+            }
+            this.$search.set({needle: needle});
         }
+
+        this.$search.set(options);
+        if (!options.start)
+            this.$search.set({start: range});
+
+        var newRange = this.$search.find(this.session);
+        if (options.preventScroll)
+            return newRange;
+        if (newRange) {
+            this.revealRange(newRange, animate);
+            return newRange;
+        }
+        // clear selection if nothing is found
+        if (options.backwards)
+            range.start = range.end;
+        else
+            range.end = range.start;
+        this.selection.setRange(range);
     };
 
+    /** related to: Editor.find
+     * Editor.findNext(options)
+     * - options (Object): search options
+     * - animate (Boolean): If `true` animate scrolling
+     *
+     * Performs another search for `needle` in the document. For more information on `options`, see [[Search `Search`]].
+     **/
+    this.findNext = function(options, animate) {
+        this.find({skipCurrent: true, backwards: false}, options, animate);
+    };
+
+    /** related to: Editor.find
+     * Editor.findPrevious(options)
+     * - options (Object): search options
+     * - animate (Boolean): If `true` animate scrolling
+     *
+     * Performs a search for `needle` backwards. For more information on `options`, see [[Search `Search`]].
+     **/
+    this.findPrevious = function(options, animate) {
+        this.find(options, {skipCurrent: true, backwards: true}, animate);
+    };
+
+    this.revealRange = function(range, animate) {
+        this.$blockScrolling += 1;
+        this.session.unfold(range);
+        this.selection.setSelectionRange(range);
+        this.$blockScrolling -= 1;
+
+        var scrollTop = this.renderer.scrollTop;
+        this.renderer.scrollSelectionIntoView(range.start, range.end, 0.5);
+        if (animate != false)
+            this.renderer.animateScrolling(scrollTop);
+    };
+
+    /** related to: UndoManager.undo
+     * Editor.undo() 
+     * 
+     * {:UndoManager.undo}
+     **/
     this.undo = function() {
+        this.$blockScrolling++;
         this.session.getUndoManager().undo();
+        this.$blockScrolling--;
+        this.renderer.scrollCursorIntoView(null, 0.5);
     };
 
+    /** related to: UndoManager.redo
+     * Editor.redo() 
+     * 
+     * {:UndoManager.redo}
+     **/
     this.redo = function() {
+        this.$blockScrolling++;
         this.session.getUndoManager().redo();
+        this.$blockScrolling--;
+        this.renderer.scrollCursorIntoView(null, 0.5);
     };
 
+    /** 
+     * Editor.destroy() 
+     * 
+     * Cleans up the entire editor.
+     **/
     this.destroy = function() {
         this.renderer.destroy();
     };
@@ -1221,15 +2126,34 @@ var editorCss = require("ace/css/editor.css");
 
 dom.importCssString(editorCss, "ace_editor");
 
+/**
+ * class VirtualRenderer
+ *
+ * The class that is responsible for drawing everything you see on the screen!
+ *
+ **/
+
+/**
+ * new VirtualRenderer(container, theme)
+ * - container (DOMElement): The root element of the editor
+ * - theme (String): The starting theme
+ *
+ * Constructs a new `VirtualRenderer` within the `container` specified, applying the given `theme`.
+ *
+ **/
+
 var VirtualRenderer = function(container, theme) {
     var _self = this;
-    
+
     this.container = container;
 
     // TODO: this breaks rendering in Cloud9 with multiple ace instances
 //    // Imports CSS once per DOM document ('ace_editor' serves as an identifier).
 //    dom.importCssString(editorCss, "ace_editor", container.ownerDocument);
-    
+
+    // in IE <= 9 the native cursor always shines through
+    this.$keepTextAreaAtCursor = !useragent.isIE;
+
     dom.addCssClass(container, "ace_editor");
 
     this.setTheme(theme);
@@ -1247,8 +2171,8 @@ var VirtualRenderer = function(container, theme) {
     this.scroller.appendChild(this.content);
 
     this.$gutterLayer = new GutterLayer(this.$gutter);
-    this.$gutterLayer.on("changeGutterWidth", this.onResize.bind(this, true));    
-    
+    this.$gutterLayer.on("changeGutterWidth", this.onResize.bind(this, true));
+
     this.$markerBack = new MarkerLayer(this.content);
 
     var textLayer = this.$textLayer = new TextLayer(this.content);
@@ -1263,17 +2187,20 @@ var VirtualRenderer = function(container, theme) {
     this.$cursorPadding = 8;
 
     // Indicates whether the horizontal scrollbar is visible
-    this.$horizScroll = true;
+    this.$horizScroll = false;
     this.$horizScrollAlwaysVisible = false;
+
+    this.$animatedScroll = false;
 
     this.scrollBar = new ScrollBar(container);
     this.scrollBar.addEventListener("scroll", function(e) {
-        _self.session.setScrollTop(e.data);
+        if (!_self.$inScrollAnimation)
+            _self.session.setScrollTop(e.data);
     });
 
     this.scrollTop = 0;
     this.scrollLeft = 0;
-    
+
     event.addListener(this.scroller, "scroll", function() {
         _self.session.setScrollLeft(_self.scroller.scrollLeft);
     });
@@ -1340,19 +2267,32 @@ var VirtualRenderer = function(container, theme) {
 
     oop.implement(this, EventEmitter);
 
+    /**
+    * VirtualRenderer.setSession(session) -> Void
+    * 
+    * Associates an [[EditSession `EditSession`]].
+    **/
     this.setSession = function(session) {
         this.session = session;
+        
+        this.scroller.className = "ace_scroller";
+        
         this.$cursorLayer.setSession(session);
         this.$markerBack.setSession(session);
         this.$markerFront.setSession(session);
         this.$gutterLayer.setSession(session);
         this.$textLayer.setSession(session);
         this.$loop.schedule(this.CHANGE_FULL);
+        
     };
 
     /**
-     * Triggers partial update of the text layer
-     */
+    * VirtualRenderer.updateLines(firstRow, lastRow) -> Void
+    * - firstRow (Number): The first row to update
+    * - lastRow (Number): The last row to update
+    *
+    * Triggers a partial update of the text, from the range given by the two parameters.
+    **/
     this.updateLines = function(firstRow, lastRow) {
         if (lastRow === undefined)
             lastRow = Infinity;
@@ -1374,27 +2314,44 @@ var VirtualRenderer = function(container, theme) {
         this.$loop.schedule(this.CHANGE_LINES);
     };
 
+    this.onChangeTabSize = function() {
+        this.$loop.schedule(this.CHANGE_TEXT | this.CHANGE_MARKER);
+        this.$textLayer.onChangeTabSize();
+    };
+
     /**
-     * Triggers full update of the text layer
-     */
+    * VirtualRenderer.updateText() -> Void
+    *
+    * Triggers a full update of the text, for all the rows.
+    **/
     this.updateText = function() {
         this.$loop.schedule(this.CHANGE_TEXT);
     };
 
     /**
-     * Triggers a full update of all layers
-     */
-    this.updateFull = function() {
+    * VirtualRenderer.updateFull() -> Void
+    *
+    * Triggers a full update of all the layers, for all the rows.
+    **/
+    this.updateFull = function(force) {
         this.$loop.schedule(this.CHANGE_FULL);
     };
 
+    /**
+    * VirtualRenderer.updateFontSize() -> Void
+    *
+    * Updates the font size.
+    **/
     this.updateFontSize = function() {
         this.$textLayer.checkForSizeChanges();
     };
 
     /**
-     * Triggers resize of the editor
-     */
+    * VirtualRenderer.onResize(force) -> Void
+    * - force (Boolean): If `true`, recomputes the size, even if the height and width haven't changed
+    *
+    * [Triggers a resize of the editor.]{: #VirtualRenderer.onResize}
+    **/
     this.onResize = function(force) {
         var changes = this.CHANGE_SIZE;
         var size = this.$size;
@@ -1420,7 +2377,7 @@ var VirtualRenderer = function(container, theme) {
             var gutterWidth = this.showGutter ? this.$gutter.offsetWidth : 0;
             this.scroller.style.left = gutterWidth + "px";
             size.scrollerWidth = Math.max(0, width - gutterWidth - this.scrollBar.getWidth());
-            this.scroller.style.width = size.scrollerWidth + "px";
+            this.scroller.style.right = this.scrollBar.getWidth() + "px";
 
             if (this.session.getUseWrapMode() && this.adjustWrapLimit() || force)
                 changes = changes | this.CHANGE_FULL;
@@ -1429,45 +2386,128 @@ var VirtualRenderer = function(container, theme) {
         this.$loop.schedule(changes);
     };
 
+    /**
+    * VirtualRenderer.adjustWrapLimit() -> Void
+    *
+    * Adjusts the wrap limit, which is the number of characters that can fit within the width of the edit area on screen.
+    **/
     this.adjustWrapLimit = function() {
         var availableWidth = this.$size.scrollerWidth - this.$padding * 2;
         var limit = Math.floor(availableWidth / this.characterWidth);
         return this.session.adjustWrapLimit(limit);
     };
 
+    /**
+    * VirtualRenderer.setAnimatedScroll(shouldAnimate) -> Void
+    * - shouldAnimate (Boolean): Set to `true` to show animated scrolls
+    *
+    * Identifies whether you want to have an animated scroll or not.
+    *
+    **/
+    this.setAnimatedScroll = function(shouldAnimate){
+        this.$animatedScroll = shouldAnimate;
+    };
+
+    /**
+    * VirtualRenderer.getAnimatedScroll() -> Boolean
+    *
+    * Returns whether an animated scroll happens or not.
+    **/
+    this.getAnimatedScroll = function() {
+        return this.$animatedScroll;
+    };
+
+    /**
+    * VirtualRenderer.setShowInvisibles(showInvisibles) -> Void
+    * - showInvisibles (Boolean): Set to `true` to show invisibles
+    *
+    * Identifies whether you want to show invisible characters or not.
+    *
+    **/
     this.setShowInvisibles = function(showInvisibles) {
         if (this.$textLayer.setShowInvisibles(showInvisibles))
             this.$loop.schedule(this.CHANGE_TEXT);
     };
 
+    /**
+    * VirtualRenderer.getShowInvisibles() -> Boolean
+    *
+    * Returns whether invisible characters are being shown or not.
+    **/
     this.getShowInvisibles = function() {
         return this.$textLayer.showInvisibles;
     };
 
+    this.getDisplayIndentGuides = function() {
+        return this.$textLayer.displayIndentGuides;
+    };
+    
+    this.setDisplayIndentGuides = function(display) {
+        if (this.$textLayer.setDisplayIndentGuides(display))
+            this.$loop.schedule(this.CHANGE_TEXT);
+    };
+    
     this.$showPrintMargin = true;
+
+    /**
+    * VirtualRenderer.setShowPrintMargin(showPrintMargin)
+    * - showPrintMargin (Boolean): Set to `true` to show the print margin
+    *
+    * Identifies whether you want to show the print margin or not.
+    *
+    **/
     this.setShowPrintMargin = function(showPrintMargin) {
         this.$showPrintMargin = showPrintMargin;
         this.$updatePrintMargin();
     };
 
+    /**
+    * VirtualRenderer.getShowPrintMargin() -> Boolean
+    *
+    * Returns whetherthe print margin is being shown or not.
+    **/
     this.getShowPrintMargin = function() {
         return this.$showPrintMargin;
     };
 
     this.$printMarginColumn = 80;
+
+    /**
+    * VirtualRenderer.setPrintMarginColumn(showPrintMargin)
+    * - showPrintMargin (Boolean): Set to `true` to show the print margin column
+    *
+    * Identifies whether you want to show the print margin column or not.
+    *
+    **/
     this.setPrintMarginColumn = function(showPrintMargin) {
         this.$printMarginColumn = showPrintMargin;
         this.$updatePrintMargin();
     };
 
+    /**
+    * VirtualRenderer.getPrintMarginColumn() -> Boolean
+    *
+    * Returns whether the print margin column is being shown or not.
+    **/
     this.getPrintMarginColumn = function() {
         return this.$printMarginColumn;
     };
 
+    /**
+    * VirtualRenderer.getShowGutter() -> Boolean
+    *
+    * Returns `true` if the gutter is being shown.
+    **/
     this.getShowGutter = function(){
         return this.showGutter;
     };
 
+    /**
+    * VirtualRenderer.setShowGutter(show) -> Void
+    * - show (Boolean): Set to `true` to show the gutter
+    *
+    * Identifies whether you want to show the gutter or not.
+    **/
     this.setShowGutter = function(show){
         if(this.showGutter === show)
             return;
@@ -1476,6 +2516,51 @@ var VirtualRenderer = function(container, theme) {
         this.onResize(true);
     };
 
+    this.getFadeFoldWidgets = function(){
+        return dom.hasCssClass(this.$gutter, "ace_fade-fold-widgets");
+    };
+
+    this.setFadeFoldWidgets = function(show) {
+        if (show)
+            dom.addCssClass(this.$gutter, "ace_fade-fold-widgets");
+        else
+            dom.removeCssClass(this.$gutter, "ace_fade-fold-widgets");
+    };
+
+    this.$highlightGutterLine = true;
+    this.setHighlightGutterLine = function(shouldHighlight) {
+        if (this.$highlightGutterLine == shouldHighlight)
+            return;
+        this.$highlightGutterLine = shouldHighlight;
+
+        this.$loop.schedule(this.CHANGE_GUTTER);
+    };
+
+    this.getHighlightGutterLine = function() {
+        return this.$highlightGutterLine;
+    };
+
+    this.$updateGutterLineHighlight = function(gutterReady) {
+        var i = this.session.selection.lead.row;
+        if (i == this.$gutterLineHighlight)
+            return;
+
+        if (!gutterReady) {
+            var lineEl, ch = this.$gutterLayer.element.children;
+            var index = this.$gutterLineHighlight - this.layerConfig.firstRow;
+            if (index >= 0 && (lineEl = ch[index]))
+                dom.removeCssClass(lineEl, "ace_gutter_active_line");
+
+            index = i - this.layerConfig.firstRow;
+            if (index >= 0 && (lineEl = ch[index]))
+                dom.addCssClass(lineEl, "ace_gutter_active_line");
+        }
+
+        this.$gutterLayer.removeGutterDecoration(this.$gutterLineHighlight, "ace_gutter_active_line");
+        this.$gutterLayer.addGutterDecoration(i, "ace_gutter_active_line");
+        this.$gutterLineHighlight = i;
+    };
+    
     this.$updatePrintMargin = function() {
         var containerEl;
 
@@ -1496,51 +2581,108 @@ var VirtualRenderer = function(container, theme) {
         style.visibility = this.$showPrintMargin ? "visible" : "hidden";
     };
 
+    /**
+    * VirtualRenderer.getContainerElement() -> DOMElement
+    *
+    * Returns the root element containing this renderer.
+    **/
     this.getContainerElement = function() {
         return this.container;
     };
 
+    /**
+    * VirtualRenderer.getMouseEventTarget() -> DOMElement
+    *
+    * Returns the element that the mouse events are attached to
+    **/
     this.getMouseEventTarget = function() {
         return this.content;
     };
 
+    /**
+    * VirtualRenderer.getTextAreaContainer() -> DOMElement
+    *
+    * Returns the element to which the hidden text area is added.
+    **/
     this.getTextAreaContainer = function() {
         return this.container;
     };
 
-    this.moveTextAreaToCursor = function(textarea) {
-        if (this.layerConfig.lastRow === 0)
+    // move text input over the cursor
+    // this is required for iOS and IME
+    this.$moveTextAreaToCursor = function() {
+        if (!this.$keepTextAreaAtCursor)
             return;
 
-        var pos = this.$cursorLayer.getPixelPosition();
-        if (!pos)
+        var posTop = this.$cursorLayer.$pixelPos.top;
+        var posLeft = this.$cursorLayer.$pixelPos.left;
+        posTop -= this.layerConfig.offset;
+
+        if (posTop < 0 || posTop > this.layerConfig.height - this.lineHeight)
             return;
 
-        var bounds = this.content.getBoundingClientRect();
-        var offset = this.layerConfig.offset;
+        var w = this.characterWidth;
+        if (this.$composition)
+            w += this.textarea.scrollWidth;
+        posLeft -= this.scrollLeft;
+        if (posLeft > this.$size.scrollerWidth - w)
+            posLeft = this.$size.scrollerWidth - w;
 
-        textarea.style.left = (bounds.left + pos.left) + "px";
-        textarea.style.top = (bounds.top + pos.top - this.scrollTop + offset) + "px";
+        if (this.showGutter)
+            posLeft += this.$gutterLayer.gutterWidth;
+
+        this.textarea.style.height = this.lineHeight + "px";
+        this.textarea.style.width = w + "px";
+        this.textarea.style.left = posLeft + "px";
+        this.textarea.style.top = posTop - 1 + "px";
     };
 
+    /**
+    * VirtualRenderer.getFirstVisibleRow() -> Number
+    *
+    * [Returns the index of the first visible row.]{: #VirtualRenderer.getFirstVisibleRow}
+    **/
     this.getFirstVisibleRow = function() {
         return this.layerConfig.firstRow;
     };
 
+    /**
+    * VirtualRenderer.getFirstFullyVisibleRow() -> Number
+    *
+    * Returns the index of the first fully visible row. "Fully" here means that the characters in the row are not truncated; that the top and the bottom of the row are on the screen.
+    **/
     this.getFirstFullyVisibleRow = function() {
         return this.layerConfig.firstRow + (this.layerConfig.offset === 0 ? 0 : 1);
     };
 
+    /**
+    * VirtualRenderer.getLastFullyVisibleRow() -> Number
+    *
+    * Returns the index of the last fully visible row. "Fully" here means that the characters in the row are not truncated; that the top and the bottom of the row are on the screen.
+    **/
     this.getLastFullyVisibleRow = function() {
         var flint = Math.floor((this.layerConfig.height + this.layerConfig.offset) / this.layerConfig.lineHeight);
         return this.layerConfig.firstRow - 1 + flint;
     };
 
+    /**
+    * VirtualRenderer.getLastVisibleRow() -> Number
+    *
+    * [Returns the index of the last visible row.]{: #VirtualRenderer.getLastVisibleRow}
+    **/
     this.getLastVisibleRow = function() {
         return this.layerConfig.lastRow;
     };
 
     this.$padding = null;
+
+    /**
+    * VirtualRenderer.setPadding(padding) -> Void
+    * - padding (Number): A new padding value (in pixels)
+    * 
+    * Sets the padding for all the layers.
+    *
+    **/
     this.setPadding = function(padding) {
         this.$padding = padding;
         this.$textLayer.setPadding(padding);
@@ -1551,10 +2693,21 @@ var VirtualRenderer = function(container, theme) {
         this.$updatePrintMargin();
     };
 
+    /**
+    * VirtualRenderer.getHScrollBarAlwaysVisible() -> Boolean
+    *
+    * Returns whether the horizontal scrollbar is set to be always visible.
+    **/
     this.getHScrollBarAlwaysVisible = function() {
         return this.$horizScrollAlwaysVisible;
     };
 
+    /**
+    * VirtualRenderer.setHScrollBarAlwaysVisible(alwaysVisible) -> Void
+    * - alwaysVisible (Boolean): Set to `true` to make the horizontal scroll bar visible
+    *
+    * Identifies whether you want to show the horizontal scrollbar or not. 
+    **/
     this.setHScrollBarAlwaysVisible = function(alwaysVisible) {
         if (this.$horizScrollAlwaysVisible != alwaysVisible) {
             this.$horizScrollAlwaysVisible = alwaysVisible;
@@ -1580,7 +2733,7 @@ var VirtualRenderer = function(container, theme) {
             changes & this.CHANGE_SCROLL
         )
             this.$computeLayerConfig();
-        
+
         //this.content.style.left = -this.scrollLeft + "px";
         if (changes & this.CHANGE_H_SCROLL)
             this.scroller.scrollLeft = this.scrollLeft
@@ -1590,11 +2743,15 @@ var VirtualRenderer = function(container, theme) {
             // update scrollbar first to not loose scroll position when gutter calls resize
             this.$updateScrollBar();
             this.$textLayer.update(this.layerConfig);
-            if (this.showGutter)
+            if (this.showGutter) {
+                if (this.$highlightGutterLine)
+                    this.$updateGutterLineHighlight(true);
                 this.$gutterLayer.update(this.layerConfig);
+            }
             this.$markerBack.update(this.layerConfig);
             this.$markerFront.update(this.layerConfig);
             this.$cursorLayer.update(this.layerConfig);
+            this.$moveTextAreaToCursor();
             return;
         }
 
@@ -1606,11 +2763,15 @@ var VirtualRenderer = function(container, theme) {
             else
                 this.$textLayer.scrollLines(this.layerConfig);
 
-            if (this.showGutter)
+            if (this.showGutter) {
+                if (this.$highlightGutterLine)
+                    this.$updateGutterLineHighlight(true);
                 this.$gutterLayer.update(this.layerConfig);
+            }
             this.$markerBack.update(this.layerConfig);
             this.$markerFront.update(this.layerConfig);
             this.$cursorLayer.update(this.layerConfig);
+            this.$moveTextAreaToCursor();
             return;
         }
 
@@ -1630,8 +2791,11 @@ var VirtualRenderer = function(container, theme) {
                 this.$gutterLayer.update(this.layerConfig);
         }
 
-        if (changes & this.CHANGE_CURSOR)
+        if (changes & this.CHANGE_CURSOR) {
             this.$cursorLayer.update(this.layerConfig);
+            this.$moveTextAreaToCursor();
+            this.$highlightGutterLine && this.$updateGutterLineHighlight(false);
+        }
 
         if (changes & (this.CHANGE_MARKER | this.CHANGE_MARKER_FRONT)) {
             this.$markerFront.update(this.layerConfig);
@@ -1728,10 +2892,6 @@ var VirtualRenderer = function(container, theme) {
 
         var layerConfig = this.layerConfig;
 
-        // if the update changes the width of the document do a full redraw
-        if (layerConfig.width != this.$getLongestLine())
-            return this.$textLayer.update(layerConfig);
-
         if (firstRow > layerConfig.lastRow + 1) { return; }
         if (lastRow < layerConfig.firstRow) { return; }
 
@@ -1756,55 +2916,109 @@ var VirtualRenderer = function(container, theme) {
         return Math.max(this.$size.scrollerWidth - 2 * this.$padding, Math.round(charCount * this.characterWidth));
     };
 
+    /**
+    * VirtualRenderer.updateFrontMarkers() -> Void
+    *
+    * Schedules an update to all the front markers in the document.
+    **/
     this.updateFrontMarkers = function() {
         this.$markerFront.setMarkers(this.session.getMarkers(true));
         this.$loop.schedule(this.CHANGE_MARKER_FRONT);
     };
 
+    /**
+    * VirtualRenderer.updateBackMarkers() -> Void
+    *
+    * Schedules an update to all the back markers in the document.
+    **/
     this.updateBackMarkers = function() {
         this.$markerBack.setMarkers(this.session.getMarkers());
         this.$loop.schedule(this.CHANGE_MARKER_BACK);
     };
 
+    /**
+    * VirtualRenderer.addGutterDecoration(row, className) -> Void
+    * - row (Number): The row number
+    * - className (String): The class to add
+    *
+    * Adds `className` to the `row`, to be used for CSS stylings and whatnot.
+    **/
     this.addGutterDecoration = function(row, className){
         this.$gutterLayer.addGutterDecoration(row, className);
         this.$loop.schedule(this.CHANGE_GUTTER);
     };
 
+    /**
+    * VirtualRenderer.removeGutterDecoration(row, className)-> Void
+    * - row (Number): The row number
+    * - className (String): The class to add
+    *
+    * Removes `className` from the `row`.
+    **/
     this.removeGutterDecoration = function(row, className){
         this.$gutterLayer.removeGutterDecoration(row, className);
         this.$loop.schedule(this.CHANGE_GUTTER);
     };
 
-    this.setBreakpoints = function(rows) {
-        this.$gutterLayer.setBreakpoints(rows);
+    /**
+    * VirtualRenderer.updateBreakpoints() -> Void
+    *
+    * Redraw breakpoints.
+    **/
+    this.updateBreakpoints = function(rows) {
         this.$loop.schedule(this.CHANGE_GUTTER);
     };
 
+    /**
+    * VirtualRenderer.setAnnotations(annotations) -> Void
+    * - annotations (Array): An array containing annotations
+    *
+    * Sets annotations for the gutter.
+    **/
     this.setAnnotations = function(annotations) {
         this.$gutterLayer.setAnnotations(annotations);
         this.$loop.schedule(this.CHANGE_GUTTER);
     };
 
+    /**
+    * VirtualRenderer.updateCursor() -> Void
+    *
+    * Updates the cursor icon.
+    **/
     this.updateCursor = function() {
         this.$loop.schedule(this.CHANGE_CURSOR);
     };
 
+    /**
+    * VirtualRenderer.hideCursor() -> Void
+    *
+    * Hides the cursor icon.
+    **/
     this.hideCursor = function() {
         this.$cursorLayer.hideCursor();
     };
 
+    /**
+    * VirtualRenderer.showCursor() -> Void
+    *
+    * Shows the cursor icon.
+    **/
     this.showCursor = function() {
         this.$cursorLayer.showCursor();
     };
 
-    this.scrollSelectionIntoView = function(anchor, lead) {
+    this.scrollSelectionIntoView = function(anchor, lead, offset) {
         // first scroll anchor into view then scroll lead into view
-        this.scrollCursorIntoView(anchor);
-        this.scrollCursorIntoView(lead);
+        this.scrollCursorIntoView(anchor, offset);
+        this.scrollCursorIntoView(lead, offset);
     };
 
-    this.scrollCursorIntoView = function(cursor) {
+    /**
+    * VirtualRenderer.scrollCursorIntoView(cursor, offset) -> Void
+    *
+    * Scrolls the cursor into the first visibile area of the editor
+    **/
+    this.scrollCursorIntoView = function(cursor, offset) {
         // the editor is not visible
         if (this.$size.scrollerHeight === 0)
             return;
@@ -1815,10 +3029,12 @@ var VirtualRenderer = function(container, theme) {
         var top = pos.top;
 
         if (this.scrollTop > top) {
+            if (offset)
+                top -= offset * this.$size.scrollerHeight;
             this.session.setScrollTop(top);
-        }
-
-        if (this.scrollTop + this.$size.scrollerHeight < top + this.lineHeight) {
+        } else if (this.scrollTop + this.$size.scrollerHeight < top + this.lineHeight) {
+            if (offset)
+                top += offset * this.$size.scrollerHeight;
             this.session.setScrollTop(top + this.lineHeight - this.$size.scrollerHeight);
         }
 
@@ -1828,49 +3044,53 @@ var VirtualRenderer = function(container, theme) {
             if (left < this.$padding + 2 * this.layerConfig.characterWidth)
                 left = 0;
             this.session.setScrollLeft(left);
-        }
-
-        if (scrollLeft + this.$size.scrollerWidth < left + this.characterWidth) {
+        } else if (scrollLeft + this.$size.scrollerWidth < left + this.characterWidth) {
             this.session.setScrollLeft(Math.round(left + this.characterWidth - this.$size.scrollerWidth));
         }
     };
-	
-	this.scrollSelectionIntoView = function(start, end) {
-		// the editor is not visible
-        if (this.$size.scrollerHeight === 0)
-            return;
-		
-		var pos1 = this.$cursorLayer.getPixelPosition(start);
-		var pos2 = end && this.$cursorLayer.getPixelPosition(start);
 
-        var left = pos1.left;
-        var top = pos1.top;
-
-        if (this.scrollTop > top) {
-            this.session.setScrollTop(top);
-        }
-
-        if (this.scrollTop + this.$size.scrollerHeight < top + this.lineHeight) {
-            this.session.setScrollTop(top + this.lineHeight - this.$size.scrollerHeight);
-        }
-	};
-
+    /** related to: EditSession.getScrollTop
+    * VirtualRenderer.getScrollTop() -> Number
+    *
+    * {:EditSession.getScrollTop}
+    **/
     this.getScrollTop = function() {
         return this.session.getScrollTop();
     };
 
+    /** related to: EditSession.getScrollLeft
+    * VirtualRenderer.getScrollLeft() -> Number
+    *
+    * {:EditSession.getScrollLeft}
+    **/
     this.getScrollLeft = function() {
         return this.session.getScrollLeft();
     };
 
+    /**
+    * VirtualRenderer.getScrollTopRow() -> Number
+    *
+    * Returns the first visible row, regardless of whether it's fully visible or not.
+    **/
     this.getScrollTopRow = function() {
         return this.scrollTop / this.lineHeight;
     };
 
+    /**
+    * VirtualRenderer.getScrollBottomRow() -> Number
+    *
+    * Returns the last visible row, regardless of whether it's fully visible or not.
+    **/
     this.getScrollBottomRow = function() {
         return Math.max(0, Math.floor((this.scrollTop + this.$size.scrollerHeight) / this.lineHeight) - 1);
     };
 
+    /** related to: EditSession.setScrollTop
+    * VirtualRenderer.scrollToRow(row) -> Void
+    * - row (Number): A row id
+    *
+    * Gracefully scrolls the top of the editor to the row indicated.
+    **/
     this.scrollToRow = function(row) {
         this.session.setScrollTop(row * this.lineHeight);
     };
@@ -1885,11 +3105,79 @@ var VirtualRenderer = function(container, theme) {
         this.session.setScrollTop(offset);
     };
 
-    // deprecated use alignCursor
-    this.scrollToLine = function(line, center) {
-        this.alignCursor(line, center ? 0.5 : 0)
+    this.STEPS = 8;
+    this.$calcSteps = function(fromValue, toValue){
+        var i = 0;
+        var l = this.STEPS;
+        var steps = [];
+
+        var func  = function(t, x_min, dx) {
+            return dx * (Math.pow(t - 1, 3) + 1) + x_min;
+        };
+
+        for (i = 0; i < l; ++i)
+            steps.push(func(i / this.STEPS, fromValue, toValue - fromValue));
+
+        return steps;
     };
 
+    /**
+    * VirtualRenderer.scrollToLine(line, center, animate, callback) -> Void
+    * - line (Number): A line number
+    * - center (Boolean): If `true`, centers the editor the to indicated line
+    * - animate (Boolean): If `true` animates scrolling
+    * - callback (Function): Function to be called after the animation has finished
+    *
+    * Gracefully scrolls the editor to the row indicated.
+    **/
+    this.scrollToLine = function(line, center, animate, callback) {
+        var pos = this.$cursorLayer.getPixelPosition({row: line, column: 0});
+        var offset = pos.top;
+        if (center)
+            offset -= this.$size.scrollerHeight / 2;
+
+        var initialScroll = this.scrollTop;
+        this.session.setScrollTop(offset);
+        if (animate !== false)
+            this.animateScrolling(initialScroll, callback);
+    };
+
+    this.animateScrolling = function(fromValue, callback) {
+        var toValue = this.scrollTop;
+        if (this.$animatedScroll && Math.abs(fromValue - toValue) < 100000) {
+            var _self = this;
+            var steps = _self.$calcSteps(fromValue, toValue);
+            this.$inScrollAnimation = true;
+
+            clearInterval(this.$timer);
+
+            _self.session.setScrollTop(steps.shift());
+            this.$timer = setInterval(function() {
+                if (steps.length) {
+                    _self.session.setScrollTop(steps.shift());
+                    // trick session to think it's already scrolled to not loose toValue
+                    _self.session.$scrollTop = toValue;
+                } else if (toValue != null) {
+                    _self.session.$scrollTop = -1;
+                    _self.session.setScrollTop(toValue);
+                    toValue = null;
+                } else {
+                    // do this on separate step to not get spurious scroll event from scrollbar
+                    _self.$timer = clearInterval(_self.$timer);
+                    _self.$inScrollAnimation = false;
+                    callback && callback();
+                }
+            }, 10);
+        }
+    };
+
+    /**
+    * VirtualRenderer.scrollToY(scrollTop) -> Number
+    * - scrollTop (Number): The position to scroll to
+    *
+    * Scrolls the editor to the y pixel indicated.
+    *
+    **/
     this.scrollToY = function(scrollTop) {
         // after calling scrollBar.setScrollTop
         // scrollbar sends us event with same scrollTop. ignore it
@@ -1899,21 +3187,42 @@ var VirtualRenderer = function(container, theme) {
         }
     };
 
+    /**
+    * VirtualRenderer.scrollToX(scrollLeft) -> Number
+    * - scrollLeft (Number): The position to scroll to
+    *
+    * Scrolls the editor to the x pixel indicated.
+    *
+    **/
     this.scrollToX = function(scrollLeft) {
-        if (scrollLeft <= this.$padding)
+        if (scrollLeft < 0)
             scrollLeft = 0;
 
         if (this.scrollLeft !== scrollLeft) {
-            this.$loop.schedule(this.CHANGE_H_SCROLL);
+        this.$loop.schedule(this.CHANGE_H_SCROLL);
             this.scrollLeft = scrollLeft;
         }
     };
 
+    /**
+    * VirtualRenderer.scrollBy(deltaX, deltaY) -> Void
+    * - deltaX (Number): The x value to scroll by
+    * - deltaY (Number): The y value to scroll by
+    *
+    * Scrolls the editor across both x- and y-axes.
+    **/
     this.scrollBy = function(deltaX, deltaY) {
         deltaY && this.session.setScrollTop(this.session.getScrollTop() + deltaY);
         deltaX && this.session.setScrollLeft(this.session.getScrollLeft() + deltaX);
     };
 
+    /**
+    * VirtualRenderer.isScrollableBy(deltaX, deltaY) -> Boolean
+    * - deltaX (Number): The x value to scroll by
+    * - deltaY (Number): The y value to scroll by
+    *
+    * Returns `true` if you can still scroll by either parameter; in other words, you haven't reached the end of the file or line.
+    **/
     this.isScrollableBy = function(deltaX, deltaY) {
         if (deltaY < 0 && this.session.getScrollTop() > 0)
            return true;
@@ -1922,28 +3231,25 @@ var VirtualRenderer = function(container, theme) {
         // todo: handle horizontal scrolling
     };
 
-    this.pixelToScreenCoordinates = function(pageX, pageY) {
+    this.pixelToScreenCoordinates = function(x, y) {
         var canvasPos = this.scroller.getBoundingClientRect();
 
-        var col = Math.round(
-            (pageX + this.scrollLeft - canvasPos.left - this.$padding - dom.getPageScrollLeft()) / this.characterWidth
-        );
-        var row = Math.floor(
-            (pageY + this.scrollTop - canvasPos.top - dom.getPageScrollTop()) / this.lineHeight
-        );
+        var offset = (x + this.scrollLeft - canvasPos.left - this.$padding) / this.characterWidth;
+        var row = Math.floor((y + this.scrollTop - canvasPos.top) / this.lineHeight);
+        var col = Math.round(offset);
 
-        return {row: row, column: col};
+        return {row: row, column: col, side: offset - col > 0 ? 1 : -1};
     };
 
-    this.screenToTextCoordinates = function(pageX, pageY) {
+    this.screenToTextCoordinates = function(x, y) {
         var canvasPos = this.scroller.getBoundingClientRect();
 
         var col = Math.round(
-            (pageX + this.scrollLeft - canvasPos.left - this.$padding - window.pageYOffset) / this.characterWidth
-         );
+            (x + this.scrollLeft - canvasPos.left - this.$padding) / this.characterWidth
+        );
         var row = Math.floor(
-            (pageY + this.scrollTop - canvasPos.top - window.pageYOffset) / this.lineHeight
-         );
+            (y + this.scrollTop - canvasPos.top) / this.lineHeight
+        );
         if (row < 0) {
             row = 0;
         } else {
@@ -1951,10 +3257,19 @@ var VirtualRenderer = function(container, theme) {
             if(row > maxRow)
                 row = maxRow;
         }
-        
+
         return this.session.screenToDocumentPosition(row, Math.max(col, 0));
     };
 
+    /**
+    * VirtualRenderer.textToScreenCoordinates(row, column) -> Object
+    * - row (Number): The document row position
+    * - column (Number): The document column position
+    *
+    * Returns an object containing the `pageX` and `pageY` coordinates of the document position.
+    *
+    *
+    **/
     this.textToScreenCoordinates = function(row, column) {
         var canvasPos = this.scroller.getBoundingClientRect();
         var pos = this.session.documentToScreenPosition(row, column);
@@ -1968,56 +3283,80 @@ var VirtualRenderer = function(container, theme) {
         };
     };
 
+    /**
+    * VirtualRenderer.visualizeFocus() -> Void
+    *
+    * Focuses the current container.
+    **/
     this.visualizeFocus = function() {
         dom.addCssClass(this.container, "ace_focus");
     };
 
+    /**
+    * VirtualRenderer.visualizeBlur() -> Void
+    *
+    * Blurs the current container.
+    **/
     this.visualizeBlur = function() {
         dom.removeCssClass(this.container, "ace_focus");
     };
 
+    /** internal, hide
+    * VirtualRenderer.showComposition(position) -> Void
+    * - position (Number):
+    *
+    **/
     this.showComposition = function(position) {
-        if (!this.$composition) {
-            this.$composition = dom.createElement("div");
-            this.$composition.className = "ace_composition";
-            this.content.appendChild(this.$composition);
-        }
+        if (!this.$composition)
+            this.$composition = {
+                keepTextAreaAtCursor: this.$keepTextAreaAtCursor,
+                cssText: this.textarea.style.cssText
+            };
 
-        this.$composition.innerHTML = "&#160;";
-
-        var pos = this.$cursorLayer.getPixelPosition();
-        var style = this.$composition.style;
-        style.top = pos.top + "px";
-        style.left = (pos.left + this.$padding) + "px";
-        style.height = this.lineHeight + "px";
-
-        this.hideCursor();
+        this.$keepTextAreaAtCursor = true;
+        dom.addCssClass(this.textarea, "ace_composition");
+        this.textarea.style.cssText = "";
+        this.$moveTextAreaToCursor();
     };
 
+    /**
+    * VirtualRenderer.setCompositionText(text) -> Void
+    * - text (String): A string of text to use
+    *
+    * Sets the inner text of the current composition to `text`.
+    **/
     this.setCompositionText = function(text) {
-        dom.setInnerText(this.$composition, text);
+        this.$moveTextAreaToCursor();
     };
 
+    /**
+    * VirtualRenderer.hideComposition() -> Void
+    *
+    * Hides the current composition.
+    **/
     this.hideComposition = function() {
-        this.showCursor();
-
         if (!this.$composition)
             return;
 
-        var style = this.$composition.style;
-        style.top = "-10000px";
-        style.left = "-10000px";
+        dom.removeCssClass(this.textarea, "ace_composition");
+        this.$keepTextAreaAtCursor = this.$composition.keepTextAreaAtCursor;
+        this.textarea.style.cssText = this.$composition.cssText;
+        this.$composition = null;
     };
 
     this._loadTheme = function(name, callback) {
         if (!config.get("packaged"))
             return callback();
 
-        var base = name.split("/").pop();
-        var filename = config.get("themePath") + "/theme-" + base + config.get("suffix");
-        net.loadScript(filename, callback);
+        net.loadScript(config.moduleUrl(name, "theme"), callback);
     };
 
+    /**
+    * VirtualRenderer.setTheme(theme) -> Void
+    * - theme (String): The path to a theme
+    *
+    * [Sets a new theme for the editor. `theme` should exist, and be a directory path, like `ace/theme/textmate`.]{: #VirtualRenderer.setTheme}
+    **/
     this.setTheme = function(theme) {
         var _self = this;
 
@@ -2038,7 +3377,7 @@ var VirtualRenderer = function(container, theme) {
                         return;
 
                     afterLoad(module);
-            });
+                });
             });
         } else {
             afterLoad(theme);
@@ -2072,6 +3411,11 @@ var VirtualRenderer = function(container, theme) {
         }
     };
 
+    /**
+    * VirtualRenderer.getTheme() -> String
+    *
+    * [Returns the path of the current theme.]{: #VirtualRenderer.getTheme}
+    **/
     this.getTheme = function() {
         return this.$themeValue;
     };
@@ -2080,14 +3424,31 @@ var VirtualRenderer = function(container, theme) {
     // This feature can be used by plug-ins to provide a visual indication of
     // a certain mode that editor is in.
 
+    /**
+    * VirtualRenderer.setStyle(style) -> Void
+    * - style (String): A class name
+    *
+    * [Adds a new class, `style`, to the editor.]{: #VirtualRenderer.setStyle}
+    **/
     this.setStyle = function setStyle(style) {
       dom.addCssClass(this.container, style);
     };
 
+    /**
+    * VirtualRenderer.unsetStyle(style) -> Void
+    * - style (String): A class name
+    *
+    * [Removes the class `style` from the editor.]{: #VirtualRenderer.unsetStyle}
+    **/
     this.unsetStyle = function unsetStyle(style) {
       dom.removeCssClass(this.container, style);
     };
 
+    /**
+    * VirtualRenderer.destroy()
+    *
+    * Destroys the text and cursor layers for this renderer.
+    **/
     this.destroy = function() {
         this.$textLayer.destroy();
         this.$cursorLayer.destroy();
@@ -2100,12 +3461,33 @@ exports.VirtualRenderer = VirtualRenderer;
 
 define("ace/undomanager",[], function(require, exports, module) {
 
+/**
+ * class UndoManager
+ *
+ * This object maintains the undo stack for an [[EditSession `EditSession`]].
+ *
+ **/
+
+/**
+ * new UndoManager()
+ * 
+ * Resets the current undo state and creates a new `UndoManager`.
+ **/
 var UndoManager = function() {
     this.reset();
 };
 
 (function() {
 
+    /**
+    * UndoManager.execute(options) -> Void
+    * - options (Object): Contains additional properties
+    *
+    * Provides a means for implementing your own undo manager. `options` has one property, `args`, an [[Array `Array`]], with two elements:
+    * * `args[0]` is an array of deltas
+    * * `args[1]` is the document to associate with
+    *
+    **/
     this.execute = function(options) {
         var deltas = options.args[0];
         this.$doc  = options.args[1];
@@ -2113,6 +3495,12 @@ var UndoManager = function() {
         this.$redoStack = [];
     };
 
+    /**
+    * UndoManager.undo(dontSelect) -> Range
+    * - dontSelect (Boolean): {:dontSelect}
+    *
+    * [Perform an undo operation on the document, reverting the last change. Returns the range of the undo.]{: #UndoManager.undo}
+    **/
     this.undo = function(dontSelect) {
         var deltas = this.$undoStack.pop();
         var undoSelectionRange = null;
@@ -2124,6 +3512,12 @@ var UndoManager = function() {
         return undoSelectionRange;
     };
 
+    /**
+    * UndoManager.redo(dontSelect) -> Void
+    * - dontSelect (Boolean): {:dontSelect}
+    *
+    * [Perform a redo operation on the document, reimplementing the last change.]{: #UndoManager.redo}
+    **/
     this.redo = function(dontSelect) {
         var deltas = this.$redoStack.pop();
         var redoSelectionRange = null;
@@ -2135,15 +3529,30 @@ var UndoManager = function() {
         return redoSelectionRange;
     };
 
+    /**
+    * UndoManager.reset() -> Void
+    *
+    * Destroys the stack of undo and redo redo operations.
+    **/
     this.reset = function() {
         this.$undoStack = [];
         this.$redoStack = [];
     };
 
+    /**
+    * UndoManager.hasUndo() -> Boolean
+    *
+    * Returns `true` if there are undo operations left to perform.
+    **/
     this.hasUndo = function() {
         return this.$undoStack.length > 0;
     };
 
+    /**
+    * UndoManager.hasRedo() -> Boolean
+    *
+    * Returns `true` if there are redo operations left to perform.
+    **/
     this.hasRedo = function() {
         return this.$redoStack.length > 0;
     };
@@ -2157,167 +3566,7 @@ define("ace/theme/textmate",[], function(require, exports, module) {
 
 exports.isDark = false;
 exports.cssClass = "ace-tm";
-exports.cssText = ".ace-tm .ace_editor {\
-  border: 2px solid rgb(159, 159, 159);\
-}\
-\
-.ace-tm .ace_editor.ace_focus {\
-  border: 2px solid #327fbd;\
-}\
-\
-.ace-tm .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
-}\
-\
-.ace-tm .ace_print_margin {\
-  width: 1px;\
-  background: #e8e8e8;\
-}\
-\
-.ace-tm .ace_fold {\
-    background-color: #6B72E6;\
-}\
-\
-.ace-tm .ace_text-layer {\
-  cursor: text;\
-}\
-\
-.ace-tm .ace_cursor {\
-  border-left: 2px solid black;\
-}\
-\
-.ace-tm .ace_cursor.ace_overwrite {\
-  border-left: 0px;\
-  border-bottom: 1px solid black;\
-}\
-        \
-.ace-tm .ace_line .ace_invisible {\
-  color: rgb(191, 191, 191);\
-}\
-\
-.ace-tm .ace_line .ace_storage,\
-.ace-tm .ace_line .ace_keyword {\
-  color: blue;\
-}\
-\
-.ace-tm .ace_line .ace_constant.ace_buildin {\
-  color: rgb(88, 72, 246);\
-}\
-\
-.ace-tm .ace_line .ace_constant.ace_language {\
-  color: rgb(88, 92, 246);\
-}\
-\
-.ace-tm .ace_line .ace_constant.ace_library {\
-  color: rgb(6, 150, 14);\
-}\
-\
-.ace-tm .ace_line .ace_invalid {\
-  background-color: rgba(255, 0, 0, 0.1);\
-  color: red;\
-}\
-\
-.ace-tm .ace_line .ace_support.ace_function {\
-  color: rgb(60, 76, 114);\
-}\
-\
-.ace-tm .ace_line .ace_support.ace_constant {\
-  color: rgb(6, 150, 14);\
-}\
-\
-.ace-tm .ace_line .ace_support.ace_type,\
-.ace-tm .ace_line .ace_support.ace_class {\
-  color: rgb(109, 121, 222);\
-}\
-\
-.ace-tm .ace_line .ace_keyword.ace_operator {\
-  color: rgb(104, 118, 135);\
-}\
-\
-.ace-tm .ace_line .ace_string {\
-  color: rgb(3, 106, 7);\
-}\
-\
-.ace-tm .ace_line .ace_comment {\
-  color: rgb(76, 136, 107);\
-}\
-\
-.ace-tm .ace_line .ace_comment.ace_doc {\
-  color: rgb(0, 102, 255);\
-}\
-\
-.ace-tm .ace_line .ace_comment.ace_doc.ace_tag {\
-  color: rgb(128, 159, 191);\
-}\
-\
-.ace-tm .ace_line .ace_constant.ace_numeric {\
-  color: rgb(0, 0, 205);\
-}\
-\
-.ace-tm .ace_line .ace_variable {\
-  color: rgb(49, 132, 149);\
-}\
-\
-.ace-tm .ace_line .ace_xml_pe {\
-  color: rgb(104, 104, 91);\
-}\
-\
-.ace-tm .ace_entity.ace_name.ace_function {\
-  color: #0000A2;\
-}\
-\
-.ace-tm .ace_markup.ace_markupine {\
-    text-decoration:underline;\
-}\
-\
-.ace-tm .ace_markup.ace_heading {\
-  color: rgb(12, 7, 255);\
-}\
-\
-.ace-tm .ace_markup.ace_list {\
-  color:rgb(185, 6, 144);\
-}\
-\
-.ace-tm .ace_marker-layer .ace_selection {\
-  background: rgb(216, 218, 220);\
-}\
-.ace-tm.ace_focus .ace_marker-layer .ace_selection {\
-  background: rgb(181, 213, 255);\
-}\
-\
-.ace-tm .ace_marker-layer .ace_step {\
-  background: rgb(252, 255, 0);\
-}\
-\
-.ace-tm .ace_marker-layer .ace_stack {\
-  background: rgb(164, 229, 101);\
-}\
-\
-.ace-tm .ace_marker-layer .ace_bracket {\
-  margin: -1px 0 0 -1px;\
-  border: 1px solid rgb(192, 192, 192);\
-}\
-\
-.ace-tm .ace_marker-layer .ace_active_line {\
-  background-color: #e8e8e8\
-}\
-.ace-tm.ace_focus .ace_marker-layer .ace_active_line {\
-  background: rgb(232, 242, 254);\
-}\
-\
-.ace-tm .ace_marker-layer .ace_selected_word {\
-  background: rgb(250, 250, 255);\
-  border: 1px solid rgb(200, 200, 250);\
-}\
-\
-.ace-tm .ace_meta.ace_tag {\
-  color:rgb(28, 2, 255);\
-}\
-\
-.ace-tm .ace_string.ace_regex {\
-  color: rgb(255, 0, 0)\
-}";
+exports.cssText = require('ace/theme/textmate.css');
 
 var dom = require("ace/lib/dom");
 dom.importCssString(exports.cssText, exports.cssClass);
@@ -2329,48 +3578,56 @@ var RangeList = require("ace/range_list").RangeList;
 var Range = require("ace/range").Range;
 var Selection = require("ace/selection").Selection;
 var onMouseDown = require("ace/mouse/multi_select_handler").onMouseDown;
-exports.commands = require("ace/commands/multi_select_commands");
+var event = require("ace/lib/event");
+var commands = require("ace/commands/multi_select_commands");
+exports.commands = commands.defaultCommands.concat(commands.multiSelectCommands);
 
-// Todo
-var Search = require("ace/search").Search
-var search = new Search
+// Todo: session.find or editor.findVolatile that returns range
+var Search = require("ace/search").Search;
+var search = new Search();
 
 function find(session, needle, dir) {
     search.$options.wrap = true;
     search.$options.needle = needle;
     search.$options.backwards = dir == -1;
-    return search.find(session)
+    return search.find(session);
 }
 
 // extend EditSession
 var EditSession = require("ace/edit_session").EditSession;
-;(function() {
+(function() {
     this.getSelectionMarkers = function() {
         return this.$selectionMarkers;
     };
 }).call(EditSession.prototype);
 
 // extend Selection
-;(function() {
+(function() {
     // list of ranges in reverse addition order
     this.ranges = null;
+
     // automatically sorted list of ranges
     this.rangeList = null;
 
-    /**
-     * add a range to selection entering multiselect mode if necessary
-     */
-    this.addRange = function(range) {
-        if (!this.inMultiSelectMode && this.rangeCount == 0) {
-            var oldRange = this.toOrientedRange();
-            if (!range || !range.isEqual(oldRange)) {
-                this.rangeList.add(oldRange);
-                this.$onAddRange(oldRange);
-            }
-        }
-
+    /** extension
+     * Selection.addRange(range, $blockChangeEvents) 
+     * - range (Range): The new range to add
+     * - $blockChangeEvents (Boolean): Whether or not to block changing events
+     *
+     * Adds a range to a selection by entering multiselect mode, if necessary.
+     **/
+    this.addRange = function(range, $blockChangeEvents) {
         if (!range)
             return;
+
+        if (!this.inMultiSelectMode && this.rangeCount == 0) {
+            var oldRange = this.toOrientedRange();
+            if (range.intersects(oldRange))
+                return $blockChangeEvents || this.fromOrientedRange(range);
+
+            this.rangeList.add(oldRange);
+            this.$onAddRange(oldRange);
+        }
 
         if (!range.cursor)
             range.cursor = range.end;
@@ -2382,12 +3639,14 @@ var EditSession = require("ace/edit_session").EditSession;
         if (removed.length)
             this.$onRemoveRange(removed);
 
-        if (this.rangeCount > 0 && !this.inMultiSelectMode) {
+        if (this.rangeCount > 1 && !this.inMultiSelectMode) {
             this._emit("multiSelect");
             this.inMultiSelectMode = true;
             this.session.$undoSelect = false;
             this.rangeList.attach(this.session);
         }
+
+        return $blockChangeEvents || this.fromOrientedRange(range);
     };
 
     this.toSingleRange = function(range) {
@@ -2398,34 +3657,44 @@ var EditSession = require("ace/edit_session").EditSession;
 
         range && this.fromOrientedRange(range);
     };
-
+    
+    /** extension
+     * Selection.substractPoint(pos) -> Range
+     * - pos (Range): The position to remove, as a `{row, column}` object
+     *
+     * Removes a Range containing pos (if it exists).
+     **/
     this.substractPoint = function(pos) {
         var removed = this.rangeList.substractPoint(pos);
         if (removed) {
             this.$onRemoveRange(removed);
-            return removed[0]
+            return removed[0];
         }
     };
 
+    /** extension
+     * Selection.mergeOverlappingRanges() 
+     *
+     * Merges overlapping ranges ensuring consistency after changes
+     **/
     this.mergeOverlappingRanges = function() {
         var removed = this.rangeList.merge();
         if (removed.length)
             this.$onRemoveRange(removed);
-        else if (this.ranges[0])
+        else if(this.ranges[0])
             this.fromOrientedRange(this.ranges[0]);
     };
 
     this.$onAddRange = function(range) {
         this.rangeCount = this.rangeList.ranges.length;
         this.ranges.unshift(range);
-        this.fromOrientedRange(range);
         this._emit("addRange", {range: range});
     };
 
     this.$onRemoveRange = function(removed) {
         this.rangeCount = this.rangeList.ranges.length;
         if (this.rangeCount == 1 && this.inMultiSelectMode) {
-            var lastRange = this.rangeList.ranges.pop()
+            var lastRange = this.rangeList.ranges.pop();
             removed.push(lastRange);
             this.rangeCount = 0;
         }
@@ -2454,23 +3723,54 @@ var EditSession = require("ace/edit_session").EditSession;
         if (this.rangeList)
             return;
 
-        this.rangeList = new RangeList;
+        this.rangeList = new RangeList();
         this.ranges = [];
         this.rangeCount = 0;
     };
 
     this.getAllRanges = function() {
-        return this.rangeList.ranges.concat()
+        return this.rangeList.ranges.concat();
     };
 
     this.splitIntoLines = function () {
         if (this.rangeCount > 1) {
             var ranges = this.rangeList.ranges;
-            var lastRange = ranges[ranges.length - 1]
-            var range = Range.fromPoints(ranges[0].start, lastRange.end)
+            var lastRange = ranges[ranges.length - 1];
+            var range = Range.fromPoints(ranges[0].start, lastRange.end);
 
-            this.toSingleRange()
-            this.setSelectionRange(range, lastRange.cursor == lastRange.start)
+            this.toSingleRange();
+            this.setSelectionRange(range, lastRange.cursor == lastRange.start);
+        } else {
+            var range = this.getRange();
+            var startRow = range.start.row;
+            var endRow = range.end.row;
+            if (startRow == endRow)
+                return;
+
+            var rectSel = [];
+            var r = this.getLineRange(startRow, true);
+            r.start.column = range.start.column;
+            rectSel.push(r);
+
+            for (var i = startRow + 1; i < endRow; i++)
+                rectSel.push(this.getLineRange(i, true));
+
+            r = this.getLineRange(endRow, true);
+            r.end.column = range.end.column;
+            rectSel.push(r);
+
+            rectSel.forEach(this.addRange, this);
+        }
+    };
+
+    this.toggleBlockSelection = function () {
+        if (this.rangeCount > 1) {
+            var ranges = this.rangeList.ranges;
+            var lastRange = ranges[ranges.length - 1];
+            var range = Range.fromPoints(ranges[0].start, lastRange.end);
+
+            this.toSingleRange();
+            this.setSelectionRange(range, lastRange.cursor == lastRange.start);
         } else {
             var cursor = this.session.documentToScreenPosition(this.selectionLead);
             var anchor = this.session.documentToScreenPosition(this.selectionAnchor);
@@ -2480,10 +3780,14 @@ var EditSession = require("ace/edit_session").EditSession;
         }
     };
 
-    /**
-     *   gets list of ranges composing rectangular block on the screen
-     *   @includeEmptyLines if true includes ranges inside the block which
-     *         are empty becuase of the clipping
+    /** extension
+     * Selection.rectangularRangeBlock(screenCursor, screenAnchor, includeEmptyLines) -> Range
+     * - screenCursor (Cursor): The cursor to use
+     * - screenAnchor (Anchor): The anchor to use
+     * - includeEmptyLins (Boolean): If true, this includes ranges inside the block which are empty due to clipping
+     *  
+     * Gets list of ranges composing rectangular block on the screen
+     *
      */
     this.rectangularRangeBlock = function(screenCursor, screenAnchor, includeEmptyLines) {
         var rectSel = [];
@@ -2527,6 +3831,7 @@ var EditSession = require("ace/edit_session").EditSession;
             range.cursor = xBackwards ? range.start : range.end;
             rectSel.push(range);
         }
+
         if (yBackwards)
             rectSel.reverse();
 
@@ -2551,12 +3856,24 @@ var EditSession = require("ace/edit_session").EditSession;
 
 // extend Editor
 var Editor = require("ace/editor").Editor;
-;(function() {
-    this.updateSelectionMarkers = function(orientedRange) {
+(function() {
+    
+    /** extension
+     * Editor.updateSelectionMarkers() 
+     *
+     * Updates the cursor and marker layers.
+     **/
+    this.updateSelectionMarkers = function() {
         this.renderer.updateCursor();
         this.renderer.updateBackMarkers();
     };
 
+    /** extension
+     * Editor.addSelectionMarker(orientedRange) -> Range
+     * - orientedRange (Range): A range containing a cursor
+     *
+     * Adds the selection and cursor.
+     **/
     this.addSelectionMarker = function(orientedRange) {
         if (!orientedRange.cursor)
             orientedRange.cursor = orientedRange.end;
@@ -2569,17 +3886,34 @@ var Editor = require("ace/editor").Editor;
         return orientedRange;
     };
 
+    /** extension
+     * Editor.removeSelectionMarker(range) 
+     * - range (Range): The selection range added with [[Editor.addSelectionMarker `addSelectionMarker()`]].
+     *
+     * Removes the selection marker.
+     **/
+    this.removeSelectionMarker = function(range) {
+        if (!range.marker)
+            return;
+        this.session.removeMarker(range.marker);
+        var index = this.session.$selectionMarkers.indexOf(range);
+        if (index != -1)
+            this.session.$selectionMarkers.splice(index, 1);
+        this.session.selectionMarkerCount = this.session.$selectionMarkers.length;
+    };
+
     this.removeSelectionMarkers = function(ranges) {
+        var markerList = this.session.$selectionMarkers;
         for (var i = ranges.length; i--; ) {
             var range = ranges[i];
             if (!range.marker)
                 continue;
             this.session.removeMarker(range.marker);
-            var index = this.session.$selectionMarkers.indexOf(range);
+            var index = markerList.indexOf(range);
             if (index != -1)
-                this.session.$selectionMarkers.splice(index, 1)
+                markerList.splice(index, 1);
         }
-        this.session.selectionMarkerCount = this.session.$selectionMarkers.length;
+        this.session.selectionMarkerCount = markerList.length;
     };
 
     this.$onAddRange = function(e) {
@@ -2587,30 +3921,33 @@ var Editor = require("ace/editor").Editor;
         this.renderer.updateCursor();
         this.renderer.updateBackMarkers();
     };
+
     this.$onRemoveRange = function(e) {
         this.removeSelectionMarkers(e.ranges);
         this.renderer.updateCursor();
         this.renderer.updateBackMarkers();
     };
+
     this.$onMultiSelect = function(e) {
         if (this.inMultiSelectMode)
             return;
         this.inMultiSelectMode = true;
 
         this.setStyle("multiselect");
-        this.keyBinding.addKeyboardHandler(exports.commands.keyboardHandler);
+        this.keyBinding.addKeyboardHandler(commands.keyboardHandler);
         this.commands.on("exec", this.$onMultiSelectExec);
 
         this.renderer.updateCursor();
         this.renderer.updateBackMarkers();
     };
+
     this.$onSingleSelect = function(e) {
         if (this.session.multiSelect.inVirtualMode)
             return;
         this.inMultiSelectMode = false;
 
         this.unsetStyle("multiselect");
-        this.keyBinding.removeKeyboardHandler(exports.commands.keyboardHandler);
+        this.keyBinding.removeKeyboardHandler(commands.keyboardHandler);
 
         this.commands.removeEventListener("exec", this.$onMultiSelectExec);
         this.renderer.updateCursor();
@@ -2620,8 +3957,11 @@ var Editor = require("ace/editor").Editor;
     this.$onMultiSelectExec = function(e) {
         var command = e.command;
         var editor = e.editor;
+        if (!editor.multiSelect)
+            return;
         if (!command.multiSelectAction) {
             command.exec(editor, e.args || {});
+            editor.multiSelect.addRange(editor.multiSelect.toOrientedRange());
             editor.multiSelect.mergeOverlappingRanges();
         } else if (command.multiSelectAction == "forEach") {
             editor.forEachSelection(command, e.args);
@@ -2634,13 +3974,20 @@ var Editor = require("ace/editor").Editor;
         e.preventDefault();
     };
 
-
+    /** extension
+     * Editor.forEachSelection(cmd, args) 
+     * - cmd (String): The command to execute
+     * - args (String): Any arguments for the command
+     *
+     * Executes a command for each selection range.
+     **/
     this.forEachSelection = function(cmd, args) {
         if (this.inVirtualSelectionMode)
             return;
-        var session = this.session
-        var selection = this.selection
-        var rangeList = selection.rangeList
+
+        var session = this.session;
+        var selection = this.selection;
+        var rangeList = selection.rangeList;
 
         var reg = selection._eventRegistry;
         selection._eventRegistry = {};
@@ -2664,47 +4011,92 @@ var Editor = require("ace/editor").Editor;
         this.onSelectionChange();
     };
 
+    /** extension
+    * Editor.exitMultiSelectMode() -> Void
+    *
+    * Removes all the selections except the last added one.
+    **/
     this.exitMultiSelectMode = function() {
         if (this.inVirtualSelectionMode)
             return;
         this.multiSelect.toSingleRange();
     };
 
-    // todo route copy/cut/paste through commandmanager
     this.getCopyText = function() {
         var text = "";
         if (this.inMultiSelectMode) {
             var ranges = this.multiSelect.rangeList.ranges;
+            text = [];
             for (var i = 0; i < ranges.length; i++) {
-                text += this.session.getTextRange(ranges[i]);
+                text.push(this.session.getTextRange(ranges[i]));
             }
-        } else if (!this.selection.isEmpty())
+            text = text.join(this.session.getDocument().getNewLineCharacter());
+        } else if (!this.selection.isEmpty()) {
             text = this.session.getTextRange(this.getSelectionRange());
-
+        }
 
         return text;
     };
 
-    this.onCut = function() {
-        var cmd = {
-            name: "cut",
-            exec: function(editor) {
-                var range = editor.getSelectionRange();
-                editor._emit("cut", range);
+    this.onPaste = function(text) {
+        this._emit("paste", text);
+        if (!this.inMultiSelectMode)
+            return this.insert(text);
 
-                if (!editor.selection.isEmpty()) {
-                    editor.session.remove(range);
-                    editor.clearSelection();
-                }
-            },
-            readonly: true,
-            multiSelectAction: "forEach"
+        var lines = text.split(/\r\n|\r|\n/);
+        var ranges = this.selection.rangeList.ranges;
+
+        if (lines.length > ranges.length || (lines.length <= 2 || !lines[1]))
+            return this.commands.exec("insertstring", this, text);
+
+        for (var i = ranges.length; i--; ) {
+            var range = ranges[i];
+            if (!range.isEmpty())
+                this.session.remove(range);
+
+            this.session.insert(range.start, lines[i]);
         }
-        this.commands.exec(cmd, this)
+    };
+
+    /** extension
+     * Editor.findAll(needle, options, additive) -> Number
+     * - needle (String): The text to find
+     * - options (Object): The search options
+     * - additive (Boolean): keeps
+     *
+     * Finds and selects all the occurences of `needle`.
+     **/
+    this.findAll = function(needle, options, additive) {
+        options = options || {};
+        options.needle = needle || options.needle;
+        this.$search.set(options);
+
+        var ranges = this.$search.findAll(this.session);
+        if (!ranges.length)
+            return 0;
+
+        this.$blockScrolling += 1;
+        var selection = this.multiSelect;
+
+        if (!additive)
+            selection.toSingleRange(ranges[0]);
+
+        for (var i = ranges.length; i--; )
+            selection.addRange(ranges[i], true);
+
+        this.$blockScrolling -= 1;
+
+        return ranges.length;
     };
 
     // commands
-
+    /** extension
+     * Editor.selectMoreLines(dir, skip) 
+     * - dir (Number): The direction of lines to select: -1 for up, 1 for down
+     * - skip (Boolean): If `true`, removes the active selection range
+     *
+     * Adds a cursor above or below the active cursor.
+     **/
     this.selectMoreLines = function(dir, skip) {
         var range = this.selection.toOrientedRange();
         var isBackwards = range.cursor == range.end;
@@ -2734,9 +4126,6 @@ var Editor = require("ace/editor").Editor;
         if (!this.selection.inMultiSelectMode) {
             this.selection.addRange(range);
         } else {
-            var allRanges = this.selection.rangeList.ranges;
-            // remove range if at end
-            // var atEdge = range.isEqual(allRanges[dir == 1 ? 0 : allRanges.length - 1]);
             if (skip)
                 var toRemove = range.cursor;
         }
@@ -2744,14 +4133,19 @@ var Editor = require("ace/editor").Editor;
         this.selection.addRange(newRange);
         if (toRemove)
             this.selection.substractPoint(toRemove);
-    }
+    };
 
+    /** extension
+     * Editor.transposeSelections(dir) 
+     * - dir (Number): The direction to rotate selections
+     *
+     * Transposes the selected ranges. 
+     **/
     this.transposeSelections = function(dir) {
         var session = this.session;
         var sel = session.multiSelect;
         var all = sel.ranges;
 
-        var words = [];
         for (var i = all.length; i--; ) {
             var range = all[i];
             if (range.isEmpty()) {
@@ -2761,8 +4155,13 @@ var Editor = require("ace/editor").Editor;
                 range.end.row = tmp.end.row;
                 range.end.column = tmp.end.column;
             }
+        }
+        sel.mergeOverlappingRanges();
 
-            words.unshift(this.session.getTextRange(range));
+        var words = [];
+        for (var i = all.length; i--; ) {
+            var range = all[i];
+            words.unshift(session.getTextRange(range));
         }
 
         if (dir < 0)
@@ -2779,19 +4178,24 @@ var Editor = require("ace/editor").Editor;
         }
     }
 
+    /** extension
+     * Editor.selectMore(dir, skip) 
+     * - dir (Number): The direction of lines to select: -1 for up, 1 for down
+     * - skip (Boolean): If `true`, removes the active selection range
+     *
+     * Finds the next occurence of text in an active selection and adds it to the selections.
+     **/
     this.selectMore = function (dir, skip) {
         var session = this.session;
         var sel = session.multiSelect;
-        var all = sel.ranges;
 
         var range = sel.toOrientedRange();
         if (range.isEmpty()) {
-            var range = session.getWordRange(range.start.row, range.start.column)
+            var range = session.getWordRange(range.start.row, range.start.column);
             range.cursor = range.end;
             this.multiSelect.addRange(range);
         }
         var needle = session.getTextRange(range);
-
 
         var newRange = find(session, needle, dir);
         if (newRange) {
@@ -2800,13 +4204,12 @@ var Editor = require("ace/editor").Editor;
         }
         if (skip)
             this.multiSelect.substractPoint(range.cursor);
-    }
-
+    };
 }).call(Editor.prototype);
 
 
 function isSamePoint(p1, p2) {
-    return p1.row == p2.row && p1.column == p2.column
+    return p1.row == p2.row && p1.column == p2.column;
 }
 
 // patch
@@ -2845,9 +4248,11 @@ exports.onSessionChange = function(e) {
         else
             this.$onSingleSelect();
     }
-}
+};
 
-// adds multicursor support to editor instance
+// MultiSelect(editor) 
+// adds multiple selection support to the editor
+// (note: should be called only once for each editor instance)
 function MultiSelect(editor) {
     editor.$onAddRange = editor.$onAddRange.bind(editor);
     editor.$onRemoveRange = editor.$onRemoveRange.bind(editor);
@@ -2858,10 +4263,35 @@ function MultiSelect(editor) {
     editor.on("changeSession", exports.onSessionChange.bind(editor));
 
     editor.on("mousedown", onMouseDown);
-    editor.commands.addCommands(exports.commands.defaultCommands);
+    editor.commands.addCommands(commands.defaultCommands);
+
+    addAltCursorListeners(editor);
 }
 
+function addAltCursorListeners(editor){
+    var el = editor.textInput.getElement();
+    var altCursor = false;
+    var contentEl = editor.renderer.content;
+    event.addListener(el, "keydown", function(e) {
+        if (e.keyCode == 18 && !(e.ctrlKey || e.shiftKey || e.metaKey)) {
+            if (!altCursor) {
+                contentEl.style.cursor = "crosshair";
+                altCursor = true;
+            }
+        } else if (altCursor) {
+            contentEl.style.cursor = "";
+        }
+    });
 
+    event.addListener(el, "keyup", reset);
+    event.addListener(el, "blur", reset);
+    function reset() {
+        if (altCursor) {
+            contentEl.style.cursor = "";
+            altCursor = false;
+        }
+    }
+}
 
 exports.MultiSelect = MultiSelect;
 
@@ -2875,13 +4305,13 @@ var JavaScriptMode = require("ace/mode/javascript").Mode;
 var CssMode = require("ace/mode/css").Mode;
 var Tokenizer = require("ace/tokenizer").Tokenizer;
 var HtmlHighlightRules = require("ace/mode/html_highlight_rules").HtmlHighlightRules;
-var XmlBehaviour = require("ace/mode/behaviour/xml").XmlBehaviour;
+var HtmlBehaviour = require("ace/mode/behaviour/html").HtmlBehaviour;
 var HtmlFoldMode = require("ace/mode/folding/html").FoldMode;
 
 var Mode = function() {
     var highlighter = new HtmlHighlightRules();
     this.$tokenizer = new Tokenizer(highlighter.getRules());
-    this.$behaviour = new XmlBehaviour();
+    this.$behaviour = new HtmlBehaviour();
     
     this.$embeds = highlighter.getEmbeds();
     this.createModeDelegates({
@@ -2946,7 +4376,7 @@ define("ace/mode/coffee",[], function(require, exports, module) {
 var Tokenizer = require("ace/tokenizer").Tokenizer;
 var Rules = require("ace/mode/coffee_highlight_rules").CoffeeHighlightRules;
 var Outdent = require("ace/mode/matching_brace_outdent").MatchingBraceOutdent;
-var PythonFoldMode = require("ace/mode/folding/pythonic").FoldMode;
+var PythonFoldMode = require("ace/mode/folding/coffee").FoldMode;
 var Range = require("ace/range").Range;
 var TextMode = require("ace/mode/text").Mode;
 var oop = require("ace/lib/oop");
@@ -2960,7 +4390,7 @@ function Mode() {
 oop.inherits(Mode, TextMode);
 
 (function() {
-
+    
 	this.foldingType = "indentation";
     
     var indenter = /(?:[({[=:]|[-=]>|\b(?:else|switch|try|catch(?:\s*[$A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]*)?|finally))\s*$/;
@@ -3004,7 +4434,7 @@ oop.inherits(Mode, TextMode);
     this.autoOutdent = function(state, doc, row) {
         this.$outdent.autoOutdent(doc, row);
     };
-
+    
 }).call(Mode.prototype);
 
 exports.Mode = Mode;
@@ -3148,7 +4578,7 @@ oop.inherits(Mode, TextMode);
     };
 
     this.createWorker = function(session) {
-        var worker = new WorkerClient(["ace"], "worker-json.js", "ace/mode/json_worker", "JsonWorker");
+        var worker = new WorkerClient(["ace"], "ace/mode/json_worker", "JsonWorker");
         worker.attachToDocument(session.getDocument());
 
         worker.on("error", function(e) {
@@ -3257,7 +4687,7 @@ exports.arrayToMap = function(arr) {
 
 };
 
-/**
+/*
  * splice out of 'array' anything that === 'value'
  */
 exports.arrayRemove = function(array, value) {
@@ -3271,6 +4701,20 @@ exports.arrayRemove = function(array, value) {
 exports.escapeRegExp = function(str) {
     return str.replace(/([.*+?^${}()|[\]\/\\])/g, '\\$1');
 };
+
+exports.getMatchOffsets = function(string, regExp) {
+    var matches = [];
+
+    string.replace(regExp, function(str) {
+        matches.push({
+            offset: arguments[arguments.length-2],
+            length: str.length
+        });
+    });
+
+    return matches;
+};
+
 
 exports.deferredCall = function(fcn) {
 
@@ -3310,13 +4754,13 @@ define("ace/lib/useragent",[], function(require, exports, module) {
 var os = (navigator.platform.match(/mac|win|linux/i) || ["other"])[0].toLowerCase();
 var ua = navigator.userAgent;
 
-/** Is the user using a browser that identifies itself as Windows */
+// Is the user using a browser that identifies itself as Windows
 exports.isWin = (os == "win");
 
-/** Is the user using a browser that identifies itself as Mac OS */
+// Is the user using a browser that identifies itself as Mac OS
 exports.isMac = (os == "mac");
 
-/** Is the user using a browser that identifies itself as Linux */
+// Is the user using a browser that identifies itself as Linux
 exports.isLinux = (os == "linux");
 
 exports.isIE = 
@@ -3325,16 +4769,16 @@ exports.isIE =
     
 exports.isOldIE = exports.isIE && exports.isIE < 9;
 
-/** Is this Firefox or related? */
+// Is this Firefox or related?
 exports.isGecko = exports.isMozilla = window.controllers && window.navigator.product === "Gecko";
 
-/** oldGecko == rev < 2.0 **/
+// oldGecko == rev < 2.0 
 exports.isOldGecko = exports.isGecko && parseInt((navigator.userAgent.match(/rv\:(\d+)/)||[])[1], 10) < 4;
 
-/** Is this Opera */
+// Is this Opera 
 exports.isOpera = window.opera && Object.prototype.toString.call(window.opera) == "[object Opera]";
 
-/** Is the user using a browser that identifies itself as WebKit */
+// Is the user using a browser that identifies itself as WebKit 
 exports.isWebKit = parseFloat(ua.split("WebKit/")[1]) || undefined;
 
 exports.isChrome = parseFloat(ua.split(" Chrome/")[1]) || undefined;
@@ -3345,7 +4789,7 @@ exports.isIPad = ua.indexOf("iPad") >= 0;
 
 exports.isTouchPad = ua.indexOf("TouchPad") >= 0;
 
-/**
+/*
  * I hate doing this, but we need some way to determine if the user is on a Mac
  * The reason is that users have different expectations of their key combinations.
  *
@@ -3358,7 +4802,7 @@ exports.OS = {
     WINDOWS: "WINDOWS"
 };
 
-/**
+/*
  * Return an exports.OS constant
  */
 exports.getOS = function() {
@@ -3380,16 +4824,22 @@ var useragent = require("ace/lib/useragent");
 var dom = require("ace/lib/dom");
 
 var TextInput = function(parentNode, host) {
-
     var text = dom.createElement("textarea");
+    /*/ debug
+    text.style.opacity = 1
+    text.style.background = "rgba(0, 250, 0, 0.3)"
+    text.style.outline = "rgba(0, 250, 0, 0.8) solid 1px"
+    text.style.outlineOffset = "3px"
+    /**/
     if (useragent.isTouchPad)
         text.setAttribute("x-palm-disable-auto-cap", true);
+
     text.setAttribute("wrap", "off");
-        
-    text.style.left = "-10000px";
+
+    text.style.top = "-2em";
     parentNode.insertBefore(text, parentNode.firstChild);
 
-    var PLACEHOLDER = String.fromCharCode(0);
+    var PLACEHOLDER = useragent.isIE ? "\x01" : "\x01";
     sendText();
 
     var inCompostion = false;
@@ -3397,9 +4847,14 @@ var TextInput = function(parentNode, host) {
     var pasted = false;
     var tempStyle = '';
 
-    function select() {
+    function reset(full) {
         try {
-            text.select();
+            if (full) {
+                text.value = PLACEHOLDER;
+                text.selectionStart = 0;
+                text.selectionEnd = 1;
+            } else 
+                text.select();
         } catch (e) {}
     }
 
@@ -3407,13 +4862,18 @@ var TextInput = function(parentNode, host) {
         if (!copied) {
             var value = valueToSend || text.value;
             if (value) {
-                if (value.charCodeAt(value.length-1) == PLACEHOLDER.charCodeAt(0)) {
-                    value = value.slice(0, -1);
-                    if (value)
-                        host.onTextInput(value, pasted);
+                if (value.length > 1) {
+                    if (value.charAt(0) == PLACEHOLDER)
+                        value = value.substr(1);
+                    else if (value.charAt(value.length - 1) == PLACEHOLDER)
+                        value = value.slice(0, -1);
                 }
-                else {
-                    host.onTextInput(value, pasted);
+
+                if (value && value != PLACEHOLDER) {
+                    if (pasted)
+                        host.onPaste(value);
+                    else
+                        host.onTextInput(value);
                 }
             }
         }
@@ -3422,19 +4882,19 @@ var TextInput = function(parentNode, host) {
         pasted = false;
 
         // Safari doesn't fire copy events if no text is selected
-        text.value = PLACEHOLDER;
-        select();
+        reset(true);
     }
 
     var onTextInput = function(e) {
+        if (!inCompostion)
+            sendText(e.data);
         setTimeout(function () {
             if (!inCompostion)
-                sendText(e.data);                
+                reset(true);
         }, 0);
     };
-    
+
     var onPropertyChange = function(e) {
-        if (useragent.isOldIE && text.value.charCodeAt(0) > 128) return;
         setTimeout(function() {
             if (!inCompostion)
                 sendText();
@@ -3444,7 +4904,7 @@ var TextInput = function(parentNode, host) {
     var onCompositionStart = function(e) {
         inCompostion = true;
         host.onCompositionStart();
-        if (!useragent.isGecko) setTimeout(onCompositionUpdate, 0);
+        setTimeout(onCompositionUpdate, 0);
     };
 
     var onCompositionUpdate = function() {
@@ -3464,12 +4924,12 @@ var TextInput = function(parentNode, host) {
             text.value = copyText;
         else
             e.preventDefault();
-        select();
+        reset();
         setTimeout(function () {
             sendText();
         }, 0);
     };
-    
+
     var onCut = function(e) {
         copied = true;
         var copyText = host.getCopyText();
@@ -3478,16 +4938,32 @@ var TextInput = function(parentNode, host) {
             host.onCut();
         } else
             e.preventDefault();
-        select();
+        reset();
         setTimeout(function () {
             sendText();
         }, 0);
     };
 
     event.addCommandKeyListener(text, host.onCommandKey.bind(host));
-
-        event.addListener(text, "input", onTextInput);
+    event.addListener(text, "input", onTextInput);
     
+    if (useragent.isOldIE) {
+        var keytable = { 13:1, 27:1 };
+        event.addListener(text, "keyup", function (e) {
+            if (inCompostion && (!text.value || keytable[e.keyCode]))
+                setTimeout(onCompositionEnd, 0);
+            if ((text.value.charCodeAt(0)|0) < 129) {
+                return;
+            }
+            inCompostion ? onCompositionUpdate() : onCompositionStart();
+        });
+        
+        event.addListener(text, "propertychange", function() {
+            if (text.value != PLACEHOLDER)
+                setTimeout(sendText, 0);
+        });
+    }
+
     event.addListener(text, "paste", function(e) {
         // Mark that the next input text comes from past.
         pasted = true;
@@ -3504,10 +4980,48 @@ var TextInput = function(parentNode, host) {
         }
     });
 
+    if ("onbeforecopy" in text && typeof clipboardData !== "undefined") {
+        event.addListener(text, "beforecopy", function(e) {
+            if (tempStyle)
+                return; // without this text is copied when contextmenu is shown
+            var copyText = host.getCopyText();
+            if (copyText)
+                clipboardData.setData("Text", copyText);
+            else
+                e.preventDefault();
+        });
+        event.addListener(parentNode, "keydown", function(e) {
+            if (e.ctrlKey && e.keyCode == 88) {
+                var copyText = host.getCopyText();
+                if (copyText) {
+                    clipboardData.setData("Text", copyText);
+                    host.onCut();
+                }
+                event.preventDefault(e);
+            }
+        });
+        event.addListener(text, "cut", onCut); // for ie9 context menu
+    }
+    else if (useragent.isOpera && !("KeyboardEvent" in window)) {
+        event.addListener(parentNode, "keydown", function(e) {
+            if ((useragent.isMac && !e.metaKey) || !e.ctrlKey)
+                return;
 
+            if ((e.keyCode == 88 || e.keyCode == 67)) {
+                var copyText = host.getCopyText();
+                if (copyText) {
+                    text.value = copyText;
+                    text.select();
+                    if (e.keyCode == 88)
+                        host.onCut();
+                }
+            }
+        });
+    }
+    else {
         event.addListener(text, "copy", onCopy);
         event.addListener(text, "cut", onCut);
-
+    }
 
     event.addListener(text, "compositionstart", onCompositionStart);
     if (useragent.isGecko) {
@@ -3524,12 +5038,11 @@ var TextInput = function(parentNode, host) {
 
     event.addListener(text, "focus", function() {
         host.onFocus();
-        select();
+        reset();
     });
 
     this.focus = function() {
-        host.onFocus();
-        select();
+        reset();
         text.focus();
     };
 
@@ -3546,29 +5059,55 @@ var TextInput = function(parentNode, host) {
         return text;
     };
 
-    this.onContextMenu = function(mousePos, isEmpty){
-        if (mousePos) {
-            if (!tempStyle)
-                tempStyle = text.style.cssText;
-                
-            text.style.cssText = 
-                'position:fixed; z-index:1000;' +
-                'left:' + (mousePos.x - 2) + 'px; top:' + (mousePos.y - 2) + 'px;';
+    this.onContextMenu = function(e) {
+        if (!tempStyle)
+            tempStyle = text.style.cssText;
 
-        }
-        if (isEmpty)
-            text.value='';
+        text.style.cssText =
+            "position:fixed; z-index:100000;" + 
+            (useragent.isIE ? "background:rgba(0, 0, 0, 0.03); opacity:0.1;" : "") + //"background:rgba(250, 0, 0, 0.3); opacity:1;" +
+            "left:" + (e.clientX - 2) + "px; top:" + (e.clientY - 2) + "px;";
+
+        if (host.selection.isEmpty())
+            text.value = "";
+        else
+            reset(true);
+
+        if (e.type != "mousedown")
+            return;
+
+        if (host.renderer.$keepTextAreaAtCursor)
+            host.renderer.$keepTextAreaAtCursor = null;
+
+        // on windows context menu is opened after mouseup
+        if (useragent.isWin && (useragent.isGecko || useragent.isIE))
+            event.capture(host.container, function(e) {
+                text.style.left = e.clientX - 2 + "px";
+                text.style.top = e.clientY - 2 + "px";
+            }, onContextMenuClose);
     };
 
-    this.onContextMenuClose = function(){
+    function onContextMenuClose() {
         setTimeout(function () {
             if (tempStyle) {
                 text.style.cssText = tempStyle;
                 tempStyle = '';
             }
             sendText();
+            if (host.renderer.$keepTextAreaAtCursor == null) {
+                host.renderer.$keepTextAreaAtCursor = true;
+                host.renderer.$moveTextAreaToCursor();
+            }
         }, 0);
     };
+    this.onContextMenuClose = onContextMenuClose;
+
+    // firefox fires contextmenu event after opening it
+    if (!useragent.isGecko)
+        event.addListener(text, "contextmenu", function(e) {
+            host.textInput.onContextMenu(e);
+            onContextMenuClose()
+        });
 };
 
 exports.TextInput = TextInput;
@@ -3577,33 +5116,30 @@ exports.TextInput = TextInput;
 define("ace/mouse/mouse_handler",[], function(require, exports, module) {
 
 var event = require("ace/lib/event");
+var useragent = require("ace/lib/useragent");
 var DefaultHandlers = require("ace/mouse/default_handlers").DefaultHandlers;
 var DefaultGutterHandler = require("ace/mouse/default_gutter_handler").GutterHandler;
 var MouseEvent = require("ace/mouse/mouse_event").MouseEvent;
+var DragdropHandler = require("ace/mouse/dragdrop").DragdropHandler;
 
 var MouseHandler = function(editor) {
     this.editor = editor;
-    
-    new DefaultHandlers(editor);
-    new DefaultGutterHandler(editor);
-    
+
+    new DefaultHandlers(this);
+    new DefaultGutterHandler(this);
+    new DragdropHandler(this);
+
     event.addListener(editor.container, "mousedown", function(e) {
         editor.focus();
         return event.preventDefault(e);
     });
-    event.addListener(editor.container, "selectstart", function(e) {
-        return event.preventDefault(e);
-    });
 
     var mouseTarget = editor.renderer.getMouseEventTarget();
-    event.addListener(mouseTarget, "mousedown", this.onMouseEvent.bind(this, "mousedown"));
     event.addListener(mouseTarget, "click", this.onMouseEvent.bind(this, "click"));
     event.addListener(mouseTarget, "mousemove", this.onMouseMove.bind(this, "mousemove"));
-    event.addMultiMouseDownListener(mouseTarget, 0, 2, 500, this.onMouseEvent.bind(this, "dblclick"));
-    event.addMultiMouseDownListener(mouseTarget, 0, 3, 600, this.onMouseEvent.bind(this, "tripleclick"));
-    event.addMultiMouseDownListener(mouseTarget, 0, 4, 600, this.onMouseEvent.bind(this, "quadclick"));
+    event.addMultiMouseDownListener(mouseTarget, [400, 300, 250], this, "onMouseEvent");
     event.addMouseWheelListener(editor.container, this.onMouseWheel.bind(this, "mousewheel"));
-    
+
     var gutterEl = editor.renderer.$gutter;
     event.addListener(gutterEl, "mousedown", this.onMouseEvent.bind(this, "guttermousedown"));
     event.addListener(gutterEl, "click", this.onMouseEvent.bind(this, "gutterclick"));
@@ -3625,7 +5161,7 @@ var MouseHandler = function(editor) {
     this.onMouseEvent = function(name, e) {
         this.editor._emit(name, new MouseEvent(e, this.editor));
     };
-    
+
     this.$dragDelay = 250;
     this.setDragDelay = function(dragDelay) {
         this.$dragDelay = dragDelay;
@@ -3649,10 +5185,57 @@ var MouseHandler = function(editor) {
         mouseEvent.speed = this.$scrollSpeed * 2;
         mouseEvent.wheelX = e.wheelX;
         mouseEvent.wheelY = e.wheelY;
-        
+
         this.editor._emit(name, mouseEvent);
     };
 
+    this.setState = function(state) {
+        this.state = state;
+    };
+
+    this.captureMouse = function(ev, state) {
+        if (state)
+            this.setState(state);
+
+        this.x = ev.x;
+        this.y = ev.y;
+
+        // do not move textarea during selection
+        var renderer = this.editor.renderer;
+        if (renderer.$keepTextAreaAtCursor)
+            renderer.$keepTextAreaAtCursor = null;
+
+        var self = this;
+        var onMouseMove = function(e) {
+            self.x = e.clientX;
+            self.y = e.clientY;
+        };
+
+        var onCaptureEnd = function(e) {
+            clearInterval(timerId);
+            self[self.state + "End"] && self[self.state + "End"](e);
+            self.$clickSelection = null;
+            if (renderer.$keepTextAreaAtCursor == null) {
+                renderer.$keepTextAreaAtCursor = true;
+                renderer.$moveTextAreaToCursor();
+            }
+        };
+
+        var onCaptureInterval = function() {
+            self[self.state] && self[self.state]();
+        }
+        
+        if (useragent.isOldIE && ev.domEvent.type == "dblclick") {
+            setTimeout(function() {
+                onCaptureInterval();
+                onCaptureEnd(ev.domEvent);
+            });
+            return;
+        }
+
+        event.capture(this.editor.container, onMouseMove, onCaptureEnd);
+        var timerId = setInterval(onCaptureInterval, 20);
+    };
 }).call(MouseHandler.prototype);
 
 exports.MouseHandler = MouseHandler;
@@ -3679,9 +5262,12 @@ function FoldHandler(editor) {
     });
     
     editor.on("gutterclick", function(e) {
-        if (e.domEvent.target.className.indexOf("ace_fold-widget") != -1) {
+        var gutterRegion = editor.renderer.$gutterLayer.getRegion(e);
+
+        if (gutterRegion == "foldWidgets") {
             var row = e.getDocumentPosition().row;
-            editor.session.onFoldWidgetClick(row, e.domEvent);
+            if (editor.session.foldWidgets[row])
+                editor.session.onFoldWidgetClick(row, e);
             e.stop();
         }
     });
@@ -3695,41 +5281,54 @@ define("ace/keyboard/keybinding",[], function(require, exports, module) {
 
 var keyUtil  = require("ace/lib/keys");
 var event = require("ace/lib/event");
-require("ace/commands/default_commands");
 
 var KeyBinding = function(editor) {
     this.$editor = editor;
-    this.$data = {editor: this.$editor};
-    this.$handlers = [this.$editor.commands];
+    this.$data = { };
+    this.$handlers = [];
+    this.setDefaultHandler(editor.commands);
 };
 
 (function() {
-    this.setKeyboardHandler = function(keyboardHandler) {
-        if (this.$handlers[this.$handlers.length - 1] == keyboardHandler)
-            return;
+    this.setDefaultHandler = function(kb) {
+        this.removeKeyboardHandler(this.$defaultHandler);
+        this.$defaultHandler = kb;
+        this.addKeyboardHandler(kb, 0);
         this.$data = {editor: this.$editor};
-        for (var i = 0; i < this.$handlers.length; i++)
-            this.$handlers[i].detach && this.$handlers[i].detach(this.$editor);
-        
-        this.$handlers = [this.$editor.commands];
-        if (keyboardHandler) {
-            this.$handlers.push(keyboardHandler);
-            keyboardHandler.attach && keyboardHandler.attach(this.$editor);
-        }
     };
 
-    this.addKeyboardHandler = function(keyboardHandler) {
-        this.removeKeyboardHandler(keyboardHandler);
-        this.$handlers.push(keyboardHandler);
-        keyboardHandler.attach && keyboardHandler.attach(this.$editor);
+    this.setKeyboardHandler = function(kb) {
+        if (this.$handlers[this.$handlers.length - 1] == kb)
+            return;
+
+        while (this.$handlers[1])
+            this.removeKeyboardHandler(this.$handlers[1]);
+
+        this.addKeyboardHandler(kb, 1);
     };
 
-    this.removeKeyboardHandler = function(keyboardHandler) {
-        var i = this.$handlers.indexOf(keyboardHandler);
+    this.addKeyboardHandler = function(kb, pos) {
+        if (!kb)
+            return;
+        var i = this.$handlers.indexOf(kb);
+        if (i != -1)
+            this.$handlers.splice(i, 1);
+
+        if (pos == undefined)
+            this.$handlers.push(kb);
+        else
+            this.$handlers.splice(pos, 0, kb);
+
+        if (i == -1 && kb.attach)
+            kb.attach(this.$editor);
+    };
+
+    this.removeKeyboardHandler = function(kb) {
+        var i = this.$handlers.indexOf(kb);
         if (i == -1)
             return false;
         this.$handlers.splice(i, 1);
-        keyboardHandler.detach && keyboardHandler.detach(this.$editor);
+        kb.detach && kb.detach(this.$editor);
         return true;
     };
 
@@ -3743,38 +5342,36 @@ var KeyBinding = function(editor) {
             toExecute = this.$handlers[i].handleKeyboard(
                 this.$data, hashId, keyString, keyCode, e
             );
-            if (toExecute)
+            if (toExecute && toExecute.command)
                 break;
         }
 
-        if (!toExecute)
+        if (!toExecute || !toExecute.command)
             return false;
 
         var success = false;
         var commands = this.$editor.commands;
 
         // allow keyboardHandler to consume keys
-        if (!toExecute.command && toExecute.isSuccessCode)
-            success = toExecute.stopEvent;
-        else if (toExecute.command)
-            success = commands.exec(toExecute.command, this.$editor, toExecute.args);
+        if (toExecute.command != "null")
+            success = commands.exec(toExecute.command, this.$editor, toExecute.args, e);
         else
-            success = commands.exec(toExecute, this.$editor);
+            success = toExecute.passEvent != true;
 
-        if (success && e)
+        // do not stop input events to not break repeating
+        if (success && e && hashId != -1)
             event.stopEvent(e);
 
         return success;
     };
 
     this.onCommandKey = function(e, hashId, keyCode) {
-        var keyString = keyUtil.keyCodeToString(keyCode).toLowerCase();
+        var keyString = keyUtil.keyCodeToString(keyCode);
         this.$callKeyboardHandlers(hashId, keyString, keyCode, e);
     };
 
-    this.onTextInput = function(text, pasted) {
-        if (!pasted)
-            var success = this.$callKeyboardHandlers(-1, text);
+    this.onTextInput = function(text) {
+        var success = this.$callKeyboardHandlers(-1, text);
         if (!success)
             this.$editor.commands.exec("insertstring", this.$editor, text);
     };
@@ -3796,6 +5393,23 @@ var TextMode = require("ace/mode/text").Mode;
 var Range = require("ace/range").Range;
 var Document = require("ace/document").Document;
 var BackgroundTokenizer = require("ace/background_tokenizer").BackgroundTokenizer;
+var SearchHighlight = require("ace/search_highlight").SearchHighlight;
+
+/**
+ * class EditSession
+ *
+ * Stores various states related to a [[Document `Document`]]. A single `EditSession` can be in charge of several `Document`s.
+ *
+ **/
+
+/**
+ * new EditSession(text, mode)
+ * - text (Document | String): If `text` is a `Document`, it associates the `EditSession` with it. Otherwise, a new `Document` is created, with the initial text
+ * - mode (TextMode): The inital language mode to use for the document
+ *
+ * Sets up a new `EditSession` and associates it with the given `Document` and `TextMode`.
+ *
+ **/
 
 var EditSession = function(text, mode) {
     this.$modified = true;
@@ -3803,9 +5417,10 @@ var EditSession = function(text, mode) {
     this.$frontMarkers = {};
     this.$backMarkers = {};
     this.$markerId = 1;
-    this.$rowCache = [];
+    this.$resetRowCache(0);
     this.$wrapData = [];
     this.$foldData = [];
+    this.$rowLengthCache = [];
     this.$undoSelect = true;
     this.$foldData.toString = function() {
         var str = "";
@@ -3815,17 +5430,14 @@ var EditSession = function(text, mode) {
         return str;
     }
 
-    if (text instanceof Document) {
+    if (typeof text == "object" && text.getLine) {
         this.setDocument(text);
     } else {
         this.setDocument(new Document(text));
     }
 
     this.selection = new Selection(this);
-    if (mode)
-        this.setMode(mode);
-    else
-        this.setMode(new TextMode());
+    this.setMode(mode);
 };
 
 
@@ -3833,6 +5445,13 @@ var EditSession = function(text, mode) {
 
     oop.implement(this, EventEmitter);
 
+    /**
+     * EditSession.setDocument(doc)
+     * - doc (Document): The new `Document` to use
+     *
+     * Sets the `EditSession` to point to a new `Document`. If a `BackgroundTokenizer` exists, it also points to `doc`.
+     *
+     **/
     this.setDocument = function(doc) {
         if (this.doc)
             throw new Error("Document is already set");
@@ -3847,29 +5466,72 @@ var EditSession = function(text, mode) {
         }
     };
 
+    /**
+     * EditSession.getDocument() -> Document
+     *
+     * Returns the `Document` associated with this session.
+     *
+     **/
     this.getDocument = function() {
         return this.doc;
     };
 
-    this.$resetRowCache = function(row) {
-        if (row == 0) {
-            this.$rowCache = [];
+    /** internal, hide
+     * EditSession.$resetRowCache(row)
+     * - row (Number): The row to work with
+     *
+     *
+     *
+     **/
+    this.$resetRowCache = function(docRrow) {
+        if (!docRrow) {
+            this.$docRowCache = [];
+            this.$screenRowCache = [];
             return;
         }
-        var rowCache = this.$rowCache;
-        for (var i = 0; i < rowCache.length; i++) {
-            if (rowCache[i].docRow >= row) {
-                rowCache.splice(i, rowCache.length);
-                return;
-            }
-        }
+
+        var i = this.$getRowCacheIndex(this.$docRowCache, docRrow) + 1;
+        var l = this.$docRowCache.length;
+        this.$docRowCache.splice(i, l);
+        this.$screenRowCache.splice(i, l);
+
     };
 
+    this.$getRowCacheIndex = function(cacheArray, val) {
+        var low = 0;
+        var hi = cacheArray.length - 1;
+
+        while (low <= hi) {
+            var mid = (low + hi) >> 1;
+            var c = cacheArray[mid];
+
+            if (val > c)
+                low = mid + 1;
+            else if (val < c)
+                hi = mid - 1;
+            else
+                return mid;
+        }
+
+        return low && low -1;
+    };
+
+    /**
+    * EditSession@onChangeFold(e)
+    *
+    * Emitted when a code fold changes its state.
+    *
+    **/
     this.onChangeFold = function(e) {
         var fold = e.data;
         this.$resetRowCache(fold.start.row);
     };
 
+    /**
+    * EditSession@onChange(e)
+    *
+    * Emitted when the document changes.
+    **/
     this.onChange = function(e) {
         var delta = e.data;
         this.$modified = true;
@@ -3889,10 +5551,17 @@ var EditSession = function(text, mode) {
             this.$informUndoManager.schedule();
         }
 
-        this.bgTokenizer.start(delta.range.start.row);
+        this.bgTokenizer.$updateOnChange(delta);
         this._emit("change", e);
     };
 
+    /**
+    * EditSession.setValue(text)
+    * - text (String): The new text to place
+    *
+    * Sets the session text.
+    *
+    **/
     this.setValue = function(text) {
         this.doc.setValue(text);
         this.selection.moveCursorTo(0, 0);
@@ -3905,25 +5574,63 @@ var EditSession = function(text, mode) {
         this.getUndoManager().reset();
     };
 
+    /** alias of: EditSession.toString
+    * EditSession.getValue() -> String
+    *
+    * Returns the current [[Document `Document`]] as a string.
+    *
+    **/
+    /** alias of: EditSession.getValue
+    * EditSession.toString() -> String
+    *
+    * Returns the current [[Document `Document`]] as a string.
+    *
+    **/
     this.getValue =
     this.toString = function() {
         return this.doc.getValue();
     };
 
+    /**
+    * EditSession.getSelection() -> String
+    *
+    * Returns the string of the current selection.
+    **/
     this.getSelection = function() {
         return this.selection;
     };
 
+    /** related to: BackgroundTokenizer.getState
+     * EditSession.getState(row) -> Array
+     * - row (Number): The row to start at
+     *
+     * {:BackgroundTokenizer.getState}
+     *
+     **/
     this.getState = function(row) {
         return this.bgTokenizer.getState(row);
     };
 
-    this.getTokens = function(firstRow, lastRow) {
-        return this.bgTokenizer.getTokens(firstRow, lastRow);
+    /** related to: BackgroundTokenizer.getTokens
+    * EditSession.getTokens(row) -> Array
+     * - row (Number): The row to start at
+     *
+     * Starts tokenizing at the row indicated. Returns a list of objects of the tokenized rows.
+     *
+     **/
+    this.getTokens = function(row) {
+        return this.bgTokenizer.getTokens(row);
     };
 
+    /**
+    * EditSession.getTokenAt(row, column) -> Array
+    * - row (Number): The row number to retrieve from
+    * - column (Number): The column number to retrieve from
+    *
+    * Returns an array of tokens at the indicated row and column.
+    **/
     this.getTokenAt = function(row, column) {
-        var tokens = this.bgTokenizer.getTokens(row, row)[0].tokens;
+        var tokens = this.bgTokenizer.getTokens(row);
         var token, c = 0;
         if (column == null) {
             i = tokens.length - 1;
@@ -3943,9 +5650,21 @@ var EditSession = function(text, mode) {
         return token;
     };
 
+    this.highlight = function(re) {
+        if (!this.$searchHighlight) {
+            var highlight = new SearchHighlight(null, "ace_selected_word", "text");
+            this.$searchHighlight = this.addDynamicMarker(highlight);
+        }
+        this.$searchHighlight.setRegexp(re);
+    }
+    /**
+    * EditSession.setUndoManager(undoManager)
+    * - undoManager (UndoManager): The new undo manager
+    *
+    * Sets the undo manager.
+    **/
     this.setUndoManager = function(undoManager) {
         this.$undoManager = undoManager;
-        this.$resetRowCache(0);
         this.$deltas = [];
         this.$deltasDoc = [];
         this.$deltasFold = [];
@@ -3955,6 +5674,11 @@ var EditSession = function(text, mode) {
 
         if (undoManager) {
             var self = this;
+    /** internal, hide
+    * EditSession.$syncInformUndoManager()
+    *
+    *
+    **/
             this.$syncInformUndoManager = function() {
                 self.$informUndoManager.cancel();
 
@@ -3994,10 +5718,20 @@ var EditSession = function(text, mode) {
         reset: function() {}
     };
 
+    /**
+    * EditSession.getUndoManager() -> UndoManager
+    *
+    * Returns the current undo manager.
+    **/
     this.getUndoManager = function() {
         return this.$undoManager || this.$defaultUndoManager;
     },
 
+    /**
+    * EditSession.getTabString() -> String
+    *
+    * Returns the current value for tabs. If the user is using soft tabs, this will be a series of spaces (defined by [[EditSession.getTabSize `getTabSize()`]]); otherwise it's simply `'\t'`.
+    **/
     this.getTabString = function() {
         if (this.getUseSoftTabs()) {
             return lang.stringRepeat(" ", this.getTabSize());
@@ -4007,34 +5741,72 @@ var EditSession = function(text, mode) {
     };
 
     this.$useSoftTabs = true;
+    /**
+    * EditSession.setUseSoftTabs(useSoftTabs)
+    * - useSoftTabs (Boolean): Value indicating whether or not to use soft tabs
+    *
+    * Pass `true` to enable the use of soft tabs. Soft tabs means you're using spaces instead of the tab character (`'\t'`).
+    *
+    **/
     this.setUseSoftTabs = function(useSoftTabs) {
         if (this.$useSoftTabs === useSoftTabs) return;
 
         this.$useSoftTabs = useSoftTabs;
     };
 
+    /**
+    * EditSession.getUseSoftTabs() -> Boolean
+    *
+    * Returns `true` if soft tabs are being used, `false` otherwise.
+    *
+    **/
     this.getUseSoftTabs = function() {
         return this.$useSoftTabs;
     };
 
     this.$tabSize = 4;
+    /**
+    * EditSession.setTabSize(tabSize)
+    * - tabSize (Number): The new tab size
+    *
+    * Set the number of spaces that define a soft tab; for example, passing in `4` transforms the soft tabs to be equivalent to four spaces. This function also emits the `changeTabSize` event.
+    **/
     this.setTabSize = function(tabSize) {
         if (isNaN(tabSize) || this.$tabSize === tabSize) return;
 
         this.$modified = true;
+        this.$rowLengthCache = [];
         this.$tabSize = tabSize;
         this._emit("changeTabSize");
     };
 
+    /**
+    * EditSession.getTabSize() -> Number
+    *
+    * Returns the current tab size.
+    **/
     this.getTabSize = function() {
         return this.$tabSize;
     };
 
+    /**
+    * EditSession.isTabStop(position) -> Boolean
+    * - position (Object): The position to check
+    *
+    * Returns `true` if the character at the position is a soft tab.
+    **/
     this.isTabStop = function(position) {
         return this.$useSoftTabs && (position.column % this.$tabSize == 0);
     };
 
     this.$overwrite = false;
+    /**
+    * EditSession.setOverwrite(overwrite)
+    * - overwrite (Boolean): Defines wheter or not to set overwrites
+    *
+    * Pass in `true` to enable overwrites in your session, or `false` to disable. If overwrites is enabled, any text you enter will type over any text after it. If the value of `overwrite` changes, this function also emites the `changeOverwrite` event.
+    *
+    **/
     this.setOverwrite = function(overwrite) {
         if (this.$overwrite == overwrite) return;
 
@@ -4042,18 +5814,40 @@ var EditSession = function(text, mode) {
         this._emit("changeOverwrite");
     };
 
+    /**
+    * EditSession.getOverwrite() -> Boolean
+    *
+    * Returns `true` if overwrites are enabled; `false` otherwise.
+    **/
     this.getOverwrite = function() {
         return this.$overwrite;
     };
 
+    /**
+    * EditSession.toggleOverwrite()
+    *
+    * Sets the value of overwrite to the opposite of whatever it currently is.
+    **/
     this.toggleOverwrite = function() {
         this.setOverwrite(!this.$overwrite);
     };
 
+    /**
+    * EditSession.getBreakpoints() -> Array
+    *
+    * Returns an array of numbers, indicating which rows have breakpoints.
+    **/
     this.getBreakpoints = function() {
         return this.$breakpoints;
     };
 
+    /**
+    * EditSession.setBreakpoints(rows)
+    * - rows (Array): An array of row indicies
+    *
+    * Sets a breakpoint on every row number given by `rows`. This function also emites the `'changeBreakpoint'` event.
+    *
+    **/
     this.setBreakpoints = function(rows) {
         this.$breakpoints = [];
         for (var i=0; i<rows.length; i++) {
@@ -4062,25 +5856,48 @@ var EditSession = function(text, mode) {
         this._emit("changeBreakpoint", {});
     };
 
+    /**
+    * EditSession.clearBreakpoints()
+    *
+    * Removes all breakpoints on the rows. This function also emites the `'changeBreakpoint'` event.
+    **/
     this.clearBreakpoints = function() {
         this.$breakpoints = [];
         this._emit("changeBreakpoint", {});
     };
 
+    /**
+    * EditSession.setBreakpoint(row)
+    * - row (Number): A row index
+    *
+    * Sets a breakpoint on the row number given by `rows`. This function also emites the `'changeBreakpoint'` event.
+    **/
     this.setBreakpoint = function(row) {
         this.$breakpoints[row] = true;
         this._emit("changeBreakpoint", {});
     };
 
+    /**
+    * EditSession.clearBreakpoint(row)
+    * - row (Number): A row index
+    *
+    * Removes a breakpoint on the row number given by `rows`. This function also emites the `'changeBreakpoint'` event.
+    **/
     this.clearBreakpoint = function(row) {
         delete this.$breakpoints[row];
         this._emit("changeBreakpoint", {});
     };
 
-    this.getBreakpoints = function() {
-        return this.$breakpoints;
-    };
-
+    /**
+    * EditSession.addMarker(range, clazz, type = "line", inFront) -> Number
+    * - range (Range): Define the range of the marker
+    * - clazz (String): Set the CSS class for the marker
+    * - type (Function | String): Identify the type of the marker
+    * - inFront (Boolean): Set to `true` to establish a front marker
+    *
+    * Adds a new marker to the given `Range`. If `inFront` is `true`, a front marker is defined, and the `'changeFrontMarker'` event fires; otherwise, the `'changeBackMarker'` event fires.
+    *
+    **/
     this.addMarker = function(range, clazz, type, inFront) {
         var id = this.$markerId++;
 
@@ -4089,7 +5906,8 @@ var EditSession = function(text, mode) {
             type : type || "line",
             renderer: typeof type == "function" ? type : null,
             clazz : clazz,
-            inFront: !!inFront
+            inFront: !!inFront,
+            id: id
         }
 
         if (inFront) {
@@ -4103,6 +5921,37 @@ var EditSession = function(text, mode) {
         return id;
     };
 
+    /**
+    * EditSession.addDynamicMarker(marker) -> {update}
+    * - marker : object with update method
+    * - inFront (Boolean): Set to `true` to establish a front marker
+    *
+    **/
+    this.addDynamicMarker = function(marker, inFront) {
+        if (!marker.update)
+            return;
+        var id = this.$markerId++;
+        marker.id = id;
+        marker.inFront = !!inFront;
+
+        if (inFront) {
+            this.$frontMarkers[id] = marker;
+            this._emit("changeFrontMarker")
+        } else {
+            this.$backMarkers[id] = marker;
+            this._emit("changeBackMarker")
+        }
+
+        return marker;
+    };
+
+    /**
+    * EditSession.removeMarker(markerId)
+    * - markerId (Number): A number representing a marker
+    *
+    * Removes the marker with the specified ID. If this marker was in front, the `'changeFrontMarker'` event is emitted. If the marker was in the back, the `'changeBackMarker'` event is emitted.
+    *
+    **/
     this.removeMarker = function(markerId) {
         var marker = this.$frontMarkers[markerId] || this.$backMarkers[markerId];
         if (!marker)
@@ -4115,11 +5964,18 @@ var EditSession = function(text, mode) {
         }
     };
 
+    /**
+    * EditSession.getMarkers(inFront) -> Array
+    * - inFront (Boolean): If `true`, indicates you only want front markers; `false` indicates only back markers
+    *
+    * Returns an array containing the IDs of all the markers, either front or back.
+    *
+    **/
     this.getMarkers = function(inFront) {
         return inFront ? this.$frontMarkers : this.$backMarkers;
     };
 
-    /**
+    /*
      * Error:
      *  {
      *    row: 12,
@@ -4128,6 +5984,12 @@ var EditSession = function(text, mode) {
      *    type: "error" // or "warning" or "info"
      *  }
      */
+    /**
+    * EditSession.setAnnotations(annotations)
+    * - annotations (Array): A list of annotations
+    *
+    * Sets annotations for the `EditSession`. This functions emits the `'changeAnnotation'` event.
+    **/
     this.setAnnotations = function(annotations) {
         this.$annotations = {};
         for (var i=0; i<annotations.length; i++) {
@@ -4141,15 +6003,32 @@ var EditSession = function(text, mode) {
         this._emit("changeAnnotation", {});
     };
 
+    /**
+    * EditSession.getAnnotations() -> Object
+    *
+    * Returns the annotations for the `EditSession`.
+    **/
     this.getAnnotations = function() {
         return this.$annotations || {};
     };
 
+    /**
+    * EditSession.clearAnnotations()
+    *
+    * Clears all the annotations for this session. This function also triggers the `'changeAnnotation'` event.
+    **/
     this.clearAnnotations = function() {
         this.$annotations = {};
         this._emit("changeAnnotation", {});
     };
 
+    /** internal, hide
+    * EditSession.$detectNewLine(text)
+    * - text (String): A block of text
+    *
+    * If `text` contains either the newline (`\n`) or carriage-return ('\r') characters, `$autoNewLine` stores that value.
+    *
+    **/
     this.$detectNewLine = function(text) {
         var match = text.match(/^.*?(\r?\n)/m);
         if (match) {
@@ -4159,19 +6038,30 @@ var EditSession = function(text, mode) {
         }
     };
 
+    /**
+    * EditSession.getWordRange(row, column) -> Range
+    * - row (Number): The row to start at
+    * - column (Number): The column to start at
+    *
+    * Given a starting row and column, this method returns the `Range` of the first word boundary it finds.
+    *
+    **/
     this.getWordRange = function(row, column) {
         var line = this.getLine(row);
 
         var inToken = false;
-        if (column > 0) {
+        if (column > 0)
             inToken = !!line.charAt(column - 1).match(this.tokenRe);
-        }
 
-        if (!inToken) {
+        if (!inToken)
             inToken = !!line.charAt(column).match(this.tokenRe);
-        }
-
-        var re = inToken ? this.tokenRe : this.nonTokenRe;
+        
+        if (inToken)
+            var re = this.tokenRe;
+        else if (/^\s+$/.test(line.slice(column-1, column+1)))
+            var re = /\s/;
+        else
+            var re = this.nonTokenRe;
 
         var start = column;
         if (start > 0) {
@@ -4190,7 +6080,13 @@ var EditSession = function(text, mode) {
         return new Range(row, start, row, end);
     };
 
-    // Gets the range of a word including its right whitespace
+    /**
+    * EditSession.getAWordRange(row, column) -> Range
+    * - row (Number): The row number to start from
+    * - column (Number): The column number to start from
+    *
+    * Gets the range of a word, including its right whitespace.
+    **/
     this.getAWordRange = function(row, column) {
         var wordRange = this.getWordRange(row, column);
         var line = this.getLine(wordRange.end.row);
@@ -4201,15 +6097,34 @@ var EditSession = function(text, mode) {
         return wordRange;
     };
 
+    /** related to: Document.setNewLineMode
+    * EditSession.setNewLineMode(newLineMode)
+    * - newLineMode (String): {:Document.setNewLineMode.param}
+    *
+    * {:Document.setNewLineMode.desc}
+    **/
     this.setNewLineMode = function(newLineMode) {
         this.doc.setNewLineMode(newLineMode);
     };
 
+    /** related to: Document.getNewLineMode
+    * EditSession.getNewLineMode() -> String
+    *
+    * Returns the current new line mode.
+    **/
     this.getNewLineMode = function() {
         return this.doc.getNewLineMode();
     };
 
     this.$useWorker = true;
+
+    /**
+    * EditSession.setUseWorker(useWorker)
+    * - useWorker (Boolean): Set to `true` to use a worker
+    *
+    * Identifies if you want to use a worker for the `EditSession`.
+    *
+    **/
     this.setUseWorker = function(useWorker) {
         if (this.$useWorker == useWorker)
             return;
@@ -4221,10 +6136,20 @@ var EditSession = function(text, mode) {
             this.$startWorker();
     };
 
+    /**
+    * EditSession.getUseWorker() -> Boolean
+    *
+    * Returns `true` if workers are being used.
+    **/
     this.getUseWorker = function() {
         return this.$useWorker;
     };
 
+    /**
+    * EditSession@onReloadTokenizer(e)
+    *
+    * Reloads all the tokens on the current session. This function calls [[BackgroundTokenizer.start `BackgroundTokenizer.start ()`]] to all the rows; it also emits the `'tokenizerUpdate'` event.
+    **/
     this.onReloadTokenizer = function(e) {
         var rows = e.data;
         this.bgTokenizer.start(rows.first);
@@ -4233,26 +6158,35 @@ var EditSession = function(text, mode) {
 
     this.$modes = {};
     this._loadMode = function(mode, callback) {
+        if (!this.$modes["null"])
+            this.$modes["null"] = this.$modes["ace/mode/text"] = new TextMode();
+
         if (this.$modes[mode])
             return callback(this.$modes[mode]);
-        
+
         var _self = this;
         var module;
         try {
             module = require(mode);
         } catch (e) {};
-        if (module)
+        // sometimes require returns empty object (this bug is present in requirejs 2 as well)
+        if (module && module.Mode)
             return done(module);
-            
-        fetch(function() {
+
+        // set mode to text until loading is finished
+        if (!this.$mode)
+            this.$setModePlaceholder();
+
+        fetch(mode, function() {
             require([mode], done);
         });
-        
+
         function done(module) {
             if (_self.$modes[mode])
                 return callback(_self.$modes[mode]);
-            
+
             _self.$modes[mode] = new module.Mode();
+            _self.$modes[mode].$id = mode;
             _self._emit("loadmode", {
                 name: mode,
                 mode: _self.$modes[mode]
@@ -4260,36 +6194,63 @@ var EditSession = function(text, mode) {
             callback(_self.$modes[mode]);
         }
 
-        function fetch(callback) {
+        function fetch(name, callback) {
             if (!config.get("packaged"))
                 return callback();
-                
-            var base = mode.split("/").pop();
-            var filename = config.get("modePath") + "/mode-" + base + config.get("suffix");
-            net.loadScript(filename, callback);
+
+            net.loadScript(config.moduleUrl(name, "mode"), callback);
         }
     };
 
+    this.$setModePlaceholder = function() {
+        this.$mode = this.$modes["null"];
+        var tokenizer = this.$mode.getTokenizer();
+
+        if (!this.bgTokenizer) {
+            this.bgTokenizer = new BackgroundTokenizer(tokenizer);
+            var _self = this;
+            this.bgTokenizer.addEventListener("update", function(e) {
+                _self._emit("tokenizerUpdate", e);
+            });
+        } else {
+            this.bgTokenizer.setTokenizer(tokenizer);
+        }
+        this.bgTokenizer.setDocument(this.getDocument());
+
+        this.tokenRe = this.$mode.tokenRe;
+        this.nonTokenRe = this.$mode.nonTokenRe;
+    };
+
+    /**
+    * EditSession.setMode(mode)
+    * - mode (TextMode): Set a new text mode
+    *
+    * Sets a new text mode for the `EditSession`. This method also emits the `'changeMode'` event. If a [[BackgroundTokenizer `BackgroundTokenizer`]] is set, the `'tokenizerUpdate'` event is also emitted.
+    *
+    **/
     this.$mode = null;
-    this.$origMode = null;
+    this.$modeId = null;
     this.setMode = function(mode) {
-        this.$origMode = mode;
-        
+        mode = mode || "null";
         // load on demand
         if (typeof mode === "string") {
+            if (this.$modeId == mode)
+                return;
+
+            this.$modeId = mode;
             var _self = this;
             this._loadMode(mode, function(module) {
-                if (_self.$origMode !== mode)
+                if (_self.$modeId !== mode)
                     return;
-            
+
                 _self.setMode(module);
             });
             return;
         }
-        
+
         if (this.$mode === mode) return;
         this.$mode = mode;
-        
+        this.$modeId = mode.$id;
 
         this.$stopWorker();
 
@@ -4324,6 +6285,11 @@ var EditSession = function(text, mode) {
         this._emit("changeMode");
     };
 
+    /** internal, hide
+    * EditSession.stopWorker()
+    *
+    *
+    **/
     this.$stopWorker = function() {
         if (this.$worker)
             this.$worker.terminate();
@@ -4331,6 +6297,11 @@ var EditSession = function(text, mode) {
         this.$worker = null;
     };
 
+    /** internal, hide
+    * EditSession.$startWorker()
+    *
+    *
+    **/
     this.$startWorker = function() {
         if (typeof Worker !== "undefined" && !require.noWorker) {
             try {
@@ -4345,11 +6316,22 @@ var EditSession = function(text, mode) {
             this.$worker = null;
     };
 
+    /**
+    * EditSession.getMode() -> TextMode
+    *
+    * Returns the current text mode.
+    **/
     this.getMode = function() {
         return this.$mode;
     };
-    
+
     this.$scrollTop = 0;
+    /**
+    * EditSession.setScrollTop(scrollTop)
+    * - scrollTop (Number): The new scroll top value
+    *
+    * This function sets the scroll top value. It also emits the `'changeScrollTop'` event.
+    **/
     this.setScrollTop = function(scrollTop) {
         scrollTop = Math.round(Math.max(0, scrollTop));
         if (this.$scrollTop === scrollTop)
@@ -4359,11 +6341,21 @@ var EditSession = function(text, mode) {
         this._emit("changeScrollTop", {data: scrollTop});
     };
 
+    /**
+    * EditSession.getScrollTop() -> Number
+    *
+    * [Returns the value of the distance between the top of the editor and the topmost part of the visible content.]{: #EditSession.getScrollTop}
+    **/
     this.getScrollTop = function() {
         return this.$scrollTop;
     };
-    
+
     this.$scrollLeft = 0;
+    /**
+    * EditSession.setScrollLeft(scrollLeft)
+    *
+    * [Sets the value of the distance between the left of the editor and the leftmost part of the visible content.]{: #EditSession.setScrollLeft}
+    **/
     this.setScrollLeft = function(scrollLeft) {
         scrollLeft = Math.round(Math.max(0, scrollLeft));
         if (this.$scrollLeft === scrollLeft)
@@ -4373,15 +6365,20 @@ var EditSession = function(text, mode) {
         this._emit("changeScrollLeft", {data: scrollLeft});
     };
 
+    /**
+    * EditSession.getScrollLeft() -> Number
+    *
+    * [Returns the value of the distance between the left of the editor and the leftmost part of the visible content.]{: #EditSession.getScrollLeft}
+    **/
     this.getScrollLeft = function() {
         return this.$scrollLeft;
     };
 
-    this.getWidth = function() {
-        this.$computeWidth();
-        return this.width;
-    };
-
+    /**
+    * EditSession.getScreenWidth() -> Number
+    *
+    * Returns the width of the screen.
+    **/
     this.getScreenWidth = function() {
         this.$computeWidth();
         return this.screenWidth;
@@ -4391,68 +6388,112 @@ var EditSession = function(text, mode) {
         if (this.$modified || force) {
             this.$modified = false;
 
+            if (this.$useWrapMode)
+                return this.screenWidth = this.$wrapLimit;
+
             var lines = this.doc.getAllLines();
-            var longestLine = 0;
+            var cache = this.$rowLengthCache;
             var longestScreenLine = 0;
+            var foldIndex = 0;
+            var foldLine = this.$foldData[foldIndex];
+            var foldStart = foldLine ? foldLine.start.row : Infinity;
+            var len = lines.length;
 
-            for ( var i = 0; i < lines.length; i++) {
-                var foldLine = this.getFoldLine(i),
-                    line, len;
-
-                line = lines[i];
-                if (foldLine) {
-                    var end = foldLine.range.end;
-                    line = this.getFoldDisplayLine(foldLine);
-                    // Continue after the foldLine.end.row. All the lines in
-                    // between are folded.
-                    i = end.row;
+            for (var i = 0; i < len; i++) {
+                if (i > foldStart) {
+                    i = foldLine.end.row + 1;
+                    if (i >= len)
+                        break
+                    foldLine = this.$foldData[foldIndex++];
+                    foldStart = foldLine ? foldLine.start.row : Infinity;
                 }
-                len = line.length;
-                longestLine = Math.max(longestLine, len);
-                if (!this.$useWrapMode) {
-                    longestScreenLine = Math.max(
-                        longestScreenLine,
-                        this.$getStringScreenWidth(line)[0]
-                    );
-                }
-            }
-            this.width = longestLine;
 
-            if (this.$useWrapMode) {
-                this.screenWidth = this.$wrapLimit;
-            } else {
-                this.screenWidth = longestScreenLine;
+                if (cache[i] == null)
+                    cache[i] = this.$getStringScreenWidth(lines[i])[0];
+
+                if (cache[i] > longestScreenLine)
+                    longestScreenLine = cache[i];
             }
+            this.screenWidth = longestScreenLine;
         }
     };
 
-    /**
-     * Get a verbatim copy of the given line as it is in the document
-     */
+    /** related to: Document.getLine
+    * EditSession.getLine(row) -> String
+    * - row (Number): The row to retrieve from
+    *
+    * Returns a verbatim copy of the given line as it is in the document
+    *
+    **/
     this.getLine = function(row) {
         return this.doc.getLine(row);
     };
 
+    /** related to: Document.getLines
+    * EditSession.getLines(firstRow, lastRow) -> Array
+    * - firstRow (Number): The first row index to retrieve
+    * - lastRow (Number): The final row index to retrieve
+    *
+    * Returns an array of strings of the rows between `firstRow` and `lastRow`. This function is inclusive of `lastRow`.
+    *
+    **/
     this.getLines = function(firstRow, lastRow) {
         return this.doc.getLines(firstRow, lastRow);
     };
 
+    /** related to: Document.getLength
+    * EditSession.getLength()-> Number
+    *
+    * Returns the number of rows in the document.
+    **/
     this.getLength = function() {
         return this.doc.getLength();
     };
 
+    /** related to: Document.getTextRange
+    * EditSession.getTextRange(range) -> Array
+    * - range (String): The range to work with
+    *
+    * {:Document.getTextRange.desc}
+    **/
     this.getTextRange = function(range) {
-        return this.doc.getTextRange(range);
+        return this.doc.getTextRange(range || this.selection.getRange());
     };
 
-	this.insert = function(position, text) {
+    /** related to: Document.insert
+    * EditSession.insert(position, text) -> Number
+    * - position (Number): The position to start inserting at
+    * - text (String): A chunk of text to insert
+    * + (Number): The position of the last line of `text`. If the length of `text` is 0, this function simply returns `position`.
+    *
+    * Inserts a block of `text` and the indicated `position`.
+    *
+    *
+    **/
+    this.insert = function(position, text) {
         return this.doc.insert(position, text);
     };
 
+    /** related to: Document.remove
+    * EditSession.remove(range) -> Object
+    * - range (Range): A specified Range to remove
+    * + (Object): The new `start` property of the range, which contains `startRow` and `startColumn`. If `range` is empty, this function returns the unmodified value of `range.start`.
+    *
+    * Removes the `range` from the document.
+    *
+    *
+    **/
     this.remove = function(range) {
         return this.doc.remove(range);
     };
 
+    /**
+    * EditSession.undoChanges(deltas, dontSelect) -> Range
+    * - deltas (Array): An array of previous changes
+    * - dontSelect (Boolean): [If `true`, doesn't select the range of where the change occured]{: #dontSelect}
+    *
+    * Reverts previous changes to your document.
+    **/
     this.undoChanges = function(deltas, dontSelect) {
         if (!deltas.length)
             return;
@@ -4479,6 +6520,13 @@ var EditSession = function(text, mode) {
         return lastUndoRange;
     };
 
+    /**
+    * EditSession.redoChanges(deltas, dontSelect) -> Range
+    * - deltas (Array): An array of previous changes
+    * - dontSelect (Boolean): {:dontSelect}
+    *
+    * Re-implements a previously undone change to your document.
+    **/
     this.redoChanges = function(deltas, dontSelect) {
         if (!deltas.length)
             return;
@@ -4500,11 +6548,22 @@ var EditSession = function(text, mode) {
             this.selection.setSelectionRange(lastUndoRange);
         return lastUndoRange;
     };
-    
+
+    /**
+    * EditSession.setUndoSelect(enable)
+    * - enable (Boolean): If `true`, selects the range of the reinserted change
+    *
+    * ENables or disables highlighting of the range where an undo occured.
+    **/
     this.setUndoSelect = function(enable) {
         this.$undoSelect = enable;
     };
 
+    /** internal, hide
+    * EditSession.$getUndoSelection(deltas, isUndo, lastUndoRange) -> Range
+    *
+    *
+    **/
     this.$getUndoSelection = function(deltas, isUndo, lastUndoRange) {
         function isInsert(delta) {
             var insert =
@@ -4559,19 +6618,36 @@ var EditSession = function(text, mode) {
         return range;
     },
 
+    /** related to: Document.replace
+    * EditSession.replace(range, text) -> Object
+    * - range (Range): A specified Range to replace
+    * - text (String): The new text to use as a replacement
+    * + (Object): Returns an object containing the final row and column, like this:<br/>
+    * ```{row: endRow, column: 0}```<br/>
+    * If the text and range are empty, this function returns an object containing the current `range.start` value.<br/>
+    * If the text is the exact same as what currently exists, this function returns an object containing the current `range.end` value.
+    *
+    * Replaces a range in the document with the new `text`.
+    *
+    *
+    *
+    **/
     this.replace = function(range, text) {
         return this.doc.replace(range, text);
     };
 
     /**
-     * Move a range of text from the given range to the given position.
-     *
-     * @param fromRange {Range} The range of text you want moved within the
-     * document.
-     * @param toPosition {Object} The location (row and column) where you want
-     * to move the text to.
-     * @return {Range} The new range where the text was moved to.
-     */
+    * EditSession.moveText(fromRange, toPosition) -> Range
+    * - fromRange (Range): The range of text you want moved within the document
+    * - toPosition (Object): The location (row and column) where you want to move the text to
+    * + (Range): The new range where the text was moved to.
+    * Moves a range of text from the given range to the given position. `toPosition` is an object that looks like this:
+    *
+    *    { row: newRowLocation, column: newColumnLocation }
+    *
+    *
+    *
+    **/
     this.moveText = function(fromRange, toPosition) {
         var text = this.getTextRange(fromRange);
         this.remove(fromRange);
@@ -4602,12 +6678,30 @@ var EditSession = function(text, mode) {
         return toRange;
     };
 
+    /**
+    * EditSession.indentRows(startRow, endRow, indentString)
+    * - startRow (Number): Starting row
+    * - endRow (Number): Ending row
+    * - indentString (String): The indent token
+    *
+    * Indents all the rows, from `startRow` to `endRow` (inclusive), by prefixing each row with the token in `indentString`.
+    *
+    * If `indentString` contains the `'\t'` character, it's replaced by whatever is defined by [[EditSession.getTabString `getTabString()`]].
+    *
+    **/
     this.indentRows = function(startRow, endRow, indentString) {
         indentString = indentString.replace(/\t/g, this.getTabString());
         for (var row=startRow; row<=endRow; row++)
             this.insert({row: row, column:0}, indentString);
     };
 
+    /**
+    * EditSession.outdentRows(range)
+    * - range (Range): A range of rows
+    *
+    * Outdents all the rows defined by the `start` and `end` properties of `range`.
+    *
+    **/
     this.outdentRows = function (range) {
         var rowRange = range.collapseRows();
         var deleteRange = new Range(0, 0, 0, 0);
@@ -4632,6 +6726,16 @@ var EditSession = function(text, mode) {
         }
     };
 
+    /** related to: Document.insertLines
+    * EditSession.moveLinesUp(firstRow, lastRow) -> Number
+    * - firstRow (Number): The starting row to move up
+    * - lastRow (Number): The final row to move up
+    * + (Number): If `firstRow` is less-than or equal to 0, this function returns 0. Otherwise, on success, it returns -1.
+    *
+    * Shifts all the lines in the document up one, starting from `firstRow` and ending at `lastRow`.
+    *
+    *
+    **/
     this.moveLinesUp = function(firstRow, lastRow) {
         if (firstRow <= 0) return 0;
 
@@ -4640,6 +6744,15 @@ var EditSession = function(text, mode) {
         return -1;
     };
 
+    /** related to: Document.insertLines
+    * EditSession.moveLinesDown(firstRow, lastRow) -> Number
+    * - firstRow (Number): The starting row to move down
+    * - lastRow (Number): The final row to move down
+    * + (Number): If `firstRow` is less-than or equal to 0, this function returns 0. Otherwise, on success, it returns -1.
+    *
+    *
+    *
+    **/
     this.moveLinesDown = function(firstRow, lastRow) {
         if (lastRow >= this.doc.getLength()-1) return 0;
 
@@ -4648,6 +6761,17 @@ var EditSession = function(text, mode) {
         return 1;
     };
 
+    /**
+    * EditSession.duplicateLines(firstRow, lastRow) -> Number
+    * - firstRow (Number): The starting row to duplicate
+    * - lastRow (Number): The final row to duplicate
+    * + (Number): Returns the number of new rows added; in other words, `lastRow - firstRow + 1`.
+    *
+    * Duplicates all the text between `firstRow` and `lastRow`.
+    *
+    *
+    *
+    **/
     this.duplicateLines = function(firstRow, lastRow) {
         var firstRow = this.$clipRowToDocument(firstRow);
         var lastRow = this.$clipRowToDocument(lastRow);
@@ -4659,15 +6783,17 @@ var EditSession = function(text, mode) {
         return addedRows;
     };
 
+
     this.$clipRowToDocument = function(row) {
         return Math.max(0, Math.min(row, this.doc.getLength()-1));
     };
-	
-	this.$clipColumnToRow = function(row, column) {
-		if (column < 0)
-			return 0;
+
+    this.$clipColumnToRow = function(row, column) {
+        if (column < 0)
+            return 0;
         return Math.min(this.doc.getLine(row).length, column);
     };
+
 
     this.$clipPositionToDocument = function(row, column) {
         column = Math.max(0, column);
@@ -4701,7 +6827,7 @@ var EditSession = function(text, mode) {
                 range.start.column
             );
         }
-        
+
         var len = this.doc.getLength() - 1;
         if (range.end.row > len) {
             range.end.row = len;
@@ -4723,6 +6849,12 @@ var EditSession = function(text, mode) {
         max : null
     };
 
+    /**
+    * EditSession.setUseWrapMode(useWrapMode)
+    * - useWrapMode (Boolean): Enable (or disable) wrap mode
+    *
+    * Sets whether or not line wrapping is enabled. If `useWrapMode` is different than the current value, the `'changeWrapMode'` event is emitted.
+    **/
     this.setUseWrapMode = function(useWrapMode) {
         if (useWrapMode != this.$useWrapMode) {
             this.$useWrapMode = useWrapMode;
@@ -4743,6 +6875,11 @@ var EditSession = function(text, mode) {
         }
     };
 
+    /**
+    * EditSession.getUseWrapMode() -> Boolean
+    *
+    * Returns `true` if wrap mode is being used; `false` otherwise.
+    **/
     this.getUseWrapMode = function() {
         return this.$useWrapMode;
     };
@@ -4751,6 +6888,13 @@ var EditSession = function(text, mode) {
     // parameter can be null to allow the wrap limit to be unconstrained
     // in that direction. Or set both parameters to the same number to pin
     // the limit to that value.
+    /**
+    * EditSession.setWrapLimitRange(min, max)
+    * - min (Number): The minimum wrap value (the left side wrap)
+    * - max (Number): The maximum wrap value (the right side wrap)
+    *
+    * Sets the boundaries of wrap. Either value can be `null` to have an unconstrained wrap, or, they can be the same number to pin the limit. If the wrap limits for `min` or `max` are different, this method also emits the `'changeWrapMode'` event.
+    **/
     this.setWrapLimitRange = function(min, max) {
         if (this.$wrapLimitRange.min !== min || this.$wrapLimitRange.max !== max) {
             this.$wrapLimitRange.min = min;
@@ -4761,8 +6905,12 @@ var EditSession = function(text, mode) {
         }
     };
 
-    // This should generally only be called by the renderer when a resize
-    // is detected.
+    /** internal, hide
+    * EditSession.adjustWrapLimit(desiredLimit) -> Boolean
+    * - desiredLimit (Number): The new wrap limit
+    *
+    * This should generally only be called by the renderer when a resize is detected.
+    **/
     this.adjustWrapLimit = function(desiredLimit) {
         var wrapLimit = this.$constrainWrapLimit(desiredLimit);
         if (wrapLimit != this.$wrapLimit && wrapLimit > 0) {
@@ -4778,6 +6926,11 @@ var EditSession = function(text, mode) {
         return false;
     };
 
+    /** internal, hide
+    * EditSession.$constrainWrapLimit(wrapLimit)
+    *
+    *
+    **/
     this.$constrainWrapLimit = function(wrapLimit) {
         var min = this.$wrapLimitRange.min;
         if (min)
@@ -4791,10 +6944,23 @@ var EditSession = function(text, mode) {
         return Math.max(1, wrapLimit);
     };
 
+    /**
+    * EditSession.getWrapLimit() -> Number
+    *
+    * Returns the value of wrap limit.
+    **/
     this.getWrapLimit = function() {
         return this.$wrapLimit;
     };
 
+    /**
+    * EditSession.getWrapLimitRange() -> Object
+    *
+    * Returns an object that defines the minimum and maximum of the wrap limit; it looks something like this:
+    *
+    *     { min: wrapLimitRange_min, max: wrapLimitRange_max }
+    *
+    **/
     this.getWrapLimitRange = function() {
         // Avoid unexpected mutation by returning a copy
         return {
@@ -4803,6 +6969,11 @@ var EditSession = function(text, mode) {
         };
     };
 
+    /** internal, hide
+    * EditSession.$updateInternalDataOnChange()
+    *
+    *
+    **/
     this.$updateInternalDataOnChange = function(e) {
         var useWrapMode = this.$useWrapMode;
         var len;
@@ -4826,7 +6997,7 @@ var EditSession = function(text, mode) {
 
         if (len != 0) {
             if (action.indexOf("remove") != -1) {
-                useWrapMode && this.$wrapData.splice(firstRow, len);
+                this[useWrapMode ? "$wrapData" : "$rowLengthCache"].splice(firstRow, len);
 
                 var foldLines = this.$foldData;
                 removedFolds = this.getFoldsInRange(e.data.range);
@@ -4860,6 +7031,10 @@ var EditSession = function(text, mode) {
                     args = [firstRow, 0];
                     for (var i = 0; i < len; i++) args.push([]);
                     this.$wrapData.splice.apply(this.$wrapData, args);
+                } else {
+                    args = Array(len);
+                    args.unshift(firstRow, 0);
+                    this.$rowLengthCache.splice.apply(this.$rowLengthCache, args);
                 }
 
                 // If some new line is added inside of a foldLine, then split
@@ -4913,11 +7088,25 @@ var EditSession = function(text, mode) {
             console.error("doc.getLength() and $wrapData.length have to be the same!");
         }
 
-        useWrapMode && this.$updateWrapData(firstRow, lastRow);
+        if (useWrapMode)
+            this.$updateWrapData(firstRow, lastRow);
+        else
+            this.$updateRowLengthCache(firstRow, lastRow);
 
         return removedFolds;
     };
 
+    this.$updateRowLengthCache = function(firstRow, lastRow, b) {
+        //console.log(firstRow, lastRow, b)
+        this.$rowLengthCache[firstRow] = null;
+        this.$rowLengthCache[lastRow] = null;
+        //console.log(this.$rowLengthCache)
+    };
+
+    /** internal, hide
+    * EditSession.$updateWrapData(firstRow, lastRow)
+    *
+    **/
     this.$updateWrapData = function(firstRow, lastRow) {
         var lines = this.doc.getAllLines();
         var tabSize = this.getTabSize();
@@ -4977,6 +7166,11 @@ var EditSession = function(text, mode) {
         TAB = 11,
         TAB_SPACE = 12;
 
+    /** internal, hide
+    * EditSession.$computeWrapSplits(tokens, wrapLimit) -> Array
+    *
+    *
+    **/
     this.$computeWrapSplits = function(tokens, wrapLimit) {
         if (tokens.length == 0) {
             return [];
@@ -5093,11 +7287,13 @@ var EditSession = function(text, mode) {
         return splits;
     }
 
-    /**
-     * @param
-     *   offset: The offset in screenColumn at which position str starts.
-     *           Important for calculating the realTabSize.
-     */
+    /** internal, hide
+    * EditSession.$getDisplayTokens(str, offset) -> Array
+    * - str (String): The string to check
+    * - offset (Number): The value to start at
+    *
+    * Given a string, returns an array of the display characters, including tabs and spaces.
+    **/
     this.$getDisplayTokens = function(str, offset) {
         var arr = [];
         var tabSize;
@@ -5125,23 +7321,24 @@ var EditSession = function(text, mode) {
         return arr;
     }
 
-    /**
-     * Calculates the width of the a string on the screen while assuming that
-     * the string starts at the first column on the screen.
-     *
-     * @param string str String to calculate the screen width of
-     * @return array
-     *      [0]: number of columns for str on screen.
-     *      [1]: docColumn position that was read until (useful with screenColumn)
-     */
+    /** internal, hide
+    * EditSession.$getStringScreenWidth(str, maxScreenColumn, screenColumn) -> [Number]
+    * - str (String): The string to calculate the screen width of
+    * - maxScreenColumn (Number):
+    * - screenColumn (Number):
+    * + ([Number]): Returns an `int[]` array with two elements:<br/>
+    * The first position indicates the number of columns for `str` on screen.<br/>
+    * The second value contains the position of the document column that this function read until.
+    *
+    * Calculates the width of the string `str` on the screen while assuming that the string starts at the first column on the screen.
+    *
+    *
+    **/
     this.$getStringScreenWidth = function(str, maxScreenColumn, screenColumn) {
-        if (maxScreenColumn == 0) {
+        if (maxScreenColumn == 0)
             return [0, 0];
-        }
-        if (maxScreenColumn == null) {
-            maxScreenColumn = screenColumn +
-                str.length * Math.max(this.getTabSize(), 2);
-        }
+        if (maxScreenColumn == null)
+            maxScreenColumn = Infinity;
         screenColumn = screenColumn || 0;
 
         var c, column;
@@ -5162,8 +7359,12 @@ var EditSession = function(text, mode) {
     }
 
     /**
-     * Returns the number of rows required to render this row on the screen
-     */
+    * EditSession.getRowLength(row) -> Number
+    * - row (Number): The row number to check
+    *
+    *
+    * Returns the length of the indicated row.
+    **/
     this.getRowLength = function(row) {
         if (!this.$useWrapMode || !this.$wrapData[row]) {
             return 1;
@@ -5173,27 +7374,52 @@ var EditSession = function(text, mode) {
     }
 
     /**
-     * Returns the height in pixels required to render this row on the screen
+    * EditSession.getRowHeight(config, row) -> Number
+    * - config (Object): An object containing a parameter indicating the `lineHeight`.
+    * - row (Number): The row number to check
+    *
+    * Returns the height of the indicated row. This is mostly relevant for situations where wrapping occurs, and a single line spans across multiple rows.
+    *
      **/
     this.getRowHeight = function(config, row) {
         return this.getRowLength(row) * config.lineHeight;
     }
 
+    /** internal, hide, related to: EditSession.documentToScreenColumn
+    * EditSession.getScreenLastRowColumn(screenRow) -> Number
+    * - screenRow (Number): The screen row to check
+    *
+    * Returns the column position (on screen) for the last character in the provided row.
+    **/
     this.getScreenLastRowColumn = function(screenRow) {
         var pos = this.screenToDocumentPosition(screenRow, Number.MAX_VALUE)
         return this.documentToScreenColumn(pos.row, pos.column);
     };
 
+    /** internal, hide
+    * EditSession.getDocumentLastRowColumn(docRow, docColumn) -> Number
+    * - docRow (Number):
+    * - docColumn (Number):
+    *
+    **/
     this.getDocumentLastRowColumn = function(docRow, docColumn) {
         var screenRow = this.documentToScreenRow(docRow, docColumn);
         return this.getScreenLastRowColumn(screenRow);
     };
 
+    /** internal, hide
+    * EditSession.getDocumentLastRowColumnPosition(docRow, docColumn) -> Number
+    *
+    **/
     this.getDocumentLastRowColumnPosition = function(docRow, docColumn) {
         var screenRow = this.documentToScreenRow(docRow, docColumn);
         return this.screenToDocumentPosition(screenRow, Number.MAX_VALUE / 10);
     };
 
+    /** internal, hide
+    * EditSession.getRowSplitData(row) -> undefined | String
+    *
+    **/
     this.getRowSplitData = function(row) {
         if (!this.$useWrapMode) {
             return undefined;
@@ -5203,27 +7429,46 @@ var EditSession = function(text, mode) {
     };
 
     /**
-     * Returns the width of a tab character at screenColumn.
-     */
+    * EditSession.getScreenTabSize(screenColumn) -> Number
+    * - screenColumn (Number): The screen column to check
+    *
+    * The distance to the next tab stop at the specified screen column.
+    **/
     this.getScreenTabSize = function(screenColumn) {
         return this.$tabSize - screenColumn % this.$tabSize;
     };
 
+    /** internal, hide
+    * EditSession.screenToDocumentRow(screenRow, screenColumn) -> Number
+    *
+    *
+    **/
     this.screenToDocumentRow = function(screenRow, screenColumn) {
         return this.screenToDocumentPosition(screenRow, screenColumn).row;
     };
 
+    /** internal, hide
+    * EditSession.screenToDocumentColumn(screenRow, screenColumn) -> Number
+    *
+    *
+    **/
     this.screenToDocumentColumn = function(screenRow, screenColumn) {
         return this.screenToDocumentPosition(screenRow, screenColumn).column;
     };
 
+    /** related to: EditSession.documentToScreenPosition
+    * EditSession.screenToDocumentPosition(screenRow, screenColumn) -> Object
+    * - screenRow (Number): The screen row to check
+    * - screenColumn (Number): The screen column to check
+    * + (Object): The object returned has two properties: `row` and `column`.
+    *
+    * Converts characters coordinates on the screen to characters coordinates within the document. [This takes into account code folding, word wrap, tab size, and any other visual modifications.]{: #conversionConsiderations}
+    *
+    *
+    **/
     this.screenToDocumentPosition = function(screenRow, screenColumn) {
-        if (screenRow < 0) {
-            return {
-                row: 0,
-                column: 0
-            }
-        }
+        if (screenRow < 0)
+            return {row: 0, column: 0};
 
         var line;
         var docRow = 0;
@@ -5232,17 +7477,17 @@ var EditSession = function(text, mode) {
         var row = 0;
         var rowLength = 0;
 
-        var rowCache = this.$rowCache;
-        for (var i = 0; i < rowCache.length; i++) {
-            if (rowCache[i].screenRow < screenRow) {
-                row = rowCache[i].screenRow;
-                docRow = rowCache[i].docRow;
-            }
-            else {
-                break;
-            }
+        var rowCache = this.$screenRowCache;
+        var i = this.$getRowCacheIndex(rowCache, screenRow);
+        var row1 = rowCache[i];
+        var docRow1 = this.$docRowCache[i];
+        if (0 < i && i < rowCache.length) {
+            var row = rowCache[i];
+            var docRow = this.$docRowCache[i];
+            var doCache = screenRow > row || (screenRow == row && i == rowCache.length - 1);
+        } else {
+            var doCache = true;
         }
-        var doCache = !rowCache.length || i == rowCache.length;
 
         var maxRow = this.getLength() - 1;
         var foldLine = this.getNextFoldLine(docRow);
@@ -5262,10 +7507,8 @@ var EditSession = function(text, mode) {
                 }
             }
             if (doCache) {
-                rowCache.push({
-                    docRow: docRow,
-                    screenRow: row
-                });
+                this.$docRowCache.push(docRow);
+                this.$screenRowCache.push(row);
             }
         }
 
@@ -5298,20 +7541,26 @@ var EditSession = function(text, mode) {
 
         // We remove one character at the end so that the docColumn
         // position returned is not associated to the next row on the screen.
-        if (this.$useWrapMode && docColumn >= column) {
+        if (this.$useWrapMode && docColumn >= column)
             docColumn = column - 1;
-        }
 
-        if (foldLine) {
+        if (foldLine)
             return foldLine.idxToPosition(docColumn);
-        }
 
-        return {
-            row: docRow,
-            column: docColumn
-        }
+        return {row: docRow, column: docColumn};
     };
 
+    /** related to: EditSession.screenToDocumentPosition
+    * EditSession.documentToScreenPosition(docRow, docColumn) -> Object
+    * - docRow (Number): The document row to check
+    * - docColumn (Number): The document column to check
+    * + (Object): The object returned by this method has two properties: `row` and `column`.
+    *
+    * Converts document coordinates to screen coordinates. {:conversionConsiderations}
+    *
+    *
+    *
+    **/
     this.documentToScreenPosition = function(docRow, docColumn) {
         // Normalize the passed in arguments.
         if (typeof docColumn === "undefined")
@@ -5321,20 +7570,6 @@ var EditSession = function(text, mode) {
 
         docRow = pos.row;
         docColumn = pos.column;
-
-        var wrapData;
-        // Special case in wrapMode if the doc is at the end of the document.
-        if (this.$useWrapMode) {
-            wrapData = this.$wrapData;
-            if (docRow > wrapData.length - 1) {
-                return {
-                    row: this.getScreenLength(),
-                    column: wrapData.length == 0
-                        ? 0
-                        : (wrapData[wrapData.length - 1].length - 1)
-                };
-            }
-        }
 
         var screenRow = 0;
         var foldStartRow = null;
@@ -5348,17 +7583,17 @@ var EditSession = function(text, mode) {
         }
 
         var rowEnd, row = 0;
-        var rowCache = this.$rowCache;
 
-        for (var i = 0; i < rowCache.length; i++) {
-            if (rowCache[i].docRow < docRow) {
-                screenRow = rowCache[i].screenRow;
-                row = rowCache[i].docRow;
-            } else {
-                break;
-            }
+
+        var rowCache = this.$docRowCache;
+        var i = this.$getRowCacheIndex(rowCache, docRow);
+        if (0 < i && i < rowCache.length) {
+            var row = rowCache[i];
+            var screenRow = this.$screenRowCache[i];
+            var doCache = docRow > row || (docRow == row && i == rowCache.length - 1);
+        } else {
+            var doCache = true;
         }
-        var doCache = !rowCache.length || i == rowCache.length;
 
         var foldLine = this.getNextFoldLine(row);
         var foldStart = foldLine ?foldLine.start.row :Infinity;
@@ -5379,10 +7614,8 @@ var EditSession = function(text, mode) {
             row = rowEnd;
 
             if (doCache) {
-                rowCache.push({
-                    docRow: row,
-                    screenRow: screenRow
-                });
+                this.$docRowCache.push(row);
+                this.$screenRowCache.push(screenRow);
             }
         }
 
@@ -5398,7 +7631,7 @@ var EditSession = function(text, mode) {
         }
         // Clamp textLine if in wrapMode.
         if (this.$useWrapMode) {
-            var wrapRow = wrapData[foldStartRow];
+            var wrapRow = this.$wrapData[foldStartRow];
             var screenRowOffset = 0;
             while (textLine.length >= wrapRow[screenRowOffset]) {
                 screenRow ++;
@@ -5415,14 +7648,29 @@ var EditSession = function(text, mode) {
         };
     };
 
+    /** internal, hide
+    * EditSession.documentToScreenColumn(row, docColumn) -> Number
+    *
+    *
+    **/
     this.documentToScreenColumn = function(row, docColumn) {
         return this.documentToScreenPosition(row, docColumn).column;
     };
 
+    /** internal, hide
+    * EditSession.documentToScreenRow(docRow, docColumn) -> Number
+    *
+    *
+    **/
     this.documentToScreenRow = function(docRow, docColumn) {
         return this.documentToScreenPosition(docRow, docColumn).row;
     };
 
+    /**
+    * EditSession.getScreenLength() -> Number
+    *
+    * Returns the length of the screen.
+    **/
     this.getScreenLength = function() {
         var screenRows = 0;
         var fold = null;
@@ -5469,300 +7717,352 @@ var lang = require("ace/lib/lang");
 var oop = require("ace/lib/oop");
 var Range = require("ace/range").Range;
 
+/**
+ * class Search
+ *
+ * A class designed to handle all sorts of text searches within a [[Document `Document`]].
+ *
+ **/
+
+/**
+ * new Search()
+ *
+ * Creates a new `Search` object. The following search options are avaliable:
+ *
+ * * needle: string or regular expression
+ * * backwards: false
+ * * wrap: false
+ * * caseSensitive: false
+ * * wholeWord: false
+ * * range: Range or null for whole document
+ * * regExp: false
+ * * start: Range or position
+ * * skipCurrent: false
+ *
+**/
+
 var Search = function() {
-    this.$options = {
-        needle: "",
-        backwards: false,
-        wrap: false,
-        caseSensitive: false,
-        wholeWord: false,
-        scope: Search.ALL,
-        regExp: false
-    };
+    this.$options = {};
 };
 
-Search.ALL = 1;
-Search.SELECTION = 2;
-
 (function() {
-
+    /**
+     * Search.set(options) -> Search
+     * - options (Object): An object containing all the new search properties
+     *
+     * Sets the search options via the `options` parameter.
+     *
+    **/
     this.set = function(options) {
         oop.mixin(this.$options, options);
         return this;
     };
-    
+
+    /**
+     * Search.getOptions() -> Object
+     *
+     * [Returns an object containing all the search options.]{: #Search.getOptions}
+     *
+    **/
     this.getOptions = function() {
         return lang.copyObject(this.$options);
     };
 
+    this.setOptions = function(options) {
+        this.$options = options;
+    };
+    /**
+     * Search.find(session) -> Range
+     * - session (EditSession): The session to search with
+     *
+     * Searches for `options.needle`. If found, this method returns the [[Range `Range`]] where the text first occurs. If `options.backwards` is `true`, the search goes backwards in the session.
+     *
+    **/
     this.find = function(session) {
-        if (!this.$options.needle)
-            return null;
+        var iterator = this.$matchIterator(session, this.$options);
 
-        if (this.$options.backwards) {
-            var iterator = this.$backwardMatchIterator(session);
-        } else {
-            iterator = this.$forwardMatchIterator(session);
-        }
+        if (!iterator)
+            return false;
 
         var firstRange = null;
-        iterator.forEach(function(range) {
-            firstRange = range;
+        iterator.forEach(function(range, row, offset) {
+            if (!range.start) {
+                var column = range.offset + (offset || 0);
+                firstRange = new Range(row, column, row, column+range.length);
+            } else
+                firstRange = range;
             return true;
         });
 
         return firstRange;
     };
 
+    /**
+     * Search.findAll(session) -> [Range]
+     * - session (EditSession): The session to search with
+     *
+     * Searches for all occurances `options.needle`. If found, this method returns an array of [[Range `Range`s]] where the text first occurs. If `options.backwards` is `true`, the search goes backwards in the session.
+     *
+    **/
     this.findAll = function(session) {
         var options = this.$options;
         if (!options.needle)
             return [];
+        this.$assembleRegExp(options);
 
-        if (options.backwards) {
-            var iterator = this.$backwardMatchIterator(session);
-        } else {
-            iterator = this.$forwardMatchIterator(session);
-        }
-
-        var ignoreCursor = !options.start && options.wrap && options.scope == Search.ALL;
-        if (ignoreCursor)
-            options.start = {row: 0, column: 0};
+        if (options.range) {
+            var range = options.range;
+            var lines = session.getLines(range.start.row, range.end.row);
+        } else
+            var lines = session.doc.getAllLines();
 
         var ranges = [];
-        iterator.forEach(function(range) {
-            ranges.push(range);
-        });
+        var re = options.re;
+        if (options.$isMultiLine) {
+            var len = re.length;
+            var maxRow = lines.length - len;
+            for (var row = re.offset || 0; row < maxRow; row++) {
+                for (var j = 0; j < re.length; j++)
+                    if (lines[row + j].search(re[j]) == -1)
+                        break;
 
-        if (ignoreCursor)
-            options.start = null;
+                var startIndex = lines[row + j].match(re[0])[0].length;
+                var endIndex = line.match(re[len - 1])[0].length;
+
+                ranges.push(new Range(
+                    row, startLine.length - startIndex,
+                    row + len - 1, endIndex
+                ));
+            }
+        } else {
+            for (var i = 0; i < lines.length; i++) {
+                var matches = lang.getMatchOffsets(lines[i], re);
+                for (var j = 0; j < matches.length; j++) {
+                    var match = matches[j];
+                    ranges.push(new Range(i, match.offset, i, match.offset + match.length));
+                };
+            }
+        }
+
+        if (options.range) {
+            var startColumn = range.start.column;
+            var endColumn = range.start.column;
+            var i = 0, j = ranges.length - 1;
+            while (i < j && ranges[i].start.column < startColumn && ranges[i].start.row == range.start.row)
+                i++;
+
+            while (i < j && ranges[j].end.column > endColumn && ranges[j].end.row == range.end.row)
+                j--;
+            return ranges.slice(i, j + 1);
+        }
 
         return ranges;
     };
 
+    /**
+     * Search.replace(input, replacement) -> String
+     * - input (String): The text to search in
+     * - replacement (String): The replacing text
+     * + (String): If `options.regExp` is `true`, this function returns `input` with the replacement already made. Otherwise, this function just returns `replacement`.<br/>
+     * If `options.needle` was not found, this function returns `null`.
+     *
+     * Searches for `options.needle` in `input`, and, if found, replaces it with `replacement`.
+     *
+    **/
     this.replace = function(input, replacement) {
-        var re = this.$assembleRegExp();
+        var options = this.$options;
+
+        var re = this.$assembleRegExp(options);
+        if (options.$isMultiLine)
+            return replacement;
+
+        if (!re)
+            return;
+
         var match = re.exec(input);
-        if (match && match[0].length == input.length) {
-            if (this.$options.regExp) {
-                return input.replace(re, replacement);
-            } else {
-                return replacement;
-            }
-        } else {
+        if (!match || match[0].length != input.length)
             return null;
+        
+        replacement = input.replace(re, replacement)
+        if (options.preserveCase) {
+            replacement = replacement.split("");
+            for (var i = Math.min(input.length, input.length); i--; ) {
+                var ch = input[i];
+                if (ch && ch.toLowerCase() != ch)
+                    replacement[i] = replacement[i].toUpperCase();
+                else
+                    replacement[i] = replacement[i].toLowerCase();
+            }
+            replacement = replacement.join("");
         }
+        
+        return replacement;
     };
 
-    this.$forwardMatchIterator = function(session) {
-        var re = this.$assembleRegExp();
-        var self = this;
+    /** internal, hide
+     * Search.$matchIterator(session) -> String | Boolean
+     * - session (EditSession): The session to search with
+     *
+    **/
+    this.$matchIterator = function(session, options) {
+        var re = this.$assembleRegExp(options);
+        if (!re)
+            return false;
 
-        return {
-            forEach: function(callback) {
-                self.$forwardLineIterator(session).forEach(function(line, startIndex, row) {
-                    if (startIndex) {
-                        line = line.substring(startIndex);
-                    }
+        var self = this, callback, backwards = options.backwards;
 
-                    var matches = [];
+        if (options.$isMultiLine) {
+            var len = re.length;
+            var matchIterator = function(line, row, offset) {
+                var startIndex = line.search(re[0]);
+                if (startIndex == -1)
+                    return;
+                for (var i = 1; i < len; i++) {
+                    line = session.getLine(row + i);
+                    if (line.search(re[i]) == -1)
+                        return;
+                }
 
-                    line.replace(re, function(str) {
-                        var offset = arguments[arguments.length-2];
-                        matches.push({
-                            str: str,
-                            offset: startIndex + offset
-                        });
-                        return str;
-                    });
+                var endIndex = line.match(re[len - 1])[0].length;
 
-                    for (var i=0; i<matches.length; i++) {
-                        var match = matches[i];
-                        var range = self.$rangeFromMatch(row, match.offset, match.str.length);
-                        if (callback(range))
-                            return true;
-                    }
+                var range = new Range(row, startIndex, row + len - 1, endIndex);
+                if (re.offset == 1) {
+                    range.start.row--;
+                    range.start.column = Number.MAX_VALUE;
+                } else if (offset)
+                    range.start.column += offset;
 
-                });
+                if (callback(range))
+                    return true;
             }
-        };
-    };
-
-    this.$backwardMatchIterator = function(session) {
-        var re = this.$assembleRegExp();
-        var self = this;
-
-        return {
-            forEach: function(callback) {
-                self.$backwardLineIterator(session).forEach(function(line, startIndex, row) {
-                    if (startIndex) {
-                        line = line.substring(startIndex);
-                    }
-
-                    var matches = [];
-
-                    line.replace(re, function(str, offset) {
-                        matches.push({
-                            str: str,
-                            offset: startIndex + offset
-                        });
-                        return str;
-                    });
-
-                    for (var i=matches.length-1; i>= 0; i--) {
-                        var match = matches[i];
-                        var range = self.$rangeFromMatch(row, match.offset, match.str.length);
-                        if (callback(range))
-                            return true;
-                    }
-                });
+        } else if (backwards) {
+            var matchIterator = function(line, row, startIndex) {
+                var matches = lang.getMatchOffsets(line, re);
+                for (var i = matches.length-1; i >= 0; i--)
+                    if (callback(matches[i], row, startIndex))
+                        return true;
             }
-        };
-    };
-
-    this.$rangeFromMatch = function(row, column, length) {
-        return new Range(row, column, row, column+length);
-    };
-
-    this.$assembleRegExp = function() {
-        if (typeof this.$options.needle != 'string')
-			return this.$options.needle;
-
-		if (this.$options.regExp) {
-            var needle = this.$options.needle;
         } else {
-            needle = lang.escapeRegExp(this.$options.needle);
+            var matchIterator = function(line, row, startIndex) {
+                var matches = lang.getMatchOffsets(line, re);
+                for (var i = 0; i < matches.length; i++)
+                    if (callback(matches[i], row, startIndex))
+                        return true;
+            }
         }
 
-        if (this.$options.wholeWord) {
+        return {
+            forEach: function(_callback) {
+                callback = _callback;
+                self.$lineIterator(session, options).forEach(matchIterator);
+            }
+        };
+    };
+
+    this.$assembleRegExp = function(options) {
+        if (options.needle instanceof RegExp)
+            return options.re = options.needle;
+
+        var needle = options.needle;
+
+        if (!options.needle)
+            return options.re = false;
+
+        if (!options.regExp)
+            needle = lang.escapeRegExp(needle);
+
+        if (options.wholeWord)
             needle = "\\b" + needle + "\\b";
-        }
 
-        var modifier = "g";
-        if (!this.$options.caseSensitive) {
-            modifier += "i";
-        }
+        var modifier = options.caseSensitive ? "g" : "gi";
 
-        var re = new RegExp(needle, modifier);
+        options.$isMultiLine = /[\n\r]/.test(needle);
+        if (options.$isMultiLine)
+            return options.re = this.$assembleMultilineRegExp(needle, modifier);
+
+        try {
+            var re = new RegExp(needle, modifier);
+        } catch(e) {
+            var re = false;
+        }
+        return options.re = re;
+    };
+
+    this.$assembleMultilineRegExp = function(needle, modifier) {
+        var parts = needle.replace(/\r\n|\r|\n/g, "$\n^").split("\n");
+        var re = [];
+        for (var i = 0; i < parts.length; i++) try {
+            re.push(new RegExp(parts[i], modifier));
+        } catch(e) {
+            return false;
+        }
+        if (parts[0] == "") {
+            re.shift();
+            re.offset = 1;
+        } else {
+            re.offset = 0;
+        }
         return re;
     };
 
-    this.$forwardLineIterator = function(session) {
-        var searchSelection = this.$options.scope == Search.SELECTION;
+    this.$lineIterator = function(session, options) {
+        var range = options.range;
+        var backwards = options.backwards == true;
+        var skipCurrent = options.skipCurrent != false;
 
-        var range = this.$options.range || session.getSelection().getRange();
-        var start = this.$options.start || range[searchSelection ? "start" : "end"];
+        var range = options.range;
+        var start = options.start;
+        if (!start)
+            start = range ? range[backwards ? "end" : "start"] : session.selection.getRange();
+         
+        if (start.start)
+            start = start[skipCurrent != backwards ? "end" : "start"];
 
-        var firstRow = searchSelection ? range.start.row : 0;
-        var firstColumn = searchSelection ? range.start.column : 0;
-        var lastRow = searchSelection ? range.end.row : session.getLength() - 1;
+        var firstRow = range ? range.start.row : 0;
+        var firstColumn = range ? range.start.column : 0;
+        var lastRow = range ? range.end.row : session.getLength() - 1;
 
-        var wrap = this.$options.wrap;
-        var inWrap = false;
-
-        function getLine(row) {
-            var line = session.getLine(row);
-            if (searchSelection && row == range.end.row) {
-                line = line.substring(0, range.end.column);
-            }
-            if (inWrap && row == start.row) {
-                line = line.substring(0, start.column);
-            }
-            return line;
-        }
-
-        return {
-            forEach: function(callback) {
+        if (!backwards) {
+            var forEach = function(callback) {
                 var row = start.row;
 
-                var line = getLine(row);
-                var startIndex = start.column;
+                var line = session.getLine(row).substr(start.column);
+                if (callback(line, row, start.column))
+                    return;
 
-                var stop = false;
-                inWrap = false;
-
-                while (!callback(line, startIndex, row)) {
-
-                    if (stop) {
+                for (row = row+1; row <= lastRow; row++)
+                    if (callback(session.getLine(row), row))
                         return;
-                    }
 
-                    row++;
-                    startIndex = 0;
+                if (options.wrap == false)
+                    return;
 
-                    if (row > lastRow) {
-                        if (wrap) {
-                            row = firstRow;
-                            startIndex = firstColumn;
-                            inWrap = true;
-                        } else {
-                            return;
-                        }
-                    }
-
-                    if (row == start.row)
-                        stop = true;
-
-                    line = getLine(row);
-                }
+                for (row = firstRow, lastRow = start.row; row <= lastRow; row++)
+                    if (callback(session.getLine(row), row))
+                        return;
             }
-        };
-    };
-
-    this.$backwardLineIterator = function(session) {
-        var searchSelection = this.$options.scope == Search.SELECTION;
-
-        var range = this.$options.range || session.getSelection().getRange();
-        var start = this.$options.start || range[searchSelection ? "end" : "start"];
-
-        var firstRow = searchSelection ? range.start.row : 0;
-        var firstColumn = searchSelection ? range.start.column : 0;
-        var lastRow = searchSelection ? range.end.row : session.getLength() - 1;
-
-        var wrap = this.$options.wrap;
-
-        return {
-            forEach : function(callback) {
+        } else {
+            var forEach = function(callback) {
                 var row = start.row;
 
                 var line = session.getLine(row).substring(0, start.column);
-                var startIndex = 0;
-                var stop = false;
-                var inWrap = false;
+                if (callback(line, row))
+                    return;
 
-                while (!callback(line, startIndex, row)) {
-
-                    if (stop)
+                for (row--; row >= firstRow; row--)
+                    if (callback(session.getLine(row), row))
                         return;
 
-                    row--;
-                    startIndex = 0;
+                if (options.wrap == false)
+                    return;
 
-                    if (row < firstRow) {
-                        if (wrap) {
-                            row = lastRow;
-                            inWrap = true;
-                        } else {
-                            return;
-                        }
-                    }
-
-                    if (row == start.row)
-                        stop = true;
-
-                    line = session.getLine(row);
-                    if (searchSelection) {
-                        if (row == firstRow)
-                            startIndex = firstColumn;
-                        else if (row == lastRow)
-                            line = line.substring(0, range.end.column);
-                    }
-
-                    if (inWrap && row == start.row)
-                        startIndex = start.column;
-                }
+                for (row = lastRow, firstRow = start.row; row >= firstRow; row--)
+                    if (callback(session.getLine(row), row))
+                        return;
             }
-        };
+        }
+
+        return {forEach: forEach};
     };
 
 }).call(Search.prototype);
@@ -5772,6 +8072,23 @@ exports.Search = Search;
 
 define("ace/range",[], function(require, exports, module) {
 
+/**
+ * class Range
+ *
+ * This object is used in various places to indicate a region within the editor. To better visualize how this works, imagine a rectangle. Each quadrant of the rectangle is analogus to a range, as ranges contain a starting row and starting column, and an ending row, and ending column.
+ *
+ **/
+
+/**
+ * new Range(startRow, startColumn, endRow, endColumn)
+ * - startRow (Number): The starting row
+ * - startColumn (Number): The starting column
+ * - endRow (Number): The ending row
+ * - endColumn (Number): The ending column
+ *
+ * Creates a new `Range` object with the given starting and ending row and column points.
+ *
+ **/
 var Range = function(startRow, startColumn, endRow, endColumn) {
     this.start = {
         row: startRow,
@@ -5785,6 +8102,13 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
 };
 
 (function() {
+    /**
+     * Range.isEqual(range) -> Boolean
+     * - range (Range): A range to check against
+     *
+     * Returns `true` if and only if the starting row and column, and ending tow and column, are equivalent to those given by `range`.
+     *
+     **/ 
     this.isEqual = function(range) {
         return this.start.row == range.start.row &&
             this.end.row == range.end.row &&
@@ -5792,28 +8116,50 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
             this.end.column == range.end.column
     };
 
+    /**
+     * Range.toString() -> String
+     *
+     * Returns a string containing the range's row and column information, given like this:
+     *
+     *    [start.row/start.column] -> [end.row/end.column]
+     *
+     **/ 
     this.toString = function() {
         return ("Range: [" + this.start.row + "/" + this.start.column +
             "] -> [" + this.end.row + "/" + this.end.column + "]");
     };
 
+    /** related to: Range.compare
+     * Range.contains(row, column) -> Boolean
+     * - row (Number): A row to check for
+     * - column (Number): A column to check for
+     *
+     * Returns `true` if the `row` and `column` provided are within the given range. This can better be expressed as returning `true` if:
+     *
+     *    this.start.row <= row <= this.end.row &&
+     *    this.start.column <= column <= this.end.column
+     *
+     **/ 
+
     this.contains = function(row, column) {
         return this.compare(row, column) == 0;
     };
 
-    /**
-     * Compares this range (A) with another range (B), where B is the passed in
-     * range.
+    /** related to: Range.compare
+     * Range.compareRange(range) -> Number
+     * - range (Range): A range to compare with
+     * + (Number): This method returns one of the following numbers:<br/>
+     * <br/>
+     * * `-2`: (B) is in front of (A), and doesn't intersect with (A)<br/>
+     * * `-1`: (B) begins before (A) but ends inside of (A)<br/>
+     * * `0`: (B) is completely inside of (A) OR (A) is completely inside of (B)<br/>
+     * * `+1`: (B) begins inside of (A) but ends outside of (A)<br/>
+     * * `+2`: (B) is after (A) and doesn't intersect with (A)<br/>
+     * * `42`: FTW state: (B) ends in (A) but starts outside of (A)
+     * 
+     * Compares `this` range (A) with another range (B).
      *
-     * Return values:
-     *  -2: (B) is infront of (A) and doesn't intersect with (A)
-     *  -1: (B) begins before (A) but ends inside of (A)
-     *   0: (B) is completly inside of (A) OR (A) is complety inside of (B)
-     *  +1: (B) begins inside of (A) but ends outside of (A)
-     *  +2: (B) is after (A) and doesn't intersect with (A)
-     *
-     *  42: FTW state: (B) ends in (A) but starts outside of (A)
-     */
+     **/ 
     this.compareRange = function(range) {
         var cmp,
             end = range.end,
@@ -5843,27 +8189,86 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
         }
     }
 
+    /** related to: Range.compare
+     * Range.comparePoint(p) -> Number
+     * - p (Range): A point to compare with
+     * + (Number): This method returns one of the following numbers:<br/>
+     * * `0` if the two points are exactly equal<br/>
+     * * `-1` if `p.row` is less then the calling range<br/>
+     * * `1` if `p.row` is greater than the calling range<br/>
+     * <br/>
+     * If the starting row of the calling range is equal to `p.row`, and:<br/>
+     * * `p.column` is greater than or equal to the calling range's starting column, this returns `0`<br/>
+     * * Otherwise, it returns -1<br/>
+     *<br/>
+     * If the ending row of the calling range is equal to `p.row`, and:<br/>
+     * * `p.column` is less than or equal to the calling range's ending column, this returns `0`<br/>
+     * * Otherwise, it returns 1<br/>
+     *
+     * Checks the row and column points of `p` with the row and column points of the calling range.
+     *
+     * 
+     *
+     **/ 
     this.comparePoint = function(p) {
         return this.compare(p.row, p.column);
     }
 
+    /** related to: Range.comparePoint
+     * Range.containsRange(range) -> Boolean
+     * - range (Range): A range to compare with
+     *
+     * Checks the start and end points of `range` and compares them to the calling range. Returns `true` if the `range` is contained within the caller's range.
+     *
+     **/ 
     this.containsRange = function(range) {
         return this.comparePoint(range.start) == 0 && this.comparePoint(range.end) == 0;
     }
 
-    this.intersectsRange = function(range) {
+    /**
+     * Range.intersects(range) -> Boolean
+     * - range (Range): A range to compare with
+     *
+     * Returns `true` if passed in `range` intersects with the one calling this method.
+     *
+     **/
+    this.intersects = function(range) {
         var cmp = this.compareRange(range);
         return (cmp == -1 || cmp == 0 || cmp == 1);
     }
 
+    /**
+     * Range.isEnd(row, column) -> Boolean
+     * - row (Number): A row point to compare with
+     * - column (Number): A column point to compare with
+     *
+     * Returns `true` if the caller's ending row point is the same as `row`, and if the caller's ending column is the same as `column`.
+     *
+     **/
     this.isEnd = function(row, column) {
         return this.end.row == row && this.end.column == column;
     }
 
+    /**
+     * Range.isStart(row, column) -> Boolean
+     * - row (Number): A row point to compare with
+     * - column (Number): A column point to compare with
+     *
+     * Returns `true` if the caller's starting row point is the same as `row`, and if the caller's starting column is the same as `column`.
+     *
+     **/ 
     this.isStart = function(row, column) {
         return this.start.row == row && this.start.column == column;
     }
 
+    /**
+     * Range.setStart(row, column)
+     * - row (Number): A row point to set
+     * - column (Number): A column point to set
+     *
+     * Sets the starting row and column for the range.
+     *
+     **/ 
     this.setStart = function(row, column) {
         if (typeof row == "object") {
             this.start.column = row.column;
@@ -5874,6 +8279,14 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
         }
     }
 
+    /**
+     * Range.setEnd(row, column)
+     * - row (Number): A row point to set
+     * - column (Number): A column point to set
+     *
+     * Sets the starting row and column for the range.
+     *
+     **/ 
     this.setEnd = function(row, column) {
         if (typeof row == "object") {
             this.end.column = row.column;
@@ -5884,6 +8297,14 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
         }
     }
 
+    /** related to: Range.compare
+     * Range.inside(row, column) -> Boolean
+     * - row (Number): A row point to compare with
+     * - column (Number): A column point to compare with
+     *
+     * Returns `true` if the `row` and `column` are within the given range.
+     *
+     **/ 
     this.inside = function(row, column) {
         if (this.compare(row, column) == 0) {
             if (this.isEnd(row, column) || this.isStart(row, column)) {
@@ -5895,6 +8316,14 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
         return false;
     }
 
+    /** related to: Range.compare
+     * Range.insideStart(row, column) -> Boolean
+     * - row (Number): A row point to compare with
+     * - column (Number): A column point to compare with
+     *
+     * Returns `true` if the `row` and `column` are within the given range's starting points.
+     *
+     **/ 
     this.insideStart = function(row, column) {
         if (this.compare(row, column) == 0) {
             if (this.isEnd(row, column)) {
@@ -5906,6 +8335,14 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
         return false;
     }
 
+    /** related to: Range.compare
+     * Range.insideEnd(row, column) -> Boolean
+     * - row (Number): A row point to compare with
+     * - column (Number): A column point to compare with
+     *
+     * Returns `true` if the `row` and `column` are within the given range's ending points.
+     *
+     **/ 
     this.insideEnd = function(row, column) {
         if (this.compare(row, column) == 0) {
             if (this.isStart(row, column)) {
@@ -5917,6 +8354,27 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
         return false;
     }
 
+    /** 
+     * Range.compare(row, column) -> Number
+     * - row (Number): A row point to compare with
+     * - column (Number): A column point to compare with
+     * + (Number): This method returns one of the following numbers:<br/>
+     * * `0` if the two points are exactly equal <br/>
+     * * `-1` if `p.row` is less then the calling range <br/>
+     * * `1` if `p.row` is greater than the calling range <br/>
+     *  <br/>
+     * If the starting row of the calling range is equal to `p.row`, and: <br/>
+     * * `p.column` is greater than or equal to the calling range's starting column, this returns `0`<br/>
+     * * Otherwise, it returns -1<br/>
+     * <br/>
+     * If the ending row of the calling range is equal to `p.row`, and: <br/>
+     * * `p.column` is less than or equal to the calling range's ending column, this returns `0` <br/>
+     * * Otherwise, it returns 1
+     *
+     * Checks the row and column points with the row and column points of the calling range.
+     *
+     *
+     **/
     this.compare = function(row, column) {
         if (!this.isMultiLine()) {
             if (row === this.start.row) {
@@ -5940,8 +8398,28 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
     };
 
     /**
-     * Like .compare(), but if isStart is true, return -1;
-     */
+     * Range.compareStart(row, column) -> Number
+     * - row (Number): A row point to compare with
+     * - column (Number): A column point to compare with
+     * + (Number): This method returns one of the following numbers:<br/>
+     * <br/>
+     * * `0` if the two points are exactly equal<br/>
+     * * `-1` if `p.row` is less then the calling range<br/>
+     * * `1` if `p.row` is greater than the calling range, or if `isStart` is `true`.<br/>
+     * <br/>
+     * If the starting row of the calling range is equal to `p.row`, and:<br/>
+     * * `p.column` is greater than or equal to the calling range's starting column, this returns `0`<br/>
+     * * Otherwise, it returns -1<br/>
+     * <br/>
+     * If the ending row of the calling range is equal to `p.row`, and:<br/>
+     * * `p.column` is less than or equal to the calling range's ending column, this returns `0`<br/>
+     * * Otherwise, it returns 1
+     *
+     * Checks the row and column points with the row and column points of the calling range.
+     *
+     *
+     *
+     **/
     this.compareStart = function(row, column) {
         if (this.start.row == row && this.start.column == column) {
             return -1;
@@ -5951,8 +8429,26 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
     }
 
     /**
-     * Like .compare(), but if isEnd is true, return 1;
-     */
+     * Range.compareEnd(row, column) -> Number
+     * - row (Number): A row point to compare with
+     * - column (Number): A column point to compare with
+     * + (Number): This method returns one of the following numbers:<br/>
+     * * `0` if the two points are exactly equal<br/>
+     * * `-1` if `p.row` is less then the calling range<br/>
+     * * `1` if `p.row` is greater than the calling range, or if `isEnd` is `true.<br/>
+     * <br/>
+     * If the starting row of the calling range is equal to `p.row`, and:<br/>
+     * * `p.column` is greater than or equal to the calling range's starting column, this returns `0`<br/>
+     * * Otherwise, it returns -1<br/>
+     *<br/>
+     * If the ending row of the calling range is equal to `p.row`, and:<br/>
+     * * `p.column` is less than or equal to the calling range's ending column, this returns `0`<br/>
+     * * Otherwise, it returns 1
+     *
+     * Checks the row and column points with the row and column points of the calling range.
+     *
+     *
+     **/
     this.compareEnd = function(row, column) {
         if (this.end.row == row && this.end.column == column) {
             return 1;
@@ -5961,6 +8457,21 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
         }
     }
 
+    /** 
+     * Range.compareInside(row, column) -> Number
+     * - row (Number): A row point to compare with
+     * - column (Number): A column point to compare with
+     * + (Number): This method returns one of the following numbers:<br/>
+     * * `1` if the ending row of the calling range is equal to `row`, and the ending column of the calling range is equal to `column`<br/>
+     * * `-1` if the starting row of the calling range is equal to `row`, and the starting column of the calling range is equal to `column`<br/>
+     * <br/>
+     * Otherwise, it returns the value after calling [[Range.compare `compare()`]].
+     *
+     * Checks the row and column points with the row and column points of the calling range.
+     *
+     *
+     *
+     **/
     this.compareInside = function(row, column) {
         if (this.end.row == row && this.end.column == column) {
             return 1;
@@ -5971,6 +8482,14 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
         }
     }
 
+    /** 
+     * Range.clipRows(firstRow, lastRow) -> Range
+     * - firstRow (Number): The starting row
+     * - lastRow (Number): The ending row
+     *
+     * Returns the part of the current `Range` that occurs within the boundaries of `firstRow` and `lastRow` as a new `Range` object.
+     *
+    **/
     this.clipRows = function(firstRow, lastRow) {
         if (this.end.row > lastRow) {
             var end = {
@@ -6002,6 +8521,14 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
         return Range.fromPoints(start || this.start, end || this.end);
     };
 
+    /** 
+     * Range.extend(row, column) -> Range
+     * - row (Number): A new row to extend to
+     * - column (Number): A new column to extend to
+     *
+     *  Changes the row and column points for the calling range for both the starting and ending points. This method returns that range with a new row.
+     *
+    **/
     this.extend = function(row, column) {
         var cmp = this.compare(row, column);
 
@@ -6015,33 +8542,36 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
         return Range.fromPoints(start || this.start, end || this.end);
     };
 
-    this.fixOrientation = function() {
-        if (
-            this.start.row < this.end.row 
-            || (this.start.row == this.end.row && this.start.column < this.end.column)
-        ) {
-            return false;
-        }
-        
-        var temp = this.start;
-        this.end = this.start;
-        this.start = temp;
-        return true;
-    };
-
-
     this.isEmpty = function() {
         return (this.start.row == this.end.row && this.start.column == this.end.column);
     };
 
+    /** 
+     * Range.isMultiLine() -> Boolean
+     *
+     * Returns true if the range spans across multiple lines.
+     *
+    **/
     this.isMultiLine = function() {
         return (this.start.row !== this.end.row);
     };
 
+    /** 
+     * Range.clone() -> Range
+     *
+     * Returns a duplicate of the calling range.
+     *
+    **/
     this.clone = function() {
         return Range.fromPoints(this.start, this.end);
     };
 
+    /** 
+     * Range.collapseRows() -> Range
+     *
+     * Returns a range containing the starting and ending rows of the original range, but with a column value of `0`.
+     *
+    **/
     this.collapseRows = function() {
         if (this.end.column == 0)
             return new Range(this.start.row, 0, Math.max(this.start.row, this.end.row-1), 0)
@@ -6049,6 +8579,12 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
             return new Range(this.start.row, 0, this.end.row, 0)
     };
 
+    /** 
+     * Range.toScreenRange(session) -> Range
+     * - session (EditSession): The `EditSession` to retrieve coordinates from
+     * 
+     * Given the current `Range`, this function converts those starting and ending points into screen positions, and then returns a new `Range` object.
+    **/
     this.toScreenRange = function(session) {
         var screenPosStart =
             session.documentToScreenPosition(this.start);
@@ -6063,7 +8599,14 @@ var Range = function(startRow, startColumn, endRow, endColumn) {
 
 }).call(Range.prototype);
 
-
+/** 
+ * Range.fromPoints(start, end) -> Range
+ * - start (Range): A starting point to use
+ * - end (Range): An ending point to use
+ * 
+ * Creates and returns a new `Range` based on the row and column of the given parameters.
+ *
+**/
 Range.fromPoints = function(start, end) {
     return new Range(start.row, start.column, end.row, end.column);
 };
@@ -6086,7 +8629,8 @@ EventEmitter._dispatchEvent = function(eventName, e) {
         return;
 
     e = e || {};
-    e.type = eventName;
+    if (!e.type)
+        e.type = eventName;
     
     if (!e.stopPropagation) {
         e.stopPropagation = function() {
@@ -6107,7 +8651,7 @@ EventEmitter._dispatchEvent = function(eventName, e) {
     }
     
     if (defaultHandler && !e.defaultPrevented)
-        defaultHandler(e);
+        return defaultHandler(e);
 };
 
 EventEmitter.setDefaultHandler = function(eventName, callback) {
@@ -6158,6 +8702,24 @@ var oop = require("ace/lib/oop");
 var HashHandler = require("ace/keyboard/hash_handler").HashHandler;
 var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
 
+/**
+ * class CommandManager
+ *
+ * 
+ *
+ *
+ **/
+
+/**
+ * new CommandManager(platform, commands)
+ * - platform (String): Identifier for the platform; must be either `'mac'` or `'win'`
+ * - commands (Array): A list of commands
+ *
+ * TODO
+ *
+ *
+ **/
+
 var CommandManager = function(platform, commands) {
     this.platform = platform;
     this.commands = {};
@@ -6166,7 +8728,7 @@ var CommandManager = function(platform, commands) {
     this.addCommands(commands);
 
     this.setDefaultHandler("exec", function(e) {
-        e.command.exec(e.editor, e.args || {})
+        return e.command.exec(e.editor, e.args || {});
     });
 };
 
@@ -6186,8 +8748,13 @@ oop.inherits(CommandManager, HashHandler);
         if (editor && editor.$readOnly && !command.readOnly)
             return false;
 
-        this._emit("exec", {editor: editor, command: command, args: args});
-        return true;
+        var retvalue = this._emit("exec", {
+            editor: editor,
+            command: command,
+            args: args
+        });
+
+        return retvalue === false ? false : true;
     };
 
     this.toggleRecording = function(editor) {
@@ -6287,17 +8854,17 @@ exports.commands = [{
     readOnly: true
 }, {
     name: "fold",
-    bindKey: bindKey("Alt-L", "Alt-L"),
+    bindKey: bindKey("Alt-L|Ctrl-F1", "Command-Alt-L|Command-F1"),
     exec: function(editor) { editor.session.toggleFold(false); },
     readOnly: true
 }, {
     name: "unfold",
-    bindKey: bindKey("Alt-Shift-L", "Alt-Shift-L"),
+    bindKey: bindKey("Alt-Shift-L|Ctrl-Shift-F1", "Command-Alt-Shift-L|Command-Shift-F1"),
     exec: function(editor) { editor.session.toggleFold(true); },
     readOnly: true
 }, {
     name: "foldall",
-    bindKey: bindKey("Alt-0", "Alt-0"),
+    bindKey: bindKey("Alt-0", "Command-Option-0"),
     exec: function(editor) { editor.session.foldAll(); },
     readOnly: true
 }, {
@@ -6307,7 +8874,7 @@ exports.commands = [{
     readOnly: true
 }, {
     name: "unfoldall",
-    bindKey: bindKey("Alt-Shift-0", "Alt-Shift-0"),
+    bindKey: bindKey("Alt-Shift-0", "Command-Option-Shift-0"),
     exec: function(editor) { editor.session.unfold(); },
     readOnly: true
 }, {
@@ -6345,7 +8912,7 @@ exports.commands = [{
     readOnly: true
 }, {
     name: "overwrite",
-    bindKey: bindKey("Insert", "Insert"),
+    bindKey: "Insert",
     exec: function(editor) { editor.toggleOverwrite(); },
     readOnly: true
 }, {
@@ -6362,131 +8929,161 @@ exports.commands = [{
     name: "selectup",
     bindKey: bindKey("Shift-Up", "Shift-Up"),
     exec: function(editor) { editor.getSelection().selectUp(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "golineup",
     bindKey: bindKey("Up", "Up|Ctrl-P"),
     exec: function(editor, args) { editor.navigateUp(args.times); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "selecttoend",
     bindKey: bindKey("Ctrl-Shift-End", "Command-Shift-Down"),
     exec: function(editor) { editor.getSelection().selectFileEnd(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "gotoend",
     bindKey: bindKey("Ctrl-End", "Command-End|Command-Down"),
     exec: function(editor) { editor.navigateFileEnd(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "selectdown",
     bindKey: bindKey("Shift-Down", "Shift-Down"),
     exec: function(editor) { editor.getSelection().selectDown(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "golinedown",
     bindKey: bindKey("Down", "Down|Ctrl-N"),
     exec: function(editor, args) { editor.navigateDown(args.times); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "selectwordleft",
     bindKey: bindKey("Ctrl-Shift-Left", "Option-Shift-Left"),
     exec: function(editor) { editor.getSelection().selectWordLeft(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "gotowordleft",
     bindKey: bindKey("Ctrl-Left", "Option-Left"),
     exec: function(editor) { editor.navigateWordLeft(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "selecttolinestart",
     bindKey: bindKey("Alt-Shift-Left", "Command-Shift-Left"),
     exec: function(editor) { editor.getSelection().selectLineStart(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "gotolinestart",
     bindKey: bindKey("Alt-Left|Home", "Command-Left|Home|Ctrl-A"),
     exec: function(editor) { editor.navigateLineStart(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "selectleft",
     bindKey: bindKey("Shift-Left", "Shift-Left"),
     exec: function(editor) { editor.getSelection().selectLeft(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "gotoleft",
     bindKey: bindKey("Left", "Left|Ctrl-B"),
     exec: function(editor, args) { editor.navigateLeft(args.times); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "selectwordright",
     bindKey: bindKey("Ctrl-Shift-Right", "Option-Shift-Right"),
     exec: function(editor) { editor.getSelection().selectWordRight(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "gotowordright",
     bindKey: bindKey("Ctrl-Right", "Option-Right"),
     exec: function(editor) { editor.navigateWordRight(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "selecttolineend",
     bindKey: bindKey("Alt-Shift-Right", "Command-Shift-Right"),
     exec: function(editor) { editor.getSelection().selectLineEnd(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "gotolineend",
     bindKey: bindKey("Alt-Right|End", "Command-Right|End|Ctrl-E"),
     exec: function(editor) { editor.navigateLineEnd(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "selectright",
     bindKey: bindKey("Shift-Right", "Shift-Right"),
     exec: function(editor) { editor.getSelection().selectRight(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "gotoright",
     bindKey: bindKey("Right", "Right|Ctrl-F"),
     exec: function(editor, args) { editor.navigateRight(args.times); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "selectpagedown",
-    bindKey: bindKey("Shift-PageDown", "Shift-PageDown"),
+    bindKey: "Shift-PageDown",
     exec: function(editor) { editor.selectPageDown(); },
     readOnly: true
 }, {
     name: "pagedown",
-    bindKey: bindKey(null, "PageDown"),
+    bindKey: bindKey(null, "Option-PageDown"),
     exec: function(editor) { editor.scrollPageDown(); },
     readOnly: true
 }, {
     name: "gotopagedown",
-    bindKey: bindKey("PageDown", "Option-PageDown|Ctrl-V"),
+    bindKey: bindKey("PageDown", "PageDown|Ctrl-V"),
     exec: function(editor) { editor.gotoPageDown(); },
     readOnly: true
 }, {
     name: "selectpageup",
-    bindKey: bindKey("Shift-PageUp", "Shift-PageUp"),
+    bindKey: "Shift-PageUp",
     exec: function(editor) { editor.selectPageUp(); },
     readOnly: true
 }, {
     name: "pageup",
-    bindKey: bindKey(null, "PageUp"),
+    bindKey: bindKey(null, "Option-PageUp"),
     exec: function(editor) { editor.scrollPageUp(); },
     readOnly: true
 }, {
     name: "gotopageup",
-    bindKey: bindKey("PageUp", "Option-PageUp"),
+    bindKey: "PageUp",
     exec: function(editor) { editor.gotoPageUp(); },
     readOnly: true
 }, {
+    name: "scrollup",
+    bindKey: bindKey("Ctrl-Up", null),
+    exec: function(e) { e.renderer.scrollBy(0, -2 * e.renderer.layerConfig.lineHeight); },
+    readOnly: true
+}, {
+    name: "scrolldown",
+    bindKey: bindKey("Ctrl-Down", null),
+    exec: function(e) { e.renderer.scrollBy(0, 2 * e.renderer.layerConfig.lineHeight); },
+    readOnly: true
+}, {
     name: "selectlinestart",
-    bindKey: bindKey("Shift-Home", "Shift-Home"),
+    bindKey: "Shift-Home",
     exec: function(editor) { editor.getSelection().selectLineStart(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "selectlineend",
-    bindKey: bindKey("Shift-End", "Shift-End"),
+    bindKey: "Shift-End",
     exec: function(editor) { editor.getSelection().selectLineEnd(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "togglerecording",
@@ -6502,6 +9099,7 @@ exports.commands = [{
     name: "jumptomatching",
     bindKey: bindKey("Ctrl-P", "Ctrl-P"),
     exec: function(editor) { editor.jumpToMatching(); },
+    multiSelectAction: "forEach",
     readOnly: true
 }, {
     name: "jumpselecttomatching",
@@ -6527,34 +9125,32 @@ exports.commands = [{
 
 // commands disabled in readOnly mode
 {
+    name: "cut",
+    exec: function(editor) {
+        var range = editor.getSelectionRange();
+        editor._emit("cut", range);
+
+        if (!editor.selection.isEmpty()) {
+            editor.session.remove(range);
+            editor.clearSelection();
+        }
+    },
+    multiSelectAction: "forEach"
+}, {
     name: "removeline",
     bindKey: bindKey("Alt-D", "Command-D"),
-    exec: function(editor) { editor.removeLines(); }
+    exec: function(editor) { editor.removeLines(); },
+    multiSelectAction: "forEach"
 }, {
     name: "duplicate",
     bindKey: bindKey("Ctrl-D", "Command-Option-D"),
-    exec: function(editor) {
-		var sel = editor.selection;
-		var doc = editor.session;
-		var range = sel.getRange();
-		if (range.isEmpty()) {
-			var row = range.start.row;
-			doc.duplicateLines(row, row);
-			//ed.copyLinesDown();
-		} else {
-			var reverse = sel.isBackwards()
-			var point = sel.isBackwards() ? range.start : range.end;
-			var endPoint = doc.insert(point, doc.getTextRange(range), false);
-			range.start = point;
-			range.end = endPoint;
-			
-			sel.setSelectionRange(range, reverse)
-		}
-	}
+    exec: function(editor) { editor.duplicateSelection(); },
+    multiSelectAction: "forEach"
 }, {
     name: "togglecomment",
-    bindKey: bindKey("Ctrl-7", "Command-7"),
-    exec: function(editor) { editor.toggleCommentLines(); }
+    bindKey: bindKey("Ctrl-/", "Command-/"),
+    exec: function(editor) { editor.toggleCommentLines(); },
+    multiSelectAction: "forEach"
 }, {
     name: "replace",
     bindKey: bindKey("Ctrl-H", "Command-Option-F"),
@@ -6589,7 +9185,7 @@ exports.commands = [{
     exec: function(editor) { editor.redo(); }
 }, {
     name: "copylinesup",
-    bindKey: bindKey("Ctrl-Alt-Up", "Command-Option-Up"),
+    bindKey: bindKey("Alt-Shift-Up", "Command-Option-Up"),
     exec: function(editor) { editor.copyLinesUp(); }
 }, {
     name: "movelinesup",
@@ -6597,7 +9193,7 @@ exports.commands = [{
     exec: function(editor) { editor.moveLinesUp(); }
 }, {
     name: "copylinesdown",
-    bindKey: bindKey("Ctrl-Alt-Down", "Command-Option-Down"),
+    bindKey: bindKey("Alt-Shift-Down", "Command-Option-Down"),
     exec: function(editor) { editor.copyLinesDown(); }
 }, {
     name: "movelinesdown",
@@ -6606,62 +9202,76 @@ exports.commands = [{
 }, {
     name: "del",
     bindKey: bindKey("Delete", "Delete|Ctrl-D"),
-    exec: function(editor) { editor.remove("right"); }
+    exec: function(editor) { editor.remove("right"); },
+    multiSelectAction: "forEach"
 }, {
     name: "backspace",
     bindKey: bindKey(
         "Command-Backspace|Option-Backspace|Shift-Backspace|Backspace",
         "Ctrl-Backspace|Command-Backspace|Shift-Backspace|Backspace|Ctrl-H"
     ),
-    exec: function(editor) { editor.remove("left"); }
+    exec: function(editor) { editor.remove("left"); },
+    multiSelectAction: "forEach"
 }, {
     name: "removetolinestart",
     bindKey: bindKey("Alt-Backspace", "Command-Backspace"),
-    exec: function(editor) { editor.removeToLineStart(); }
+    exec: function(editor) { editor.removeToLineStart(); },
+    multiSelectAction: "forEach"
 }, {
     name: "removetolineend",
     bindKey: bindKey("Alt-Delete", "Ctrl-K"),
-    exec: function(editor) { editor.removeToLineEnd(); }
+    exec: function(editor) { editor.removeToLineEnd(); },
+    multiSelectAction: "forEach"
 }, {
     name: "removewordleft",
     bindKey: bindKey("Ctrl-Backspace", "Alt-Backspace|Ctrl-Alt-Backspace"),
-    exec: function(editor) { editor.removeWordLeft(); }
+    exec: function(editor) { editor.removeWordLeft(); },
+    multiSelectAction: "forEach"
 }, {
     name: "removewordright",
     bindKey: bindKey("Ctrl-Delete", "Alt-Delete"),
-    exec: function(editor) { editor.removeWordRight(); }
+    exec: function(editor) { editor.removeWordRight(); },
+    multiSelectAction: "forEach"
 }, {
     name: "outdent",
     bindKey: bindKey("Shift-Tab", "Shift-Tab"),
-    exec: function(editor) { editor.blockOutdent(); }
+    exec: function(editor) { editor.blockOutdent(); },
+    multiSelectAction: "forEach"
 }, {
     name: "indent",
     bindKey: bindKey("Tab", "Tab"),
-    exec: function(editor) { editor.indent(); }
+    exec: function(editor) { editor.indent(); },
+    multiSelectAction: "forEach"
 }, {
     name: "insertstring",
-    exec: function(editor, str) { editor.insert(str); }
+    exec: function(editor, str) { editor.insert(str); },
+    multiSelectAction: "forEach"
 }, {
     name: "inserttext",
     exec: function(editor, args) {
         editor.insert(lang.stringRepeat(args.text  || "", args.times || 1));
-    }
+    },
+    multiSelectAction: "forEach"
 }, {
     name: "splitline",
     bindKey: bindKey(null, "Ctrl-O"),
-    exec: function(editor) { editor.splitLine(); }
+    exec: function(editor) { editor.splitLine(); },
+    multiSelectAction: "forEach"
 }, {
     name: "transposeletters",
     bindKey: bindKey("Ctrl-T", "Ctrl-T"),
-    exec: function(editor) { editor.transposeLetters(); }
+    exec: function(editor) { editor.transposeLetters(); },
+    multiSelectAction: function(editor) {editor.transposeSelections(1); }
 }, {
     name: "touppercase",
     bindKey: bindKey("Ctrl-U", "Ctrl-U"),
-    exec: function(editor) { editor.toggleCase("up"); }
+    exec: function(editor) { editor.toggleCase("up"); },
+    multiSelectAction: "forEach"
 }, {
     name: "tolowercase",
     bindKey: bindKey("Ctrl-Shift-U", "Ctrl-Shift-U"),
-    exec: function(editor) { editor.toggleCase("low"); }
+    exec: function(editor) { editor.toggleCase("low"); },
+    multiSelectAction: "forEach"
 }];
 
 });
@@ -6690,7 +9300,7 @@ exports.hasCssClass = function(el, name) {
     return classes.indexOf(name) !== -1;
 };
 
-/**
+/*
 * Add a CSS class to the list of classes on the given node
 */
 exports.addCssClass = function(el, name) {
@@ -6699,7 +9309,7 @@ exports.addCssClass = function(el, name) {
     }
 };
 
-/**
+/*
 * Remove a CSS class from the list of classes on the given node
 */
 exports.removeCssClass = function(el, name) {
@@ -6731,7 +9341,7 @@ exports.toggleCssClass = function(el, name) {
     return add;
 };
 
-/**
+/*
  * Add or remove a CSS class from the list of classes on the given node
  * depending on the value of <tt>include</tt>
  */
@@ -6848,7 +9458,7 @@ exports.scrollbarWidth = function(document) {
     return noScrollbar-withScrollbar;
 };
 
-/**
+/*
  * Optimized set innerHTML. This is faster than plain innerHTML if the element
  * already contains a lot of child elements.
  *
@@ -6912,7 +9522,7 @@ exports.removeListener = function(elem, type, callback) {
     }
 };
 
-/**
+/*
 * Prevents propagation and clobbers the default action of the passed event
 */
 exports.stopEvent = function(e) {
@@ -6935,29 +9545,13 @@ exports.preventDefault = function(e) {
         e.returnValue = false;
 };
 
-exports.getDocumentX = function(e) {
-    if (e.clientX) {
-        return e.clientX + dom.getPageScrollLeft();
-    } else {
-        return e.pageX;
-    }
-};
-
-exports.getDocumentY = function(e) {
-    if (e.clientY) {
-        return e.clientY + dom.getPageScrollTop();
-    } else {
-        return e.pageY;
-    }
-};
-
-/**
+/*
  * @return {Number} 0 for left button, 1 for middle button, 2 for right button
  */
 exports.getButton = function(e) {
     if (e.type == "dblclick")
         return 0;
-    else if (e.type == "contextmenu")
+    if (e.type == "contextmenu" || (e.ctrlKey && useragent.isMac))
         return 2;
 
     // DOM Event
@@ -7048,41 +9642,58 @@ exports.addMouseWheelListener = function(el, callback) {
     exports.addListener(el, "mousewheel", listener);
 };
 
-exports.addMultiMouseDownListener = function(el, button, count, timeout, callback) {
+exports.addMultiMouseDownListener = function(el, timeouts, eventHandler, callbackName) {
     var clicks = 0;
-    var startX, startY;
+    var startX, startY, timer;
+    var eventNames = {
+        2: "dblclick",
+        3: "tripleclick",
+        4: "quadclick"
+    };
 
-    var listener = function(e) {
-        clicks += 1;
+    exports.addListener(el, "mousedown", function(e) {
+        if (exports.getButton(e) != 0) {
+            clicks = 0;
+        } else {
+            var isNewClick = Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5;
+
+            if (!timer || isNewClick)
+                clicks = 0;
+
+            clicks += 1;
+
+            if (timer)
+                clearTimeout(timer)
+            timer = setTimeout(function() {timer = null}, timeouts[clicks - 1] || 600);
+        }
         if (clicks == 1) {
             startX = e.clientX;
             startY = e.clientY;
-
-            setTimeout(function() {
-                clicks = 0;
-            }, timeout || 600);
         }
 
-        var isButton = exports.getButton(e) == button;
-        if (!isButton || Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5)
+        eventHandler[callbackName]("mousedown", e);
+
+        if (clicks > 4)
             clicks = 0;
+        else if (clicks > 1)
+            return eventHandler[callbackName](eventNames[clicks], e);
+    });
 
-        if (clicks == count) {
-            clicks = 0;
-            callback(e);
-        }
-
-        if (isButton)
-            return exports.preventDefault(e);
-    };
-
-    exports.addListener(el, "mousedown", listener);
-    useragent.isOldIE && exports.addListener(el, "dblclick", listener);
+    if (useragent.isOldIE) {
+        exports.addListener(el, "dblclick", function(e) {
+            clicks = 2;
+            if (timer)
+                clearTimeout(timer);
+            timer = setTimeout(function() {timer = null}, timeouts[clicks - 1] || 600);
+            eventHandler[callbackName]("mousedown", e);
+            eventHandler[callbackName](eventNames[clicks], e);
+        });
+    }
 };
 
 function normalizeCommandKeys(callback, e, keyCode) {
     var hashId = 0;
-    if (useragent.isOpera && useragent.isMac) {
+    if ((useragent.isOpera && !("KeyboardEvent" in window)) && useragent.isMac) {
         hashId = 0 | (e.metaKey ? 1 : 0) | (e.altKey ? 2 : 0)
             | (e.shiftKey ? 4 : 0) | (e.ctrlKey ? 8 : 0);
     } else {
@@ -7147,7 +9758,7 @@ exports.addCommandKeyListener = function(el, callback) {
     }
 };
 
-if (window.postMessage) {
+if (window.postMessage && !useragent.isOldIE) {
     var postMessageId = 1;
     exports.nextTick = function(callback, win) {
         win = win || window;
@@ -7185,25 +9796,43 @@ var options = {
     workerPath: "",
     modePath: "",
     themePath: "",
-    suffix: ".js"
+    suffix: ".js",
+    $moduleUrls: {}
 };
 
 exports.get = function(key) {
     if (!options.hasOwnProperty(key))
-        throw new Error("Unknown confik key: " + key);
-        
+        throw new Error("Unknown config key: " + key);
+
     return options[key];
 };
 
 exports.set = function(key, value) {
     if (!options.hasOwnProperty(key))
-        throw new Error("Unknown confik key: " + key);
-        
+        throw new Error("Unknown config key: " + key);
+
     options[key] = value;
 };
 
 exports.all = function() {
     return lang.copyObject(options);
+};
+
+exports.moduleUrl = function(name, component) {
+    if (options.$moduleUrls[name])
+        return options.$moduleUrls[name];
+
+    var parts = name.split("/");
+    component = component || parts[parts.length - 2] || "";
+    var base = parts[parts.length - 1].replace(component, "").replace(/(^[\-_])|([\-_]$)/, "");
+
+    if (!base && parts.length > 1)
+        base = parts[parts.length - 2];
+    return this.get(component + "Path") + "/" + component + "-" + base + this.get("suffix");
+};
+
+exports.setModuleUrl = function(name, subst) {
+    return options.$moduleUrls[name] = subst;
 };
 
 exports.init = function() {
@@ -7214,8 +9843,7 @@ exports.init = function() {
 
     var scriptOptions = {};
     var scriptUrl = "";
-    var suffix;
-    
+
     var scripts = document.getElementsByTagName("script");
     for (var i=0; i<scripts.length; i++) {
         var script = scripts[i];
@@ -7224,7 +9852,7 @@ exports.init = function() {
         if (!src) {
             continue;
         }
-        
+
         var attributes = script.attributes;
         for (var j=0, l=attributes.length; j < l; j++) {
             var attr = attributes[j];
@@ -7233,24 +9861,21 @@ exports.init = function() {
             }
         }
 
-        var m = src.match(/^(?:(.*\/)ace\.js|(.*\/)ace((-uncompressed)?(-noconflict)?\.js))(?:\?|$)/);
-        if (m) {
-            scriptUrl = m[1] || m[2];
-            suffix = m[3];
-        }
+        var m = src.match(/^(.*)\/ace(\-\w+)?\.js(\?|$)/);
+        if (m)
+            scriptUrl = m[1];
     }
-    
+
     if (scriptUrl) {
         scriptOptions.base = scriptOptions.base || scriptUrl;
         scriptOptions.packaged = true;
     }
-    
-    scriptOptions.suffix = scriptOptions.suffix || suffix;
+
     scriptOptions.workerPath = scriptOptions.workerPath || scriptOptions.base;
     scriptOptions.modePath = scriptOptions.modePath || scriptOptions.base;
     scriptOptions.themePath = scriptOptions.themePath || scriptOptions.base;
     delete scriptOptions.base;
-    
+
     for (var key in scriptOptions)
         if (typeof scriptOptions[key] !== "undefined")
             exports.set(key, scriptOptions[key]);
@@ -7263,6 +9888,8 @@ function deHyphenate(str) {
 });
 
 define("ace/lib/net",[], function(require, exports, module) {
+
+var useragent = require("ace/lib/useragent");
 
 exports.get = function (url, callback) {
     var xhr = exports.createXhr();
@@ -7311,8 +9938,13 @@ exports.loadScript = function(path, callback) {
 
     s.src = path;
     head.appendChild(s);
-    
-    s.onload = callback;
+
+    if (useragent.isOldIE)
+        s.onreadystatechange = function () {
+            this.readyState == 'loaded' && callback();
+        };
+    else
+        s.onload = callback;
 };
 
 });
@@ -7347,14 +9979,11 @@ var Gutter = function(parentEl) {
     this.addGutterDecoration = function(row, className){
         if (!this.$decorations[row])
             this.$decorations[row] = "";
-        this.$decorations[row] += " ace_" + className;
+        this.$decorations[row] += " " + className;
     };
 
     this.removeGutterDecoration = function(row, className){
-        this.$decorations[row] = this.$decorations[row].replace(" ace_" + className, "");
-    };
-
-    this.setBreakpoints = function(rows) {
+        this.$decorations[row] = (this.$decorations[row] || "").replace(" " + className, "");
     };
 
     this.setAnnotations = function(annotations) {
@@ -7395,6 +10024,7 @@ var Gutter = function(parentEl) {
         var fold = this.session.getNextFoldLine(i);
         var foldStart = fold ? fold.start.row : Infinity;
         var foldWidgets = this.$showFoldWidgets && this.session.foldWidgets;
+        var breakpoints = this.session.$breakpoints;
 
         while (true) {
             if(i > foldStart) {
@@ -7411,7 +10041,7 @@ var Gutter = function(parentEl) {
                 breakpoints[i] ? " ace_breakpoint " + breakpoints[i] : " ",
                 annotation.className,
                 "' title='", annotation.text.join("\n"),
-                "' style='height:", config.lineHeight, "px;'>", i);
+                "' style='height:", this.session.getRowLength(i) * config.lineHeight, "px;'>", i);
 
             if (foldWidgets) {
                 var c = foldWidgets[i];
@@ -7426,20 +10056,18 @@ var Gutter = function(parentEl) {
                     );
             }
 
-            var wrappedRowLength = this.session.getRowLength(i) - 1;
-            while (wrappedRowLength--) {
-                html.push("</div><div class='ace_gutter-cell' style='height:", config.lineHeight, "px'>&#166;");
-            }
-
             html.push("</div>");
 
             i++;
         }
-        html.push(
-            "<div class='ace_gutter-cell' style='pointer-events:none;opacity:0'>",
-            this.session.getLength() - 1,
-            "</div>"
-        );
+
+        if (this.session.$useWrapMode)
+            html.push(
+                "<div class='ace_gutter-cell' style='pointer-events:none;opacity:0'>",
+                this.session.getLength() - 1,
+                "</div>"
+            );
+
         this.element = dom.setInnerHtml(this.element, html.join(""));
         this.element.style.height = config.minHeight + "px";
         
@@ -7458,10 +10086,30 @@ var Gutter = function(parentEl) {
             dom.removeCssClass(this.element, "ace_folding-enabled");
 
         this.$showFoldWidgets = show;
+        this.$padding = null;
     };
     
     this.getShowFoldWidgets = function() {
         return this.$showFoldWidgets;
+    };
+
+    this.$computePadding = function() {
+        if (!this.element.firstChild)
+            return {left: 0, right: 0};
+        var style = dom.computedStyle(this.element.firstChild);
+        this.$padding = {}
+        this.$padding.left = parseInt(style.paddingLeft) + 1;
+        this.$padding.right = parseInt(style.paddingRight);  
+        return this.$padding;
+    };
+
+    this.getRegion = function(point) {
+        var padding = this.$padding || this.$computePadding();
+        var rect = this.element.getBoundingClientRect();
+        if (point.x < padding.left + rect.left)
+            return "markers";
+        if (this.$showFoldWidgets && point.x > rect.right - padding.right)
+            return "foldWidgets";
     };
 
 }).call(Gutter.prototype);
@@ -7505,8 +10153,23 @@ var Marker = function(parentEl) {
 
 
         var html = [];
-        for ( var key in this.markers) {
+        for (var key in this.markers) {
             var marker = this.markers[key];
+            
+            if (!marker.range) {
+                marker.update(html, this, this.session, config);
+                continue;
+            }
+
+            if (!marker.range) {
+                marker.update(html, this, this.session, config);
+                continue;
+            }
+
+            if (!marker.range) {
+                marker.update(html, this, this.session, config);
+                continue;
+            }
 
             var range = marker.range.clipRows(config.firstRow, config.lastRow);
             if (range.isEmpty()) continue;
@@ -7531,7 +10194,7 @@ var Marker = function(parentEl) {
             }
             else {
                 this.drawSingleLineMarker(
-                    html, range, marker.clazz, config,
+                    html, range, marker.clazz + " start", config,
                     null, marker.type
                 );
             }
@@ -7543,9 +10206,7 @@ var Marker = function(parentEl) {
         return (row - layerConfig.firstRowScreen) * layerConfig.lineHeight;
     };
 
-    /**
-     * Draws a marker, which spans a range of text on multiple lines
-     */ 
+    // Draws a marker, which spans a range of text on multiple lines 
     this.drawTextMarker = function(stringBuilder, range, clazz, layerConfig) {
         // selection start
         var row = range.start.row;
@@ -7554,7 +10215,7 @@ var Marker = function(parentEl) {
             row, range.start.column,
             row, this.session.getScreenLastRowColumn(row)
         );
-        this.drawSingleLineMarker(stringBuilder, lineRange, clazz, layerConfig, 1, "text");
+        this.drawSingleLineMarker(stringBuilder, lineRange, clazz + " start", layerConfig, 1, "text");
 
         // selection end
         row = range.end.row;
@@ -7569,31 +10230,25 @@ var Marker = function(parentEl) {
         }
     };
 
-    /**
-     * Draws a multi line marker, where lines span the full width
-     */
-     this.drawMultiLineMarker = function(stringBuilder, range, clazz, layerConfig, type) {
+    // Draws a multi line marker, where lines span the full width
+    this.drawMultiLineMarker = function(stringBuilder, range, clazz, config, type) {
         var padding = type === "background" ? 0 : this.$padding;
-        var layerWidth = layerConfig.width + 2 * this.$padding - padding;
         // from selection start to the end of the line
-        var height = layerConfig.lineHeight;
-        var width = Math.round(layerWidth - (range.start.column * layerConfig.characterWidth));
-        var top = this.$getTop(range.start.row, layerConfig);
-        var left = Math.round(
-            padding + range.start.column * layerConfig.characterWidth
-        );
+        var height = config.lineHeight;
+        var top = this.$getTop(range.start.row, config);
+        var left = Math.round(padding + range.start.column * config.characterWidth);
 
         stringBuilder.push(
-            "<div class='", clazz, "' style='",
+            "<div class='", clazz, " start' style='",
             "height:", height, "px;",
-            "width:", width, "px;",
+            "right:0;",
             "top:", top, "px;",
             "left:", left, "px;'></div>"
         );
 
         // from start of the last line to the selection end
-        top = this.$getTop(range.end.row, layerConfig);
-        width = Math.round(range.end.column * layerConfig.characterWidth);
+        top = this.$getTop(range.end.row, config);
+        var width = Math.round(range.end.column * config.characterWidth);
 
         stringBuilder.push(
             "<div class='", clazz, "' style='",
@@ -7604,23 +10259,21 @@ var Marker = function(parentEl) {
         );
 
         // all the complete lines
-        height = (range.end.row - range.start.row - 1) * layerConfig.lineHeight;
+        height = (range.end.row - range.start.row - 1) * config.lineHeight;
         if (height < 0)
             return;
-        top = this.$getTop(range.start.row + 1, layerConfig);
+        top = this.$getTop(range.start.row + 1, config);
 
         stringBuilder.push(
             "<div class='", clazz, "' style='",
             "height:", height, "px;",
-            "width:", layerWidth, "px;",
+            "right:0;",
             "top:", top, "px;",
             "left:", padding, "px;'></div>"
         );
     };
 
-    /**
-     * Draws a marker which covers part or whole width of a single screen line
-     */
+    // Draws a marker which covers part or whole width of a single screen line
     this.drawSingleLineMarker = function(stringBuilder, range, clazz, layerConfig, extraLength, type) {
         var padding = type === "background" ? 0 : this.$padding;
         var height = layerConfig.lineHeight;
@@ -7673,7 +10326,7 @@ var Text = function(parentEl) {
 
     this.EOF_CHAR = "\xB6"; //"&para;";
     this.EOL_CHAR = "\xAC"; //"&not;";
-    this.TAB_CHAR = "\u2192"; //"&rarr;";
+    this.TAB_CHAR = "\u2192"; //"&rarr;" "\u21E5";
     this.SPACE_CHAR = "\xB7"; //"&middot;";
     this.$padding = 0;
 
@@ -7713,7 +10366,7 @@ var Text = function(parentEl) {
         lineHeight : 1
     };
 
-    this.$measureSizes = function() {
+    this.$measureSizes = useragent.isIE || useragent.isOldGecko ? function() {
         var n = 1000;
         if (!this.$measureNode) {
             var measureNode = this.$measureNode = dom.createElement("div");
@@ -7723,7 +10376,7 @@ var Text = function(parentEl) {
             style.left = style.top = (-n * 40)  + "px";
 
             style.visibility = "hidden";
-            style.position = "absolute";
+            style.position = "fixed";
             style.overflow = "visible";
             style.whiteSpace = "nowrap";
 
@@ -7740,8 +10393,12 @@ var Text = function(parentEl) {
                     container = container.parentNode;
                 container.appendChild(measureNode);
             }
-
         }
+
+        // Size and width can be null if the editor is not visible or
+        // detached from the document
+        if (!this.element.offsetWidth)
+            return null;
 
         var style = this.$measureNode.style;
         var computedStyle = dom.computedStyle(this.element);
@@ -7755,7 +10412,46 @@ var Text = function(parentEl) {
 
         // Size and width can be null if the editor is not visible or
         // detached from the document
-        if (!size.width || !size.height)
+        if (size.width == 0 || size.height == 0)
+            return null;
+
+        return size;
+    }
+    : function() {
+        if (!this.$measureNode) {
+            var measureNode = this.$measureNode = dom.createElement("div");
+            var style = measureNode.style;
+
+            style.width = style.height = "auto";
+            style.left = style.top = -100 + "px";
+
+            style.visibility = "hidden";
+            style.position = "fixed";
+            style.overflow = "visible";
+            style.whiteSpace = "nowrap";
+
+            measureNode.innerHTML = "X";
+
+            var container = this.element.parentNode;
+            while (container && !dom.hasCssClass(container, "ace_editor"))
+                container = container.parentNode;
+
+            if (!container)
+                return this.$measureNode = null;
+
+            container.appendChild(measureNode);
+        }
+
+        var rect = this.$measureNode.getBoundingClientRect();
+
+        var size = {
+            height: rect.height,
+            width: rect.width
+        };
+
+        // Size and width can be null if the editor is not visible or
+        // detached from the document
+        if (size.width == 0 || size.height == 0)
             return null;
 
         return size;
@@ -7763,6 +10459,7 @@ var Text = function(parentEl) {
 
     this.setSession = function(session) {
         this.session = session;
+        this.$computeTabString();
     };
 
     this.showInvisibles = false;
@@ -7771,28 +10468,52 @@ var Text = function(parentEl) {
             return false;
 
         this.showInvisibles = showInvisibles;
+        this.$computeTabString();
+        return true;
+    };
+
+    this.displayIndentGuides = true;
+    this.setDisplayIndentGuides = function(display) {
+        if (this.displayIndentGuides == display)
+            return false;
+
+        this.displayIndentGuides = display;
+        this.$computeTabString();
         return true;
     };
 
     this.$tabStrings = [];
+    this.onChangeTabSize =
     this.$computeTabString = function() {
         var tabSize = this.session.getTabSize();
+        this.tabSize = tabSize;
         var tabStr = this.$tabStrings = [0];
         for (var i = 1; i < tabSize + 1; i++) {
             if (this.showInvisibles) {
                 tabStr.push("<span class='ace_invisible'>"
                     + this.TAB_CHAR
-                    + new Array(i).join("&#160;")
+                    + Array(i).join("&#160;")
                     + "</span>");
             } else {
                 tabStr.push(new Array(i+1).join("&#160;"));
             }
         }
+        if (this.displayIndentGuides) {
+            this.$indentGuideRe =  /\s\S| \t|\t |\s$/;
+            var className = "ace_indent-guide";
+            var content = Array(this.tabSize + 1).join("&#160;");
+            var tabContent = content;
+            if (this.showInvisibles) {
+                className += " ace_invisible";
+                tabContent = this.TAB_CHAR + content.substr(6);
+            }
 
+            this.$tabStrings[" "] = "<span class='" + className + "'>" + content + "</span>";
+            this.$tabStrings["\t"] = "<span class='" + className + "'>" + tabContent + "</span>";
+        }
     };
 
     this.updateLines = function(config, firstRow, lastRow) {
-        this.$computeTabString();
         // Due to wrap line changes there can be new lines if e.g.
         // the line to updated wrapped in the meantime.
         if (this.config.lastRow != config.lastRow ||
@@ -7820,22 +10541,32 @@ var Text = function(parentEl) {
             lineElementsIdx ++;
         }
 
-        for (var i=first; i<=last; i++) {
+        var row = first;
+        var foldLine = this.session.getNextFoldLine(row);
+        var foldStart = foldLine ? foldLine.start.row : Infinity;
+
+        while (true) {
+            if (row > foldStart) {
+                row = foldLine.end.row+1;
+                foldLine = this.session.getNextFoldLine(row, foldLine);
+                foldStart = foldLine ? foldLine.start.row :Infinity;
+            }
+            if (row > last)
+                break;
+
             var lineElement = lineElements[lineElementsIdx++];
-            if (!lineElement)
-                continue;
-
-            var html = [];
-            var tokens = this.session.getTokens(i, i);
-            this.$renderLine(html, i, tokens[0].tokens, !this.$useLineGroups());
-            lineElement = dom.setInnerHtml(lineElement, html.join(""));
-
-            i = this.session.getRowFoldEnd(i);
+            if (lineElement) {
+                var html = [];
+                this.$renderLine(
+                    html, row, !this.$useLineGroups(), row == foldStart ? foldLine : false
+                );
+                dom.setInnerHtml(lineElement, html.join(""));
+            }
+            row++;
         }
     };
 
     this.scrollLines = function(config) {
-        this.$computeTabString();
         var oldConfig = this.config;
         this.config = config;
 
@@ -7888,11 +10619,7 @@ var Text = function(parentEl) {
             var html = [];
             // Get the tokens per line as there might be some lines in between
             // beeing folded.
-            // OPTIMIZE: If there is a long block of unfolded lines, just make
-            // this call once for that big block of unfolded lines.
-            var tokens = this.session.getTokens(row, row);
-            if (tokens.length == 1)
-                this.$renderLine(html, row, tokens[0].tokens, false);
+            this.$renderLine(html, row, false, row == foldStart ? foldLine : false);
 
             // don't use setInnerHtml since we are working with an empty DIV
             container.innerHTML = html.join("");
@@ -7911,7 +10638,6 @@ var Text = function(parentEl) {
     };
 
     this.update = function(config) {
-        this.$computeTabString();
         this.config = config;
 
         var html = [];
@@ -7933,13 +10659,7 @@ var Text = function(parentEl) {
             if (this.$useLineGroups())
                 html.push("<div class='ace_line_group'>")
 
-            // Get the tokens per line as there might be some lines in between
-            // beeing folded.
-            // OPTIMIZE: If there is a long block of unfolded lines, just make
-            // this call once for that big block of unfolded lines.
-            var tokens = this.session.getTokens(row, row);
-            if (tokens.length == 1)
-                this.$renderLine(html, row, tokens[0].tokens, false);
+            this.$renderLine(html, row, false, row == foldStart ? foldLine : false);
 
             if (this.$useLineGroups())
                 html.push("</div>"); // end the line group
@@ -7955,31 +10675,32 @@ var Text = function(parentEl) {
         "lparen": true
     };
 
-    this.$renderToken = function(stringBuilder, screenColumn, token, value) {        
+    this.$renderToken = function(stringBuilder, screenColumn, token, value) {
         var self = this;
-        var replaceReg = /\t|&|<|( +)|([\v\f\u00a0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000]+)/g;
+        var replaceReg = /\t|&|<|( +)|([\u0000-\u0019\u00a0\u1680\u180E\u2000-\u200b\u2028\u2029\u202F\u205F\u3000\uFEFF])/g;
         var replaceFunc = function(c, a, b, tabIdx, idx4) {
             if (a) {
-				if (self.showInvisibles) {
-                    var space = new Array(a.length+1).join(self.SPACE_CHAR);
-                    return "<span class='ace_invisible'>" + space + "</span>";
-                } else {
-					return new Array(a.length+1).join("&#160;");
-                }
+				return self.showInvisibles
+					? new Array(c.length+1).join("&#160;")
+					: "<span class='ace_invisible'>" + new Array(c.length+1).join(self.SPACE_CHAR) + "</span>";
+            } else if (c == "&") {
+                return "&#38;";
+            } else if (c == "<") {
+                return "&#60;";
             } else if (c == "\t") {
                 var tabSize = self.session.getScreenTabSize(screenColumn + tabIdx);
                 screenColumn += tabSize - 1;
                 return self.$tabStrings[tabSize];
-            } else if (c == "&") {
-                if (useragent.isOldGecko)
-                    return "&";
-                else
-                    return "&amp;";
-            } else if (c == "<") {
-                return "&lt;";
+            } else if (c == "\u3000") {
+                // U+3000 is both invisible AND full-width, so must be handled uniquely
+                var classToUse = self.showInvisibles ? "ace_cjk ace_invisible" : "ace_cjk";
+                var space = self.showInvisibles ? self.SPACE_CHAR : "";
+                screenColumn += 1;
+                return "<span class='" + classToUse + "' style='width:" +
+                    (self.config.characterWidth * 2) +
+                    "px'>" + space + "</span>";
             } else if (b) {
-                var space = new Array(b.length+1).join(self.SPACE_CHAR);
-                return "<span class='ace_invisible ace_invalid'>" + space + "</span>";
+                return "<span class='ace_invisible ace_invalid'>" + self.SPACE_CHAR + "</span>";
             }
         };
 
@@ -7998,49 +10719,54 @@ var Text = function(parentEl) {
         return screenColumn + value.length;
     };
 
-    this.$renderLineCore = function(stringBuilder, lastRow, tokens, splits, onlyContents) {
+    this.renderIndentGuide = function(stringBuilder, value) {
+        var cols = value.search(this.$indentGuideRe);
+        if (cols <= 0)
+            return value;
+        if (value[0] == " ") {
+            cols -= cols % this.tabSize;
+            stringBuilder.push(Array(cols/this.tabSize + 1).join(this.$tabStrings[" "]));
+            return value.substr(cols);
+        } else if (value[0] == "\t") {
+            stringBuilder.push(Array(cols + 1).join(this.$tabStrings["\t"]));
+            return value.substr(cols);
+        }
+        return value;
+    };
+
+    this.$renderWrappedLine = function(stringBuilder, tokens, splits, onlyContents) {
         var chars = 0;
         var split = 0;
-        var splitChars;
+        var splitChars = splits[0];
         var screenColumn = 0;
-        var self = this;
 
-        if (!splits || splits.length == 0)
-            splitChars = Number.MAX_VALUE;
-        else
-            splitChars = splits[0];
-
-        if (!onlyContents) {
-            stringBuilder.push("<div class='ace_line' style='height:",
-                this.config.lineHeight, "px",
-                "'>"
-            );
-        }
-        
         for (var i = 0; i < tokens.length; i++) {
             var token = tokens[i];
             var value = token.value;
+            if (i == 0 && this.displayIndentGuides) {
+                chars = value.length;
+                value = this.renderIndentGuide(stringBuilder, value);
+                if (!value)
+                    continue;
+                chars -= value.length;
+            }
 
             if (chars + value.length < splitChars) {
-                screenColumn = self.$renderToken(
-                    stringBuilder, screenColumn, token, value
-                );
+                screenColumn = this.$renderToken(stringBuilder, screenColumn, token, value);
                 chars += value.length;
-            }
-            else {
+            } else {
                 while (chars + value.length >= splitChars) {
-                    screenColumn = self.$renderToken(
-                        stringBuilder, screenColumn, 
+                    screenColumn = this.$renderToken(
+                        stringBuilder, screenColumn,
                         token, value.substring(0, splitChars - chars)
                     );
                     value = value.substring(splitChars - chars);
                     chars = splitChars;
-                    
+
                     if (!onlyContents) {
                         stringBuilder.push("</div>",
                             "<div class='ace_line' style='height:",
-                            this.config.lineHeight, "px",
-                            "'>"
+                            this.config.lineHeight, "px'>"
                         );
                     }
 
@@ -8050,38 +10776,71 @@ var Text = function(parentEl) {
                 }
                 if (value.length != 0) {
                     chars += value.length;
-                    screenColumn = self.$renderToken(
+                    screenColumn = this.$renderToken(
                         stringBuilder, screenColumn, token, value
                     );
                 }
             }
         }
+    };
+
+    this.$renderSimpleLine = function(stringBuilder, tokens) {
+        var screenColumn = 0;
+        var token = tokens[0];
+        var value = token.value;
+        if (this.displayIndentGuides)
+            value = this.renderIndentGuide(stringBuilder, value);
+        if (value)
+            screenColumn = this.$renderToken(stringBuilder, screenColumn, token, value);
+        for (var i = 1; i < tokens.length; i++) {
+            token = tokens[i];
+            value = token.value;
+            screenColumn = this.$renderToken(stringBuilder, screenColumn, token, value);
+        }
+    };
+
+    // row is either first row of foldline or not in fold
+    this.$renderLine = function(stringBuilder, row, onlyContents, foldLine) {
+        if (!foldLine && foldLine != false)
+            foldLine = this.session.getFoldLine(row);
+
+        if (foldLine)
+            var tokens = this.$getFoldLineTokens(row, foldLine);
+        else
+            var tokens = this.session.getTokens(row);
+
+
+        if (!onlyContents) {
+            stringBuilder.push(
+                "<div class='ace_line' style='height:", this.config.lineHeight, "px'>"
+            );
+        }
+
+        if (tokens.length) {
+            var splits = this.session.getRowSplitData(row);
+            if (splits && splits.length)
+                this.$renderWrappedLine(stringBuilder, tokens, splits, onlyContents);
+            else
+                this.$renderSimpleLine(stringBuilder, tokens);
+        }
 
         if (this.showInvisibles) {
-            if (lastRow !== this.session.getLength() - 1)
-                stringBuilder.push("<span class='ace_invisible'>" + this.EOL_CHAR + "</span>");
-            else
-                stringBuilder.push("<span class='ace_invisible'>" + this.EOF_CHAR + "</span>");
+            if (foldLine)
+                row = foldLine.end.row
+
+            stringBuilder.push(
+                "<span class='ace_invisible'>",
+                row == this.session.getLength() - 1 ? this.EOF_CHAR : this.EOL_CHAR,
+                "</span>"
+            );
         }
         if (!onlyContents)
             stringBuilder.push("</div>");
     };
 
-    this.$renderLine = function(stringBuilder, row, tokens, onlyContents) {
-        // Check if the line to render is folded or not. If not, things are
-        // simple, otherwise, we need to fake some things...
-        if (!this.session.isRowFolded(row)) {
-            var splits = this.session.getRowSplitData(row);
-            this.$renderLineCore(stringBuilder, row, tokens, splits, onlyContents);
-        } else {
-            this.$renderFoldLine(stringBuilder, row, tokens, onlyContents);
-        }
-    };
-
-    this.$renderFoldLine = function(stringBuilder, row, tokens, onlyContents) {
-        var session = this.session,
-            foldLine = session.getFoldLine(row),
-            renderTokens = [];
+    this.$getFoldLineTokens = function(row, foldLine) {
+        var session = this.session;
+        var renderTokens = [];
 
         function addTokens(tokens, from, to) {
             var idx = 0, col = 0;
@@ -8089,16 +10848,14 @@ var Text = function(parentEl) {
                 col += tokens[idx].value.length;
                 idx++;
 
-                if (idx == tokens.length) {
+                if (idx == tokens.length)
                     return;
-                }
             }
             if (col != from) {
                 var value = tokens[idx].value.substring(from - col);
                 // Check if the token value is longer then the from...to spacing.
-                if (value.length > (to - from)) {
+                if (value.length > (to - from))
                     value = value.substring(0, to - from);
-                }
 
                 renderTokens.push({
                     type: tokens[idx].type,
@@ -8109,44 +10866,42 @@ var Text = function(parentEl) {
                 idx += 1;
             }
 
-            while (col < to) {
+            while (col < to && idx < tokens.length) {
                 var value = tokens[idx].value;
                 if (value.length + col > to) {
-                    value = value.substring(0, to - col);
-                }
-                renderTokens.push({
-                    type: tokens[idx].type,
-                    value: value
-                });
+                    renderTokens.push({
+                        type: tokens[idx].type,
+                        value: value.substring(0, to - col)
+                    });
+                } else
+                    renderTokens.push(tokens[idx]);
                 col += value.length;
                 idx += 1;
             }
         }
 
+        var tokens = session.getTokens(row);
         foldLine.walk(function(placeholder, row, column, lastColumn, isNewRow) {
             if (placeholder) {
-               renderTokens.push({
+                renderTokens.push({
                     type: "fold",
                     value: placeholder
                 });
             } else {
-                if (isNewRow) {
-                   tokens = this.session.getTokens(row, row)[0].tokens;
-                }
-                if (tokens.length != 0) {
-                    addTokens(tokens, lastColumn, column);
-                }
-            }
-        }.bind(this), foldLine.end.row, this.session.getLine(foldLine.end.row).length);
+                if (isNewRow)
+                    tokens = session.getTokens(row);
 
-        // TODO: Build a fake splits array!
-        var splits = this.session.$useWrapMode?this.session.$wrapData[row]:null;
-        this.$renderLineCore(stringBuilder, row, renderTokens, splits, onlyContents);
+                if (tokens.length)
+                    addTokens(tokens, lastColumn, column);
+            }
+        }, foldLine.end.row, this.session.getLine(foldLine.end.row).length);
+
+        return renderTokens;
     };
-    
+
     this.$useLineGroups = function() {
         // For the updateLines function to work correctly, it's important that the
-        // child nodes of this.element correspond on a 1-to-1 basis to rows in the 
+        // child nodes of this.element correspond on a 1-to-1 basis to rows in the
         // document (as distinct from lines on the screen). For sessions that are
         // wrapped, this means we need to add a layer to the node hierarchy (tagged
         // with the class name ace_line_group).
@@ -8235,11 +10990,11 @@ var Cursor = function(parentEl) {
         if (!this.isVisible)
             return;
 
-        var element = this.element;
+        var element = this.cursors.length == 1 ? this.cursor : this.element;
         this.blinkId = setInterval(function() {
             element.style.visibility = "hidden";
             setTimeout(function() {
-                element.style.visibility = "visible";
+                element.style.visibility = "";
             }, 400);
         }, 1000);
     };
@@ -8269,7 +11024,7 @@ var Cursor = function(parentEl) {
     this.update = function(config) {
         this.config = config;
 
-        if (this.session.selectionMarkerCount > 1) {
+        if (this.session.selectionMarkerCount > 0) {
             var selections = this.session.$selectionMarkers;
             var i = 0, sel, cursorIndex = 0;
 
@@ -8302,6 +11057,9 @@ var Cursor = function(parentEl) {
         var overwrite = this.session.getOverwrite();
         if (overwrite != this.overwrite)
             this.$setOverite(overwrite);
+
+        // cache for textarea and gutter highlight
+        this.$pixelPos = pixelPos;
 
         this.restartTimer();
     };
@@ -8382,18 +11140,21 @@ var ScrollBar = function(parent) {
 	scrollButton.style.bottom = '0px'
 	scrollButton.style.height = this.buttonSize-2 +'px'
 	this.element.appendChild(scrollButton);
-	
-	event.addListener(this.element, "mousedown", this.onMouseDown.bind(this));
 
-    event.addMultiMouseDownListener(this.element, 0, 2, 500, this.onMouseDoubleClick.bind(this));
-
+    event.addMultiMouseDownListener(this.element, [500, 300, 300], this, "onMouseDown");
 };
 
 (function() {
     oop.implement(this, EventEmitter);
     
-	this.onMouseDown = function(e) {       
-        if (event.getButton(e) != 0 || e.detail == 2) {          
+	this.onMouseDown = function(eType, e) {
+        if (eType == "dblclick")
+            this.onMouseDoubleClick(e);
+            
+        if (eType != "mousedown")
+            return
+        
+        if (event.getButton(e) != 0 || e.detail == 2) {
             return;
         }
 		
@@ -8525,6 +11286,8 @@ var ScrollBar = function(parent) {
 		
     };
 
+    // TODO: on chrome 17+ after for small zoom levels after this function
+    // this.element.scrollTop != scrollTop which makes page to scroll up.
     this.setScrollTop = function(scrollTop) {
 	//	if(this.scrollTop == scrollTop)
 	//		return
@@ -8578,9 +11341,7 @@ var RenderLoop = function(onRender, window) {
 exports.RenderLoop = RenderLoop;
 });
 
-define("ace/css/editor.css",[], "\
-\
-.ace_editor {\
+define("ace/css/editor.css",[], ".ace_editor {\
     position: absolute;\
     overflow: hidden;\
     font-family: monospace;\
@@ -8589,8 +11350,7 @@ define("ace/css/editor.css",[], "\
 \
 .ace_scroller {\
     position: absolute;\
-    overflow-x: scroll;\
-    overflow-y: hidden;\
+    overflow: hidden;\
 }\
 \
 .ace_content {\
@@ -8601,19 +11361,17 @@ define("ace/css/editor.css",[], "\
     cursor: text;\
 }\
 \
-.ace_composition {\
-    position: absolute;\
-    background: #555;\
-    color: #DDD;\
-    z-index: 4;\
-}\
-\
 .ace_gutter {\
     position: absolute;\
     overflow : hidden;\
     height: 100%;\
     width: auto;\
     cursor: default;\
+    z-index: 4;\
+}\
+\
+.ace_scroller.horscroll {\
+    box-shadow: 17px 0 16px -16px rgba(0, 0, 0, 0.4) inset;\
 }\
 \
 .ace_gutter-cell {\
@@ -8622,21 +11380,23 @@ define("ace/css/editor.css",[], "\
 }\
 \
 .ace_gutter-cell.ace_error {\
-    background-image: url(\"data:image/gif,GIF89a%10%00%10%00%D5%00%00%F5or%F5%87%88%F5nr%F4ns%EBmq%F5z%7F%DDJT%DEKS%DFOW%F1Yc%F2ah%CE(7%CE)8%D18E%DD%40M%F2KZ%EBU%60%F4%60m%DCir%C8%16(%C8%19*%CE%255%F1%3FR%F1%3FS%E6%AB%B5%CA%5DI%CEn%5E%F7%A2%9A%C9G%3E%E0a%5B%F7%89%85%F5yy%F6%82%80%ED%82%80%FF%BF%BF%E3%C4%C4%FF%FF%FF%FF%FF%FF%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00!%F9%04%01%00%00%25%00%2C%00%00%00%00%10%00%10%00%00%06p%C0%92pH%2C%1A%8F%C8%D2H%93%E1d4%23%E4%88%D3%09mB%1DN%B48%F5%90%40%60%92G%5B%94%20%3E%22%D2%87%24%FA%20%24%C5%06A%00%20%B1%07%02B%A38%89X.v%17%82%11%13q%10%0Fi%24%0F%8B%10%7BD%12%0Ei%09%92%09%0EpD%18%15%24%0A%9Ci%05%0C%18F%18%0B%07%04%01%04%06%A0H%18%12%0D%14%0D%12%A1I%B3%B4%B5IA%00%3B\");\
+    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6QUM2OEZDQTQ4RTU0MTFFMUEzM0VFRTM2RUY1M0RBMjYiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6QUM2OEZDQTU4RTU0MTFFMUEzM0VFRTM2RUY1M0RBMjYiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDpBQzY4RkNBMjhFNTQxMUUxQTMzRUVFMzZFRjUzREEyNiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpBQzY4RkNBMzhFNTQxMUUxQTMzRUVFMzZFRjUzREEyNiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PkgXxbAAAAJbSURBVHjapFNNaBNBFH4zs5vdZLP5sQmNpT82QY209heh1ioWisaDRcSKF0WKJ0GQnrzrxasHsR6EnlrwD0TagxJabaVEpFYxLWlLSS822tr87m66ccfd2GKyVhA6MMybgfe97/vmPUQphd0sZjto9XIn9OOsvlu2nkqRzVU+6vvlzPf8W6bk8dxQ0NPbxAALgCgg2JkaQuhzQau/El0zbmUA7U0Es8v2CiYmKQJHGO1QICCLoqilMhkmurDAyapKgqItezi/USRdJqEYY4D5jCy03ht2yMkkvL91jTTX10qzyyu2hruPRN7jgbH+EOsXcMLgYiThEgAMhABW85oqy1DXdRIdvP1AHJ2acQXvDIrVHcdQNrEKNYSVMSZGMjEzIIAwDXIo+6G/FxcGnzkC3T2oMhLjre49sBB+RRcHLqdafK6sYdE/GGBwU1VpFNj0aN8pJbe+BkZyevUrvLl6Xmm0W9IuTc0DxrDNAJd5oEvI/KRsNC3bQyNjPO9yQ1YHcfj2QvfQc/5TUhJTBc2iM0U7AWDQtc1nJHvD/cfO2s7jaGkiTEfa/Ep8coLu7zmNmh8+dc5lZDuUeFAGUNA/OY6JVaypQ0vjr7XYjUvJM37vt+j1vuTK5DgVfVUoTjVe+y3/LxMxY2GgU+CSLy4cpfsYorRXuXIOi0Vt40h67uZFTdIo6nLaZcwUJWAzwNS0tBnqqKzQDnjdG/iPyZxo46HaKUpbvYkj8qYRTZsBhge+JHhZyh0x9b95JqjVJkT084kZIPwu/mPWqPgfQ5jXh2+92Ay7HedfAgwA6KDWafb4w3cAAAAASUVORK5CYII=\");\
     background-repeat: no-repeat;\
     background-position: 0px center;\
 }\
 \
 .ace_gutter-cell.ace_warning {\
-    background-image: url(\"data:image/gif,GIF89a%10%00%10%00%D5%00%00%FF%DBr%FF%DE%81%FF%E2%8D%FF%E2%8F%FF%E4%96%FF%E3%97%FF%E5%9D%FF%E6%9E%FF%EE%C1%FF%C8Z%FF%CDk%FF%D0s%FF%D4%81%FF%D5%82%FF%D5%83%FF%DC%97%FF%DE%9D%FF%E7%B8%FF%CCl%7BQ%13%80U%15%82W%16%81U%16%89%5B%18%87%5B%18%8C%5E%1A%94d%1D%C5%83-%C9%87%2F%C6%84.%C6%85.%CD%8B2%C9%871%CB%8A3%CD%8B5%DC%98%3F%DF%9BB%E0%9CC%E1%A5U%CB%871%CF%8B5%D1%8D6%DB%97%40%DF%9AB%DD%99B%E3%B0p%E7%CC%AE%FF%FF%FF%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00%00!%F9%04%01%00%00%2F%00%2C%00%00%00%00%10%00%10%00%00%06a%C0%97pH%2C%1A%8FH%A1%ABTr%25%87%2B%04%82%F4%7C%B9X%91%08%CB%99%1C!%26%13%84*iJ9(%15G%CA%84%14%01%1A%97%0C%03%80%3A%9A%3E%81%84%3E%11%08%B1%8B%20%02%12%0F%18%1A%0F%0A%03'F%1C%04%0B%10%16%18%10%0B%05%1CF%1D-%06%07%9A%9A-%1EG%1B%A0%A1%A0U%A4%A5%A6BA%00%3B\");\
+    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNSBNYWNpbnRvc2giIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6QUM2OEZDQTg4RTU0MTFFMUEzM0VFRTM2RUY1M0RBMjYiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6QUM2OEZDQTk4RTU0MTFFMUEzM0VFRTM2RUY1M0RBMjYiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDpBQzY4RkNBNjhFNTQxMUUxQTMzRUVFMzZFRjUzREEyNiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDpBQzY4RkNBNzhFNTQxMUUxQTMzRUVFMzZFRjUzREEyNiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pgd7PfIAAAGmSURBVHjaYvr//z8DJZiJgUIANoCRkREb9gLiSVAaQx4OQM7AAkwd7XU2/v++/rOttdYGEB9dASEvOMydGKfH8Gv/p4XTkvRBfLxeQAP+1cUhXopyvzhP7P/IoSj7g7Mw09cNKO6J1QQ0L4gICPIv/veg/8W+JdFvQNLHVsW9/nmn9zk7B+cCkDwhL7gt6knSZnx9/LuCEOcvkIAMP+cvto9nfqyZmmUAksfnBUtbM60gX/3/kgyv3/xSFOL5DZT+L8vP+Yfh5cvfPvp/xUHyQHXGyAYwgpwBjZYFT3Y1OEl/OfCH4ffv3wzc4iwMvNIsDJ+f/mH4+vIPAxsb631WW0Yln6ZpQLXdMK/DXGDflh+sIv37EivD5x//Gb7+YWT4y86sl7BCCkSD+Z++/1dkvsFRl+HnD1Rvje4F8whjMXmGj58YGf5zsDMwcnAwfPvKcml62DsQDeaDxN+/Y0qwlpEHqrdB94IRNIDUgfgfKJChGK4OikEW3gTiXUB950ASLFAF54AC94A0G9QAfOnmF9DCDzABFqS08IHYDIScdijOjQABBgC+/9awBH96jwAAAABJRU5ErkJggg==\");\
     background-repeat: no-repeat;\
     background-position: 0px center;\
 }\
 \
 .ace_gutter-cell.ace_info {\
     background-image: url(\"data:image/gif;base64,R0lGODlhEAAQAMQAAAAAAEFBQVJSUl5eXmRkZGtra39/f4WFhYmJiZGRkaampry8vMPDw8zMzNXV1dzc3OTk5Orq6vDw8P///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAkAABQALAAAAAAQABAAAAUuICWOZGmeaBml5XGwFCQSBGyXRSAwtqQIiRuiwIM5BoYVbEFIyGCQoeJGrVptIQA7\");\
-    background-repeat: no-repeat;\
     background-position: 2px center;\
+}\
+.ace_dark .ace_gutter-cell.ace_info {\
+    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyRpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMy1jMDExIDY2LjE0NTY2MSwgMjAxMi8wMi8wNi0xNDo1NjoyNyAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNiAoTWFjaW50b3NoKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDpGRTk5MTVGREIxNDkxMUUxOTc5Q0FFREQyMTNGMjBFQyIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDpGRTk5MTVGRUIxNDkxMUUxOTc5Q0FFREQyMTNGMjBFQyI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOkZFOTkxNUZCQjE0OTExRTE5NzlDQUVERDIxM0YyMEVDIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOkZFOTkxNUZDQjE0OTExRTE5NzlDQUVERDIxM0YyMEVDIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+SIDkjAAAAJ1JREFUeNpi/P//PwMlgImBQkB7A6qrq/+DMC55FkIGKCoq4pVnpFkgTp069f/+/fv/r1u37r+tre1/kg0A+ptn9uzZYLaRkRHpLvjw4cNXWVlZhufPnzOcO3eOdAO0tbVPAjHDmzdvGA4fPsxIsgGSkpJmv379Ynj37h2DjIyMCMkG3LhxQ/T27dsMampqDHZ2dq/pH41DxwCAAAMAFdc68dUsFZgAAAAASUVORK5CYII=\");\
 }\
 \
 .ace_sb {\
@@ -8667,11 +11427,11 @@ define("ace/css/editor.css",[], "\
     height: 100%;\
 }\
 \
-.ace_editor textarea {\
-    position: fixed;\
+.ace_editor > textarea {\
+    position: absolute;\
     z-index: 0;\
-    width: 10px;\
-    height: 30px;\
+    width: 0.5em;\
+    height: 1em;\
     opacity: 0;\
     background: transparent;\
     appearance: none;\
@@ -8680,6 +11440,15 @@ define("ace/css/editor.css",[], "\
     resize: none;\
     outline: none;\
     overflow: hidden;\
+}\
+\
+.ace_editor > textarea.ace_composition {\
+    background: #fff;\
+    color: #000;\
+    z-index: 1000;\
+    opacity: 1;\
+    border: solid lightgray 1px;\
+    margin: -1px\
 }\
 \
 .ace_layer {\
@@ -8700,12 +11469,14 @@ define("ace/css/editor.css",[], "\
 .ace_gutter .ace_layer {\
     position: relative;\
     min-width: 40px;\
+    width: auto;\
     text-align: right;\
     pointer-events: auto;\
 }\
 \
 .ace_text-layer {\
     color: black;\
+    font: inherit !important;\
 }\
 \
 .ace_cursor-layer {\
@@ -8719,6 +11490,10 @@ define("ace/css/editor.css",[], "\
 \
 .ace_cursor.ace_hidden {\
     opacity: 0.2;\
+}\
+\
+.ace_editor.multiselect .ace_cursor {\
+    border-left-width: 1px;\
 }\
 \
 .ace_line {\
@@ -8757,13 +11532,13 @@ define("ace/css/editor.css",[], "\
     box-sizing: border-box;\
     -moz-box-sizing: border-box;\
     -webkit-box-sizing: border-box;\
-    \
+\
     display: inline-block;\
     height: 11px;\
     margin-top: -2px;\
     vertical-align: middle;\
 \
-    background-image: \
+    background-image:\
         url(\"data:image/png,%89PNG%0D%0A%1A%0A%00%00%00%0DIHDR%00%00%00%11%00%00%00%09%08%06%00%00%00%D4%E8%C7%0C%00%00%03%1EiCCPICC%20Profile%00%00x%01%85T%DFk%D3P%14%FE%DAe%9D%B0%E1%8B%3Ag%11%09%3Eh%91ndStC%9C%B6kW%BA%CDZ%EA6%B7!H%9B%A6m%5C%9A%C6%24%ED~%B0%07%D9%8Bo%3A%C5w%F1%07%3E%F9%07%0C%D9%83o%7B%92%0D%C6%14a%F8%AC%88%22L%F6%22%B3%9E%9B4M'S%03%B9%F7%BB%DF%F9%EE9'%E7%E4%5E%A0%F9qZ%D3%14%2F%0F%14USO%C5%C2%FC%C4%E4%14%DF%F2%01%5E%1CC%2B%FChM%8B%86%16J%26G%40%0F%D3%B2y%EF%B3%F3%0E%1E%C6lt%EEo%DF%AB%FEc%D5%9A%95%0C%11%F0%1C%20%BE%945%C4%22%E1Y%A0i%5C%D4t%13%E0%D6%89%EF%9D15%C2%CDLsX%A7%04%09%1Fg8oc%81%E1%8C%8D%23%96f45%40%9A%09%C2%07%C5B%3AK%B8%408%98i%E0%F3%0D%D8%CE%81%14%E4'%26%A9%92.%8B%3C%ABER%2F%E5dE%B2%0C%F6%F0%1Fs%83%F2_%B0%A8%94%E9%9B%AD%E7%10%8Dm%9A%19N%D1%7C%8A%DE%1F9%7Dp%8C%E6%00%D5%C1%3F_%18%BDA%B8%9DpX6%E3%A35~B%CD%24%AE%11%26%BD%E7%EEti%98%EDe%9A%97Y)%12%25%1C%24%BCbT%AE3li%E6%0B%03%89%9A%E6%D3%ED%F4P%92%B0%9F4%BF43Y%F3%E3%EDP%95%04%EB1%C5%F5%F6KF%F4%BA%BD%D7%DB%91%93%07%E35%3E%A7)%D6%7F%40%FE%BD%F7%F5r%8A%E5y%92%F0%EB%B4%1E%8D%D5%F4%5B%92%3AV%DB%DB%E4%CD%A6%23%C3%C4wQ%3F%03HB%82%8E%1Cd(%E0%91B%0Ca%9Ac%C4%AA%F8L%16%19%22J%A4%D2itTy%B28%D6%3B(%93%96%ED%1CGx%C9_%0E%B8%5E%16%F5%5B%B2%B8%F6%E0%FB%9E%DD%25%D7%8E%BC%15%85%C5%B7%A3%D8Q%ED%B5%81%E9%BA%B2%13%9A%1B%7Fua%A5%A3n%E17%B9%E5%9B%1Bm%AB%0B%08Q%FE%8A%E5%B1H%5Ee%CAO%82Q%D7u6%E6%90S%97%FCu%0B%CF2%94%EE%25v%12X%0C%BA%AC%F0%5E%F8*l%0AO%85%17%C2%97%BF%D4%C8%CE%DE%AD%11%CB%80q%2C%3E%AB%9ES%CD%C6%EC%25%D2L%D2%EBd%B8%BF%8A%F5B%C6%18%F9%901CZ%9D%BE%24M%9C%8A9%F2%DAP%0B'%06w%82%EB%E6%E2%5C%2F%D7%07%9E%BB%CC%5D%E1%FA%B9%08%AD.r%23%8E%C2%17%F5E%7C!%F0%BE3%BE%3E_%B7o%88a%A7%DB%BE%D3d%EB%A31Z%EB%BB%D3%91%BA%A2%B1z%94%8F%DB'%F6%3D%8E%AA%13%19%B2%B1%BE%B1~V%08%2B%B4%A2cjJ%B3tO%00%03%25mN%97%F3%05%93%EF%11%84%0B%7C%88%AE-%89%8F%ABbW%90O%2B%0Ao%99%0C%5E%97%0CI%AFH%D9.%B0%3B%8F%ED%03%B6S%D6%5D%E6i_s9%F3*p%E9%1B%FD%C3%EB.7U%06%5E%19%C0%D1s.%17%A03u%E4%09%B0%7C%5E%2C%EB%15%DB%1F%3C%9E%B7%80%91%3B%DBc%AD%3Dma%BA%8B%3EV%AB%DBt.%5B%1E%01%BB%0F%AB%D5%9F%CF%AA%D5%DD%E7%E4%7F%0Bx%A3%FC%06%A9%23%0A%D6%C2%A1_2%00%00%00%09pHYs%00%00%0B%13%00%00%0B%13%01%00%9A%9C%18%00%00%00%B5IDAT(%15%A5%91%3D%0E%02!%10%85ac%E1%05%D6%CE%D6%C6%CE%D2%E8%ED%CD%DE%C0%C6%D6N.%E0V%F8%3D%9Ca%891XH%C2%BE%D9y%3F%90!%E6%9C%C3%BFk%E5%011%C6-%F5%C8N%04%DF%BD%FF%89%DFt%83DN%60%3E%F3%AB%A0%DE%1A%5Dg%BE%10Q%97%1B%40%9C%A8o%10%8F%5E%828%B4%1B%60%87%F6%02%26%85%1Ch%1E%C1%2B%5Bk%FF%86%EE%B7j%09%9A%DA%9B%ACe%A3%F9%EC%DA!9%B4%D5%A6%81%86%86%98%CC%3C%5B%40%FA%81%B3%E9%CB%23%94%C16Azo%05%D4%E1%C1%95a%3B%8A'%A0%E8%CC%17%22%85%1D%BA%00%A2%FA%DC%0A%94%D1%D1%8D%8B%3A%84%17B%C7%60%1A%25Z%FC%8D%00%00%00%00IEND%AEB%60%82\"),\
         url(\"data:image/png,%89PNG%0D%0A%1A%0A%00%00%00%0DIHDR%00%00%00%05%00%00%007%08%06%00%00%00%C4%DD%80C%00%00%03%1EiCCPICC%20Profile%00%00x%01%85T%DFk%D3P%14%FE%DAe%9D%B0%E1%8B%3Ag%11%09%3Eh%91ndStC%9C%B6kW%BA%CDZ%EA6%B7!H%9B%A6m%5C%9A%C6%24%ED~%B0%07%D9%8Bo%3A%C5w%F1%07%3E%F9%07%0C%D9%83o%7B%92%0D%C6%14a%F8%AC%88%22L%F6%22%B3%9E%9B4M'S%03%B9%F7%BB%DF%F9%EE9'%E7%E4%5E%A0%F9qZ%D3%14%2F%0F%14USO%C5%C2%FC%C4%E4%14%DF%F2%01%5E%1CC%2B%FChM%8B%86%16J%26G%40%0F%D3%B2y%EF%B3%F3%0E%1E%C6lt%EEo%DF%AB%FEc%D5%9A%95%0C%11%F0%1C%20%BE%945%C4%22%E1Y%A0i%5C%D4t%13%E0%D6%89%EF%9D15%C2%CDLsX%A7%04%09%1Fg8oc%81%E1%8C%8D%23%96f45%40%9A%09%C2%07%C5B%3AK%B8%408%98i%E0%F3%0D%D8%CE%81%14%E4'%26%A9%92.%8B%3C%ABER%2F%E5dE%B2%0C%F6%F0%1Fs%83%F2_%B0%A8%94%E9%9B%AD%E7%10%8Dm%9A%19N%D1%7C%8A%DE%1F9%7Dp%8C%E6%00%D5%C1%3F_%18%BDA%B8%9DpX6%E3%A35~B%CD%24%AE%11%26%BD%E7%EEti%98%EDe%9A%97Y)%12%25%1C%24%BCbT%AE3li%E6%0B%03%89%9A%E6%D3%ED%F4P%92%B0%9F4%BF43Y%F3%E3%EDP%95%04%EB1%C5%F5%F6KF%F4%BA%BD%D7%DB%91%93%07%E35%3E%A7)%D6%7F%40%FE%BD%F7%F5r%8A%E5y%92%F0%EB%B4%1E%8D%D5%F4%5B%92%3AV%DB%DB%E4%CD%A6%23%C3%C4wQ%3F%03HB%82%8E%1Cd(%E0%91B%0Ca%9Ac%C4%AA%F8L%16%19%22J%A4%D2itTy%B28%D6%3B(%93%96%ED%1CGx%C9_%0E%B8%5E%16%F5%5B%B2%B8%F6%E0%FB%9E%DD%25%D7%8E%BC%15%85%C5%B7%A3%D8Q%ED%B5%81%E9%BA%B2%13%9A%1B%7Fua%A5%A3n%E17%B9%E5%9B%1Bm%AB%0B%08Q%FE%8A%E5%B1H%5Ee%CAO%82Q%D7u6%E6%90S%97%FCu%0B%CF2%94%EE%25v%12X%0C%BA%AC%F0%5E%F8*l%0AO%85%17%C2%97%BF%D4%C8%CE%DE%AD%11%CB%80q%2C%3E%AB%9ES%CD%C6%EC%25%D2L%D2%EBd%B8%BF%8A%F5B%C6%18%F9%901CZ%9D%BE%24M%9C%8A9%F2%DAP%0B'%06w%82%EB%E6%E2%5C%2F%D7%07%9E%BB%CC%5D%E1%FA%B9%08%AD.r%23%8E%C2%17%F5E%7C!%F0%BE3%BE%3E_%B7o%88a%A7%DB%BE%D3d%EB%A31Z%EB%BB%D3%91%BA%A2%B1z%94%8F%DB'%F6%3D%8E%AA%13%19%B2%B1%BE%B1~V%08%2B%B4%A2cjJ%B3tO%00%03%25mN%97%F3%05%93%EF%11%84%0B%7C%88%AE-%89%8F%ABbW%90O%2B%0Ao%99%0C%5E%97%0CI%AFH%D9.%B0%3B%8F%ED%03%B6S%D6%5D%E6i_s9%F3*p%E9%1B%FD%C3%EB.7U%06%5E%19%C0%D1s.%17%A03u%E4%09%B0%7C%5E%2C%EB%15%DB%1F%3C%9E%B7%80%91%3B%DBc%AD%3Dma%BA%8B%3EV%AB%DBt.%5B%1E%01%BB%0F%AB%D5%9F%CF%AA%D5%DD%E7%E4%7F%0Bx%A3%FC%06%A9%23%0A%D6%C2%A1_2%00%00%00%09pHYs%00%00%0B%13%00%00%0B%13%01%00%9A%9C%18%00%00%00%3AIDAT8%11c%FC%FF%FF%7F%18%03%1A%60%01%F2%3F%A0%891%80%04%FF%11-%F8%17%9BJ%E2%05%B1ZD%81v%26t%E7%80%F8%A3%82h%A12%1A%20%A3%01%02%0F%01%BA%25%06%00%19%C0%0D%AEF%D5%3ES%00%00%00%00IEND%AEB%60%82\");\
     background-repeat: no-repeat, repeat-x;\
@@ -8772,7 +11547,7 @@ define("ace/css/editor.css",[], "\
 \
     border: 1px solid black;\
     border-radius: 2px;\
-    \
+\
     cursor: pointer;\
     pointer-events: auto;\
 }\
@@ -8781,7 +11556,7 @@ define("ace/css/editor.css",[], "\
 }\
 \
 .ace_fold:hover{\
-    background-image: \
+    background-image:\
         url(\"data:image/png,%89PNG%0D%0A%1A%0A%00%00%00%0DIHDR%00%00%00%11%00%00%00%09%08%06%00%00%00%D4%E8%C7%0C%00%00%03%1EiCCPICC%20Profile%00%00x%01%85T%DFk%D3P%14%FE%DAe%9D%B0%E1%8B%3Ag%11%09%3Eh%91ndStC%9C%B6kW%BA%CDZ%EA6%B7!H%9B%A6m%5C%9A%C6%24%ED~%B0%07%D9%8Bo%3A%C5w%F1%07%3E%F9%07%0C%D9%83o%7B%92%0D%C6%14a%F8%AC%88%22L%F6%22%B3%9E%9B4M'S%03%B9%F7%BB%DF%F9%EE9'%E7%E4%5E%A0%F9qZ%D3%14%2F%0F%14USO%C5%C2%FC%C4%E4%14%DF%F2%01%5E%1CC%2B%FChM%8B%86%16J%26G%40%0F%D3%B2y%EF%B3%F3%0E%1E%C6lt%EEo%DF%AB%FEc%D5%9A%95%0C%11%F0%1C%20%BE%945%C4%22%E1Y%A0i%5C%D4t%13%E0%D6%89%EF%9D15%C2%CDLsX%A7%04%09%1Fg8oc%81%E1%8C%8D%23%96f45%40%9A%09%C2%07%C5B%3AK%B8%408%98i%E0%F3%0D%D8%CE%81%14%E4'%26%A9%92.%8B%3C%ABER%2F%E5dE%B2%0C%F6%F0%1Fs%83%F2_%B0%A8%94%E9%9B%AD%E7%10%8Dm%9A%19N%D1%7C%8A%DE%1F9%7Dp%8C%E6%00%D5%C1%3F_%18%BDA%B8%9DpX6%E3%A35~B%CD%24%AE%11%26%BD%E7%EEti%98%EDe%9A%97Y)%12%25%1C%24%BCbT%AE3li%E6%0B%03%89%9A%E6%D3%ED%F4P%92%B0%9F4%BF43Y%F3%E3%EDP%95%04%EB1%C5%F5%F6KF%F4%BA%BD%D7%DB%91%93%07%E35%3E%A7)%D6%7F%40%FE%BD%F7%F5r%8A%E5y%92%F0%EB%B4%1E%8D%D5%F4%5B%92%3AV%DB%DB%E4%CD%A6%23%C3%C4wQ%3F%03HB%82%8E%1Cd(%E0%91B%0Ca%9Ac%C4%AA%F8L%16%19%22J%A4%D2itTy%B28%D6%3B(%93%96%ED%1CGx%C9_%0E%B8%5E%16%F5%5B%B2%B8%F6%E0%FB%9E%DD%25%D7%8E%BC%15%85%C5%B7%A3%D8Q%ED%B5%81%E9%BA%B2%13%9A%1B%7Fua%A5%A3n%E17%B9%E5%9B%1Bm%AB%0B%08Q%FE%8A%E5%B1H%5Ee%CAO%82Q%D7u6%E6%90S%97%FCu%0B%CF2%94%EE%25v%12X%0C%BA%AC%F0%5E%F8*l%0AO%85%17%C2%97%BF%D4%C8%CE%DE%AD%11%CB%80q%2C%3E%AB%9ES%CD%C6%EC%25%D2L%D2%EBd%B8%BF%8A%F5B%C6%18%F9%901CZ%9D%BE%24M%9C%8A9%F2%DAP%0B'%06w%82%EB%E6%E2%5C%2F%D7%07%9E%BB%CC%5D%E1%FA%B9%08%AD.r%23%8E%C2%17%F5E%7C!%F0%BE3%BE%3E_%B7o%88a%A7%DB%BE%D3d%EB%A31Z%EB%BB%D3%91%BA%A2%B1z%94%8F%DB'%F6%3D%8E%AA%13%19%B2%B1%BE%B1~V%08%2B%B4%A2cjJ%B3tO%00%03%25mN%97%F3%05%93%EF%11%84%0B%7C%88%AE-%89%8F%ABbW%90O%2B%0Ao%99%0C%5E%97%0CI%AFH%D9.%B0%3B%8F%ED%03%B6S%D6%5D%E6i_s9%F3*p%E9%1B%FD%C3%EB.7U%06%5E%19%C0%D1s.%17%A03u%E4%09%B0%7C%5E%2C%EB%15%DB%1F%3C%9E%B7%80%91%3B%DBc%AD%3Dma%BA%8B%3EV%AB%DBt.%5B%1E%01%BB%0F%AB%D5%9F%CF%AA%D5%DD%E7%E4%7F%0Bx%A3%FC%06%A9%23%0A%D6%C2%A1_2%00%00%00%09pHYs%00%00%0B%13%00%00%0B%13%01%00%9A%9C%18%00%00%00%B5IDAT(%15%A5%91%3D%0E%02!%10%85ac%E1%05%D6%CE%D6%C6%CE%D2%E8%ED%CD%DE%C0%C6%D6N.%E0V%F8%3D%9Ca%891XH%C2%BE%D9y%3F%90!%E6%9C%C3%BFk%E5%011%C6-%F5%C8N%04%DF%BD%FF%89%DFt%83DN%60%3E%F3%AB%A0%DE%1A%5Dg%BE%10Q%97%1B%40%9C%A8o%10%8F%5E%828%B4%1B%60%87%F6%02%26%85%1Ch%1E%C1%2B%5Bk%FF%86%EE%B7j%09%9A%DA%9B%ACe%A3%F9%EC%DA!9%B4%D5%A6%81%86%86%98%CC%3C%5B%40%FA%81%B3%E9%CB%23%94%C16Azo%05%D4%E1%C1%95a%3B%8A'%A0%E8%CC%17%22%85%1D%BA%00%A2%FA%DC%0A%94%D1%D1%8D%8B%3A%84%17B%C7%60%1A%25Z%FC%8D%00%00%00%00IEND%AEB%60%82\"),\
         url(\"data:image/png,%89PNG%0D%0A%1A%0A%00%00%00%0DIHDR%00%00%00%05%00%00%007%08%06%00%00%00%C4%DD%80C%00%00%03%1EiCCPICC%20Profile%00%00x%01%85T%DFk%D3P%14%FE%DAe%9D%B0%E1%8B%3Ag%11%09%3Eh%91ndStC%9C%B6kW%BA%CDZ%EA6%B7!H%9B%A6m%5C%9A%C6%24%ED~%B0%07%D9%8Bo%3A%C5w%F1%07%3E%F9%07%0C%D9%83o%7B%92%0D%C6%14a%F8%AC%88%22L%F6%22%B3%9E%9B4M'S%03%B9%F7%BB%DF%F9%EE9'%E7%E4%5E%A0%F9qZ%D3%14%2F%0F%14USO%C5%C2%FC%C4%E4%14%DF%F2%01%5E%1CC%2B%FChM%8B%86%16J%26G%40%0F%D3%B2y%EF%B3%F3%0E%1E%C6lt%EEo%DF%AB%FEc%D5%9A%95%0C%11%F0%1C%20%BE%945%C4%22%E1Y%A0i%5C%D4t%13%E0%D6%89%EF%9D15%C2%CDLsX%A7%04%09%1Fg8oc%81%E1%8C%8D%23%96f45%40%9A%09%C2%07%C5B%3AK%B8%408%98i%E0%F3%0D%D8%CE%81%14%E4'%26%A9%92.%8B%3C%ABER%2F%E5dE%B2%0C%F6%F0%1Fs%83%F2_%B0%A8%94%E9%9B%AD%E7%10%8Dm%9A%19N%D1%7C%8A%DE%1F9%7Dp%8C%E6%00%D5%C1%3F_%18%BDA%B8%9DpX6%E3%A35~B%CD%24%AE%11%26%BD%E7%EEti%98%EDe%9A%97Y)%12%25%1C%24%BCbT%AE3li%E6%0B%03%89%9A%E6%D3%ED%F4P%92%B0%9F4%BF43Y%F3%E3%EDP%95%04%EB1%C5%F5%F6KF%F4%BA%BD%D7%DB%91%93%07%E35%3E%A7)%D6%7F%40%FE%BD%F7%F5r%8A%E5y%92%F0%EB%B4%1E%8D%D5%F4%5B%92%3AV%DB%DB%E4%CD%A6%23%C3%C4wQ%3F%03HB%82%8E%1Cd(%E0%91B%0Ca%9Ac%C4%AA%F8L%16%19%22J%A4%D2itTy%B28%D6%3B(%93%96%ED%1CGx%C9_%0E%B8%5E%16%F5%5B%B2%B8%F6%E0%FB%9E%DD%25%D7%8E%BC%15%85%C5%B7%A3%D8Q%ED%B5%81%E9%BA%B2%13%9A%1B%7Fua%A5%A3n%E17%B9%E5%9B%1Bm%AB%0B%08Q%FE%8A%E5%B1H%5Ee%CAO%82Q%D7u6%E6%90S%97%FCu%0B%CF2%94%EE%25v%12X%0C%BA%AC%F0%5E%F8*l%0AO%85%17%C2%97%BF%D4%C8%CE%DE%AD%11%CB%80q%2C%3E%AB%9ES%CD%C6%EC%25%D2L%D2%EBd%B8%BF%8A%F5B%C6%18%F9%901CZ%9D%BE%24M%9C%8A9%F2%DAP%0B'%06w%82%EB%E6%E2%5C%2F%D7%07%9E%BB%CC%5D%E1%FA%B9%08%AD.r%23%8E%C2%17%F5E%7C!%F0%BE3%BE%3E_%B7o%88a%A7%DB%BE%D3d%EB%A31Z%EB%BB%D3%91%BA%A2%B1z%94%8F%DB'%F6%3D%8E%AA%13%19%B2%B1%BE%B1~V%08%2B%B4%A2cjJ%B3tO%00%03%25mN%97%F3%05%93%EF%11%84%0B%7C%88%AE-%89%8F%ABbW%90O%2B%0Ao%99%0C%5E%97%0CI%AFH%D9.%B0%3B%8F%ED%03%B6S%D6%5D%E6i_s9%F3*p%E9%1B%FD%C3%EB.7U%06%5E%19%C0%D1s.%17%A03u%E4%09%B0%7C%5E%2C%EB%15%DB%1F%3C%9E%B7%80%91%3B%DBc%AD%3Dma%BA%8B%3EV%AB%DBt.%5B%1E%01%BB%0F%AB%D5%9F%CF%AA%D5%DD%E7%E4%7F%0Bx%A3%FC%06%A9%23%0A%D6%C2%A1_2%00%00%00%09pHYs%00%00%0B%13%00%00%0B%13%01%00%9A%9C%18%00%00%003IDAT8%11c%FC%FF%FF%7F%3E%03%1A%60%01%F2%3F%A3%891%80%04%FFQ%26%F8w%C0%B43%A1%DB%0C%E2%8F%0A%A2%85%CAh%80%8C%06%08%3C%04%E8%96%18%00%A3S%0D%CD%CF%D8%C1%9D%00%00%00%00IEND%AEB%60%82\");\
     background-repeat: no-repeat, repeat-x;\
@@ -8806,12 +11581,14 @@ define("ace/css/editor.css",[], "\
     height: 14px;\
     width: 11px;\
     vertical-align: text-bottom;\
-    \
+\
     background-image: url(\"data:image/png,%89PNG%0D%0A%1A%0A%00%00%00%0DIHDR%00%00%00%05%00%00%00%05%08%06%00%00%00%8Do%26%E5%00%00%004IDATx%DAe%8A%B1%0D%000%0C%C2%F2%2CK%96%BC%D0%8F9%81%88H%E9%D0%0E%96%C0%10%92%3E%02%80%5E%82%E4%A9*-%EEsw%C8%CC%11%EE%96w%D8%DC%E9*Eh%0C%151(%00%00%00%00IEND%AEB%60%82\");\
     background-repeat: no-repeat;\
-    background-position: center 5px;\
+    background-position: center 4px;\
 \
     border-radius: 3px;\
+    \
+    border: 1px solid transparent;\
 }\
 \
 .ace_fold-widget.end {\
@@ -8825,11 +11602,8 @@ define("ace/css/editor.css",[], "\
 .ace_fold-widget:hover {\
     border: 1px solid rgba(0, 0, 0, 0.3);\
     background-color: rgba(255, 255, 255, 0.2);\
-    -moz-box-shadow:inset 0 1px 1px rgba(255, 255, 255, 0.7);\
     -moz-box-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);\
-    -webkit-box-shadow:inset 0 1px 1px rgba(255, 255, 255, 0.7);\
     -webkit-box-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);\
-    box-shadow:inset 0 1px 1px rgba(255, 255, 255, 0.7);\
     box-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);\
     background-position: center 4px;\
 }\
@@ -8837,32 +11611,244 @@ define("ace/css/editor.css",[], "\
 .ace_fold-widget:active {\
     border: 1px solid rgba(0, 0, 0, 0.4);\
     background-color: rgba(0, 0, 0, 0.05);\
-    -moz-box-shadow:inset 0 1px 1px rgba(255, 255, 255);\
     -moz-box-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);\
-    -webkit-box-shadow:inset 0 1px 1px rgba(255, 255, 255);\
     -webkit-box-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);\
-    box-shadow:inset 0 1px 1px rgba(255, 255, 255);\
     box-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);\
 }\
-\
+/**\
+ * Dark version for fold widgets\
+ */\
+.ace_dark .ace_fold-widget {\
+    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHklEQVQIW2P4//8/AzoGEQ7oGCaLLAhWiSwB146BAQCSTPYocqT0AAAAAElFTkSuQmCC\");\
+}\
+.ace_dark .ace_fold-widget.end {\
+    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAH0lEQVQIW2P4//8/AxQ7wNjIAjDMgC4AxjCVKBirIAAF0kz2rlhxpAAAAABJRU5ErkJggg==\");\
+}\
+.ace_dark .ace_fold-widget.closed {\
+    background-image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAAFCAYAAACAcVaiAAAAHElEQVQIW2P4//+/AxAzgDADlOOAznHAKgPWAwARji8UIDTfQQAAAABJRU5ErkJggg==\");\
+}\
+.ace_dark .ace_fold-widget:hover {\
+    box-shadow: 0 1px 1px rgba(255, 255, 255, 0.2);\
+    background-color: rgba(255, 255, 255, 0.1);\
+}\
+.ace_dark .ace_fold-widget:active {\
+    -moz-box-shadow: 0 1px 1px rgba(255, 255, 255, 0.2);\
+    -webkit-box-shadow: 0 1px 1px rgba(255, 255, 255, 0.2);\
+    box-shadow: 0 1px 1px rgba(255, 255, 255, 0.2);\
+}\
+    \
+    \
+    \
 .ace_fold-widget.invalid {\
     background-color: #FFB4B4;\
     border-color: #DE5555;\
 }\
+\
+.ace_fade-fold-widgets .ace_fold-widget {\
+       -moz-transition: opacity 0.4s ease 0.05s;\
+    -webkit-transition: opacity 0.4s ease 0.05s;\
+         -o-transition: opacity 0.4s ease 0.05s;\
+        -ms-transition: opacity 0.4s ease 0.05s;\
+            transition: opacity 0.4s ease 0.05s;\
+    opacity: 0;\
+}\
+\
+.ace_fade-fold-widgets:hover .ace_fold-widget {\
+       -moz-transition: opacity 0.05s ease 0.05s;\
+    -webkit-transition: opacity 0.05s ease 0.05s;\
+         -o-transition: opacity 0.05s ease 0.05s;\
+        -ms-transition: opacity 0.05s ease 0.05s;\
+            transition: opacity 0.05s ease 0.05s;\
+    opacity:1;\
+}\
 ");
+
+define("ace/theme/textmate.css",[], ".ace-tm .ace_editor {\
+  border: 2px solid rgb(159, 159, 159);\
+}\
+\
+.ace-tm .ace_editor.ace_focus {\
+  border: 2px solid #327fbd;\
+}\
+\
+.ace-tm .ace_gutter {\
+  background: #e8e8e8;\
+  color: #333;\
+}\
+\
+.ace-tm .ace_print_margin {\
+  width: 1px;\
+  background: #e8e8e8;\
+}\
+\
+.ace-tm .ace_fold {\
+    background-color: #6B72E6;\
+}\
+\
+.ace-tm .ace_text-layer {\
+}\
+\
+.ace-tm .ace_cursor {\
+  border-left: 2px solid black;\
+}\
+\
+.ace-tm .ace_cursor.ace_overwrite {\
+  border-left: 0px;\
+  border-bottom: 1px solid black;\
+}\
+        \
+.ace-tm .ace_line .ace_invisible {\
+  color: rgb(191, 191, 191);\
+}\
+\
+.ace-tm .ace_line .ace_storage,\
+.ace-tm .ace_line .ace_keyword {\
+  color: blue;\
+}\
+\
+.ace-tm .ace_line .ace_constant {\
+  color: rgb(197, 6, 11);\
+}\
+\
+.ace-tm .ace_line .ace_constant.ace_buildin {\
+  color: rgb(88, 72, 246);\
+}\
+\
+.ace-tm .ace_line .ace_constant.ace_language {\
+  color: rgb(88, 92, 246);\
+}\
+\
+.ace-tm .ace_line .ace_constant.ace_library {\
+  color: rgb(6, 150, 14);\
+}\
+\
+.ace-tm .ace_line .ace_invalid {\
+  background-color: rgba(255, 0, 0, 0.1);\
+  color: red;\
+}\
+\
+.ace-tm .ace_line .ace_support.ace_function {\
+  color: rgb(60, 76, 114);\
+}\
+\
+.ace-tm .ace_line .ace_support.ace_constant {\
+  color: rgb(6, 150, 14);\
+}\
+\
+.ace-tm .ace_line .ace_support.ace_type,\
+.ace-tm .ace_line .ace_support.ace_class {\
+  color: rgb(109, 121, 222);\
+}\
+\
+.ace-tm .ace_line .ace_keyword.ace_operator {\
+  color: rgb(104, 118, 135);\
+}\
+\
+.ace-tm .ace_line .ace_string {\
+  color: rgb(3, 106, 7);\
+}\
+\
+.ace-tm .ace_line .ace_comment {\
+  color: rgb(76, 136, 107);\
+}\
+\
+.ace-tm .ace_line .ace_comment.ace_doc {\
+  color: rgb(0, 102, 255);\
+}\
+\
+.ace-tm .ace_line .ace_comment.ace_doc.ace_tag {\
+  color: rgb(128, 159, 191);\
+}\
+\
+.ace-tm .ace_line .ace_constant.ace_numeric {\
+  color: rgb(0, 0, 205);\
+}\
+\
+.ace-tm .ace_line .ace_variable {\
+  color: rgb(49, 132, 149);\
+}\
+\
+.ace-tm .ace_line .ace_xml_pe {\
+  color: rgb(104, 104, 91);\
+}\
+\
+.ace-tm .ace_entity.ace_name.ace_function {\
+  color: #0000A2;\
+}\
+\
+.ace-tm .ace_markup.ace_markupine {\
+    text-decoration:underline;\
+}\
+\
+.ace-tm .ace_markup.ace_heading {\
+  color: rgb(12, 7, 255);\
+}\
+\
+.ace-tm .ace_markup.ace_list {\
+  color:rgb(185, 6, 144);\
+}\
+\
+.ace-tm .ace_marker-layer .ace_selection {\
+  background: rgb(216, 218, 220);\
+}\
+.ace-tm.ace_focus .ace_marker-layer .ace_selection {\
+  background: rgb(181, 213, 255);\
+}\
+.ace-tm.multiselect .ace_selection.start {\
+  box-shadow: 0 0 3px 0px white;\
+  border-radius: 2px;\
+}\
+.ace-tm .ace_marker-layer .ace_step {\
+  background: rgb(252, 255, 0);\
+}\
+\
+.ace-tm .ace_marker-layer .ace_stack {\
+  background: rgb(164, 229, 101);\
+}\
+\
+.ace-tm .ace_marker-layer .ace_bracket {\
+  margin: -1px 0 0 -1px;\
+  border: 1px solid rgb(192, 192, 192);\
+}\
+\
+.ace-tm .ace_marker-layer .ace_active_line {\
+  background-color: #e8e8e8\
+}\
+.ace-tm.ace_focus .ace_marker-layer .ace_active_line {\
+  background: rgb(232, 242, 254);\
+}\
+\
+.ace-tm .ace_gutter_active_line {\
+    background-color : #dcdcdc;\
+}\
+\
+.ace-tm .ace_marker-layer .ace_selected_word {\
+  background: rgb(250, 250, 255);\
+  border: 1px solid rgb(200, 200, 250);\
+}\
+\
+.ace-tm .ace_meta.ace_tag {\
+  color:rgb(28, 2, 255);\
+}\
+\
+.ace-tm .ace_string.ace_regex {\
+  color: rgb(255, 0, 0)\
+}\
+\
+.ace-tm .ace_indent-guide {\
+  background: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAE0lEQVQImWP4////f4bLly//BwAmVgd1/w11/gAAAABJRU5ErkJggg==\") right repeat-y;\
+}");
 
 define("ace/range_list",[], function(require, exports, module) {
 
-var oop = require("ace/lib/oop");
-var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
 
-var RangeList = function(startRow, startColumn, endRow, endColumn) {
+var RangeList = function() {
     this.ranges = [];
 };
 
 (function() {
     this.comparePoints = function(p1, p2) {
-        return p1.row - p2.row || p1.column - p2.column
+        return p1.row - p2.row || p1.column - p2.column;
     };
 
     this.pointIndex = function(pos, startIndex) {
@@ -8882,7 +11868,7 @@ var RangeList = function(startRow, startColumn, endRow, endColumn) {
 
             return -i-1;
         }
-        return -i - 1
+        return -i - 1;
     };
 
     this.add = function(range) {
@@ -8903,7 +11889,7 @@ var RangeList = function(startRow, startColumn, endRow, endColumn) {
     this.addList = function(list) {
         var removed = [];
         for (var i = list.length; i--; ) {
-            removed.push.call(removed, this.add(list[i]))
+            removed.push.call(removed, this.add(list[i]));
         }
         return removed;
     };
@@ -8923,7 +11909,7 @@ var RangeList = function(startRow, startColumn, endRow, endColumn) {
         for (var i = 1; i < list.length; i++) {
             range = next;
             next = list[i];
-            var cmp = this.comparePoints(range.end, next.start)
+            var cmp = this.comparePoints(range.end, next.start);
             if (cmp < 0)
                 continue;
 
@@ -8995,8 +11981,8 @@ var RangeList = function(startRow, startColumn, endRow, endColumn) {
     this.detach = function() {
         if (!this.session)
             return;
-        this.session.removeListener('change', this.onChange)
-        this.session = null
+        this.session.removeListener('change', this.onChange);
+        this.session = null;
     };
 
     this.$onChange = function(e) {
@@ -9013,10 +11999,9 @@ var RangeList = function(startRow, startColumn, endRow, endColumn) {
         var lineDif = endRow - startRow;
 
         var colDiff = -start.column + end.column;
-
         var ranges = this.ranges;
 
-        for (var i=0, n = ranges.length; i < n; i++) {
+        for (var i = 0, n = ranges.length; i < n; i++) {
             var r = ranges[i];
             if (r.end.row < startRow)
                 continue;
@@ -9055,22 +12040,30 @@ var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
 var Range = require("ace/range").Range;
 
 /**
- * Keeps cursor position and the text selection of an edit session.
+ * class Selection
  *
- * The row/columns used in the selection are in document coordinates
- * representing ths coordinates as thez appear in the document
- * before applying soft wrap and folding.
- */
+ * Contains the cursor position and the text selection of an edit session.
+ *
+ * The row/columns used in the selection are in document coordinates representing ths coordinates as thez appear in the document before applying soft wrap and folding.
+ **/
+
+/**
+ * new Selection(session)
+ * - session (EditSession): The session to use
+ *
+ * Creates a new `Selection` object.
+ *
+**/
 var Selection = function(session) {
     this.session = session;
     this.doc = session.getDocument();
 
     this.clearSelection();
-    this.selectionLead = this.doc.createAnchor(0, 0);
-    this.selectionAnchor = this.doc.createAnchor(0, 0);
+    this.lead = this.selectionLead = this.doc.createAnchor(0, 0);
+    this.anchor = this.selectionAnchor = this.doc.createAnchor(0, 0);
 
     var self = this;
-    this.selectionLead.on("change", function(e) {
+    this.lead.on("change", function(e) {
         self._emit("changeCursor");
         if (!self.$isEmpty)
             self._emit("changeSelection");
@@ -9088,13 +12081,23 @@ var Selection = function(session) {
 
     oop.implement(this, EventEmitter);
 
+    /**
+    * Selection.isEmpty() -> Boolean
+    *
+    * Returns `true` if the selection is empty.
+    **/
     this.isEmpty = function() {
         return (this.$isEmpty || (
-            this.selectionAnchor.row == this.selectionLead.row &&
-            this.selectionAnchor.column == this.selectionLead.column
+            this.anchor.row == this.lead.row &&
+            this.anchor.column == this.lead.column
         ));
     };
 
+    /**
+    * Selection.isMultiLine() -> Boolean
+    *
+    * Returns `true` if the selection is a multi-line.
+    **/
     this.isMultiLine = function() {
         if (this.isEmpty()) {
             return false;
@@ -9103,12 +12106,24 @@ var Selection = function(session) {
         return this.getRange().isMultiLine();
     };
 
+    /**
+    * Selection.getCursor() -> Number
+    *
+    * Gets the current position of the cursor.
+    **/
     this.getCursor = function() {
-        return this.selectionLead.getPosition();
+        return this.lead.getPosition();
     };
 
+    /**
+    * Selection.setSelectionAnchor(row, column)
+    * - row (Number): The new row
+    * - column (Number): The new column
+    *
+    * Sets the row and column position of the anchor. This function also emits the `'changeSelection'` event.
+    **/
     this.setSelectionAnchor = function(row, column) {
-        this.selectionAnchor.setPosition(row, column);
+        this.anchor.setPosition(row, column);
 
         if (this.$isEmpty) {
             this.$isEmpty = false;
@@ -9116,20 +12131,38 @@ var Selection = function(session) {
         }
     };
 
+    /** related to: Anchor.getPosition
+    * Selection.getSelectionAnchor() -> Object
+    *
+    * Returns an object containing the `row` and `column` of the calling selection anchor.
+    *
+    **/
     this.getSelectionAnchor = function() {
         if (this.$isEmpty)
             return this.getSelectionLead()
         else
-            return this.selectionAnchor.getPosition();
+            return this.anchor.getPosition();
     };
 
+    /**
+    * Selection.getSelectionLead() -> Object
+    *
+    * Returns an object containing the `row` and `column` of the calling selection lead.
+    **/
     this.getSelectionLead = function() {
-        return this.selectionLead.getPosition();
+        return this.lead.getPosition();
     };
 
+    /**
+    * Selection.shiftSelection(columns)
+    * - columns (Number): The number of columns to shift by
+    *
+    * Shifts the selection up (or down, if [[Selection.isBackwards `isBackwards()`]] is true) the given number of columns.
+    *
+    **/
     this.shiftSelection = function(columns) {
         if (this.$isEmpty) {
-            this.moveCursorTo(this.selectionLead.row, this.selectionLead.column + columns);
+            this.moveCursorTo(this.lead.row, this.lead.column + columns);
             return;
         };
 
@@ -9148,15 +12181,25 @@ var Selection = function(session) {
         }
     };
 
+    /**
+    * Selection.isBackwards() -> Boolean
+    *
+    * Returns `true` if the selection is going backwards in the document.
+    **/
     this.isBackwards = function() {
-        var anchor = this.selectionAnchor;
-        var lead = this.selectionLead;
+        var anchor = this.anchor;
+        var lead = this.lead;
         return (anchor.row > lead.row || (anchor.row == lead.row && anchor.column > lead.column));
     };
 
+    /**
+    * Selection.getRange() -> Range
+    *
+    * [Returns the [[Range `Range`]] for the selected text.]{: #Selection.getRange}
+    **/
     this.getRange = function() {
-        var anchor = this.selectionAnchor;
-        var lead = this.selectionLead;
+        var anchor = this.anchor;
+        var lead = this.lead;
 
         if (this.isEmpty())
             return Range.fromPoints(lead, lead);
@@ -9169,6 +12212,11 @@ var Selection = function(session) {
         }
     };
 
+    /**
+    * Selection.clearSelection()
+    *
+    * [Empties the selection (by de-selecting it). This function also emits the `'changeSelection'` event.]{: #Selection.clearSelection}
+    **/
     this.clearSelection = function() {
         if (!this.$isEmpty) {
             this.$isEmpty = true;
@@ -9176,12 +12224,26 @@ var Selection = function(session) {
         }
     };
 
+    /**
+    * Selection.selectAll()
+    *
+    * Selects all the text in the document.
+    **/
     this.selectAll = function() {
         var lastRow = this.doc.getLength() - 1;
-        this.setSelectionAnchor(lastRow, this.doc.getLine(lastRow).length);
-        this.moveCursorTo(0, 0);
+        this.setSelectionAnchor(0, 0);
+        this.moveCursorTo(lastRow, this.doc.getLine(lastRow).length);
     };
 
+    /**
+    * Selection.setSelectionRange(range, reverse)
+    * - range (Range): The range of text to select
+    * - reverse (Boolean): Indicates if the range should go backwards (`true`) or not
+    *
+    * Sets the selection to the provided range.
+    *
+    **/
+    this.setRange =
     this.setSelectionRange = function(range, reverse) {
         if (reverse) {
             this.setSelectionAnchor(range.end.row, range.end.column);
@@ -9194,80 +12256,161 @@ var Selection = function(session) {
     };
 
     this.$moveSelection = function(mover) {
-        var lead = this.selectionLead;
+        var lead = this.lead;
         if (this.$isEmpty)
             this.setSelectionAnchor(lead.row, lead.column);
 
         mover.call(this);
     };
 
+    /**
+    * Selection.selectTo(row, column)
+    * - row (Number): The row to select to
+    * - column (Number): The column to select to
+    *
+    * Moves the selection cursor to the indicated row and column.
+    *
+    **/
     this.selectTo = function(row, column) {
         this.$moveSelection(function() {
             this.moveCursorTo(row, column);
         });
     };
 
+    /**
+    * Selection.selectToPosition(pos)
+    * - pos (Object): An object containing the row and column
+    *
+    * Moves the selection cursor to the row and column indicated by `pos`.
+    *
+    **/
     this.selectToPosition = function(pos) {
         this.$moveSelection(function() {
             this.moveCursorToPosition(pos);
         });
     };
 
+    /**
+    * Selection.selectUp()
+    *
+    * Moves the selection up one row.
+    **/
     this.selectUp = function() {
         this.$moveSelection(this.moveCursorUp);
     };
 
+    /**
+    * Selection.selectDown()
+    *
+    * Moves the selection down one row.
+    **/
     this.selectDown = function() {
         this.$moveSelection(this.moveCursorDown);
     };
 
+    /**
+    * Selection.selectRight()
+    *
+    * Moves the selection right one column.
+    **/
     this.selectRight = function() {
         this.$moveSelection(this.moveCursorRight);
     };
 
+    /**
+    * Selection.selectLeft()
+    *
+    * Moves the selection left one column.
+    **/
     this.selectLeft = function() {
         this.$moveSelection(this.moveCursorLeft);
     };
 
+    /**
+    * Selection.selectLineStart()
+    *
+    * Moves the selection to the beginning of the current line.
+    **/
     this.selectLineStart = function() {
         this.$moveSelection(this.moveCursorLineStart);
     };
 
+    /**
+    * Selection.selectLineEnd()
+    *
+    * Moves the selection to the end of the current line.
+    **/
     this.selectLineEnd = function() {
         this.$moveSelection(this.moveCursorLineEnd);
     };
 
+    /**
+    * Selection.selectFileEnd()
+    *
+    * Moves the selection to the end of the file.
+    **/
     this.selectFileEnd = function() {
         this.$moveSelection(this.moveCursorFileEnd);
     };
 
+    /**
+    * Selection.selectFileStart()
+    *
+    * Moves the selection to the start of the file.
+    **/
     this.selectFileStart = function() {
         this.$moveSelection(this.moveCursorFileStart);
     };
 
+    /**
+    * Selection.selectWordRight()
+    *
+    * Moves the selection to the first word on the right.
+    **/
     this.selectWordRight = function() {
         this.$moveSelection(this.moveCursorWordRight);
     };
 
+    /**
+    * Selection.selectWordLeft()
+    *
+    * Moves the selection to the first word on the left.
+    **/
     this.selectWordLeft = function() {
         this.$moveSelection(this.moveCursorWordLeft);
     };
 
-    this.selectWord = function() {
-        var cursor = this.getCursor();
-        var range  = this.session.getWordRange(cursor.row, cursor.column);
-        this.setSelectionRange(range);
+    /** related to: EditSession.getWordRange
+    * Selection.selectWord()
+    *
+    * Moves the selection to highlight the entire word.
+    **/
+    this.getWordRange = function(row, column) {
+        if (typeof column == "undefined") {
+            var cursor = row || this.lead;
+            row = cursor.row;
+            column = cursor.column;
+        }
+        return this.session.getWordRange(row, column);
     };
 
-    // Selects a word including its right whitespace
+    this.selectWord = function() {
+        this.setSelectionRange(this.getWordRange());
+    };
+
+    /** related to: EditSession.getAWordRange
+    * Selection.selectAWord()
+    *
+    * Selects a word, including its right whitespace.
+    **/
     this.selectAWord = function() {
         var cursor = this.getCursor();
         var range = this.session.getAWordRange(cursor.row, cursor.column);
         this.setSelectionRange(range);
     };
 
-    this.selectLine = function() {
-        var rowStart = this.selectionLead.row;
+    this.getLineRange = function(row, excludeLastChar) {
+        var rowStart = typeof row == "number" ? row : this.lead.row;
         var rowEnd;
 
         var foldLine = this.session.getFoldLine(rowStart);
@@ -9277,22 +12420,46 @@ var Selection = function(session) {
         } else {
             rowEnd = rowStart;
         }
-        this.setSelectionAnchor(rowStart, 0);
-        this.$moveSelection(function() {
-            this.moveCursorTo(rowEnd + 1, 0);
-        });
+        if (excludeLastChar)
+            return new Range(rowStart, 0, rowEnd, this.session.getLine(rowEnd).length);
+        else
+            return new Range(rowStart, 0, rowEnd + 1, 0);
     };
 
+    /**
+    * Selection.selectLine()
+    *
+    * Selects the entire line.
+    **/
+    this.selectLine = function() {
+        this.setSelectionRange(this.getLineRange());
+    };
+
+    /**
+    * Selection.moveCursorUp()
+    *
+    * Moves the cursor up one row.
+    **/
     this.moveCursorUp = function() {
         this.moveCursorBy(-1, 0);
     };
 
+    /**
+    * Selection.moveCursorDown()
+    *
+    * Moves the cursor down one row.
+    **/
     this.moveCursorDown = function() {
         this.moveCursorBy(1, 0);
     };
 
+    /**
+    * Selection.moveCursorLeft()
+    *
+    * Moves the cursor left one column.
+    **/
     this.moveCursorLeft = function() {
-        var cursor = this.selectionLead.getPosition(),
+        var cursor = this.lead.getPosition(),
             fold;
 
         if (fold = this.session.getFoldAt(cursor.row, cursor.column, -1)) {
@@ -9312,20 +12479,25 @@ var Selection = function(session) {
         }
     };
 
+    /**
+    * Selection.moveCursorRight()
+    *
+    * Moves the cursor right one column.
+    **/
     this.moveCursorRight = function() {
-        var cursor = this.selectionLead.getPosition(),
+        var cursor = this.lead.getPosition(),
             fold;
         if (fold = this.session.getFoldAt(cursor.row, cursor.column, 1)) {
             this.moveCursorTo(fold.end.row, fold.end.column);
         }
-        else if (this.selectionLead.column == this.doc.getLine(this.selectionLead.row).length) {
-            if (this.selectionLead.row < this.doc.getLength() - 1) {
-                this.moveCursorTo(this.selectionLead.row + 1, 0);
+        else if (this.lead.column == this.doc.getLine(this.lead.row).length) {
+            if (this.lead.row < this.doc.getLength() - 1) {
+                this.moveCursorTo(this.lead.row + 1, 0);
             }
         }
         else {
             var tabSize = this.session.getTabSize();
-            var cursor = this.selectionLead;
+            var cursor = this.lead;
             if (this.session.isTabStop(cursor) && this.doc.getLine(cursor.row).slice(cursor.column, cursor.column+tabSize).split(" ").length-1 == tabSize)
                 this.moveCursorBy(0, tabSize);
             else
@@ -9333,9 +12505,14 @@ var Selection = function(session) {
         }
     };
 
+    /**
+    * Selection.moveCursorLineStart()
+    *
+    * Moves the cursor to the start of the line.
+    **/
     this.moveCursorLineStart = function() {
-        var row = this.selectionLead.row;
-        var column = this.selectionLead.column;
+        var row = this.lead.row;
+        var column = this.lead.column;
         var screenRow = this.session.documentToScreenRow(row, column);
 
         // Determ the doc-position of the first character at the screen line.
@@ -9361,8 +12538,13 @@ var Selection = function(session) {
         }
     };
 
+    /**
+    * Selection.moveCursorLineEnd()
+    *
+    * Moves the cursor to the end of the line.
+    **/
     this.moveCursorLineEnd = function() {
-        var lead = this.selectionLead;
+        var lead = this.lead;
         var lastRowColumnPosition =
             this.session.getDocumentLastRowColumnPosition(lead.row, lead.column);
         this.moveCursorTo(
@@ -9371,86 +12553,34 @@ var Selection = function(session) {
         );
     };
 
+    /**
+    * Selection.moveCursorFileEnd()
+    *
+    * Moves the cursor to the end of the file.
+    **/
     this.moveCursorFileEnd = function() {
         var row = this.doc.getLength() - 1;
         var column = this.doc.getLine(row).length;
         this.moveCursorTo(row, column);
     };
 
+    /**
+    * Selection.moveCursorFileStart()
+    *
+    * Moves the cursor to the start of the file.
+    **/
     this.moveCursorFileStart = function() {
         this.moveCursorTo(0, 0);
     };
 
-    this.moveCursorWordRight = function() {
-        var row = this.selectionLead.row;
-        var column = this.selectionLead.column;
-        var line = this.doc.getLine(row);
-        var rightOfCursor = line.substring(column);
-
-        var match;
-        this.session.nonTokenRe.lastIndex = 0;
-        this.session.tokenRe.lastIndex = 0;
-
-        var fold;
-        if (fold = this.session.getFoldAt(row, column, 1)) {
-            this.moveCursorTo(fold.end.row, fold.end.column);
-            return;
-        } else if (column == line.length) {
-            this.moveCursorRight();
-            return;
-        }
-        else if (match = this.session.nonTokenRe.exec(rightOfCursor)) {
-            column += this.session.nonTokenRe.lastIndex;
-            this.session.nonTokenRe.lastIndex = 0;
-        }
-        else if (match = this.session.tokenRe.exec(rightOfCursor)) {
-            column += this.session.tokenRe.lastIndex;
-            this.session.tokenRe.lastIndex = 0;
-        }
-
-        this.moveCursorTo(row, column);
-    };
-
-    this.moveCursorWordLeft = function() {
-        var row = this.selectionLead.row;
-        var column = this.selectionLead.column;
-
-        var fold;
-        if (fold = this.session.getFoldAt(row, column, -1)) {
-            this.moveCursorTo(fold.start.row, fold.start.column);
-            return;
-        }
-
-        if (column == 0) {
-            this.moveCursorLeft();
-            return;
-        }
-
-        var str = this.session.getFoldStringAt(row, column, -1);
-        if (str == null) {
-            str = this.doc.getLine(row).substring(0, column)
-        }
-        var leftOfCursor = lang.stringReverse(str);
-
-        var match;
-        this.session.nonTokenRe.lastIndex = 0;
-        this.session.tokenRe.lastIndex = 0;
-
-        if (match = this.session.nonTokenRe.exec(leftOfCursor)) {
-            column -= this.session.nonTokenRe.lastIndex;
-            this.session.nonTokenRe.lastIndex = 0;
-        }
-        else if (match = this.session.tokenRe.exec(leftOfCursor)) {
-            column -= this.session.tokenRe.lastIndex;
-            this.session.tokenRe.lastIndex = 0;
-        }
-
-        this.moveCursorTo(row, column);
-    };
-    
-	this.moveCursorBWordRight = function() {
-        var row = this.selectionLead.row;
-        var column = this.selectionLead.column;
+    /**
+    * Selection.moveCursorLongWordRight()
+    *
+    * Moves the cursor to the word on the right.
+    **/
+    this.moveCursorLongWordRight = function() {
+        var row = this.lead.row;
+        var column = this.lead.column;
         var line = this.doc.getLine(row);
         var rightOfCursor = line.substring(column);
 
@@ -9490,9 +12620,14 @@ var Selection = function(session) {
         this.moveCursorTo(row, column);
     };
 
-    this.moveCursorBWordLeft = function() {
-        var row = this.selectionLead.row;
-        var column = this.selectionLead.column;
+    /**
+    * Selection.moveCursorLongWordLeft()
+    *
+    * Moves the cursor to the word on the left.
+    **/
+    this.moveCursorLongWordLeft = function() {
+        var row = this.lead.row;
+        var column = this.lead.column;
 
         // skip folds
         var fold;
@@ -9536,10 +12671,120 @@ var Selection = function(session) {
         this.moveCursorTo(row, column);
     };
 
+    this.$shortWordEndIndex = function(rightOfCursor) {
+        var match, index = 0, ch;
+        var whitespaceRe = /\s/;
+        var tokenRe = this.session.tokenRe;
+
+        tokenRe.lastIndex = 0;
+        if (match = this.session.tokenRe.exec(rightOfCursor)) {
+            index = this.session.tokenRe.lastIndex;
+        } else {
+            while ((ch = rightOfCursor[index]) && whitespaceRe.test(ch))
+                index ++;
+
+            if (index <= 1) {
+                tokenRe.lastIndex = 0;
+                 while ((ch = rightOfCursor[index]) && !tokenRe.test(ch)) {
+                    tokenRe.lastIndex = 0;
+                    index ++;
+                    if (whitespaceRe.test(ch)) {
+                        if (index > 2) {
+                            index--
+                            break;
+                        } else {
+                            while ((ch = rightOfCursor[index]) && whitespaceRe.test(ch))
+                                index ++;
+                            if (index > 2)
+                                break
+                        }
+                    }
+                }
+            }
+        }
+        tokenRe.lastIndex = 0;
+
+        return index;
+    };
+
+    this.moveCursorShortWordRight = function() {
+        var row = this.lead.row;
+        var column = this.lead.column;
+        var line = this.doc.getLine(row);
+        var rightOfCursor = line.substring(column);
+
+        var fold = this.session.getFoldAt(row, column, 1);
+        if (fold)
+            return this.moveCursorTo(fold.end.row, fold.end.column);
+
+        if (column == line.length) {
+            var l = this.doc.getLength();
+            do {    
+                row++;
+                rightOfCursor = this.doc.getLine(row)
+            } while (row < l && /^\s*$/.test(rightOfCursor))
+            
+            if (!/^\s+/.test(rightOfCursor))
+                rightOfCursor = ""
+            column = 0;
+        }
+
+        var index = this.$shortWordEndIndex(rightOfCursor);
+
+        this.moveCursorTo(row, column + index);
+    };
+
+    this.moveCursorShortWordLeft = function() {
+        var row = this.lead.row;
+        var column = this.lead.column;
+
+        var fold;
+        if (fold = this.session.getFoldAt(row, column, -1))
+            return this.moveCursorTo(fold.start.row, fold.start.column);
+
+        var line = this.session.getLine(row).substring(0, column);
+        if (column == 0) {
+            do {    
+                row--;
+                line = this.doc.getLine(row);
+            } while (row > 0 && /^\s*$/.test(line))
+            
+            column = line.length;
+            if (!/\s+$/.test(line))
+                line = ""
+        }
+
+        var leftOfCursor = lang.stringReverse(line);
+        var index = this.$shortWordEndIndex(leftOfCursor);
+
+        return this.moveCursorTo(row, column - index);
+    };
+
+    this.moveCursorWordRight = function() {
+        if (this.session.$selectLongWords)
+            this.moveCursorLongWordRight();
+        else
+            this.moveCursorShortWordRight();
+    };
+
+    this.moveCursorWordLeft = function() {
+        if (this.session.$selectLongWords)
+            this.moveCursorLongWordLeft();
+        else
+            this.moveCursorShortWordLeft();
+    };
+
+    /** related to: EditSession.documentToScreenPosition
+    * Selection.moveCursorBy(rows, chars)
+    * - rows (Number): The number of rows to move by
+    * - chars (Number): The number of characters to move by
+    *
+    * Moves the cursor to position indicated by the parameters. Negative numbers move the cursor backwards in the document.
+    **/
     this.moveCursorBy = function(rows, chars) {
         var screenPos = this.session.documentToScreenPosition(
-            this.selectionLead.row,
-            this.selectionLead.column
+            this.lead.row,
+            this.lead.column
         );
 
         if (chars === 0) {
@@ -9555,10 +12800,24 @@ var Selection = function(session) {
         this.moveCursorTo(docPos.row, docPos.column + chars, chars === 0);
     };
 
+    /**
+    * Selection.moveCursorToPosition(position)
+    * - position (Object): The position to move to
+    *
+    * Moves the selection to the position indicated by its `row` and `column`.
+    **/
     this.moveCursorToPosition = function(position) {
         this.moveCursorTo(position.row, position.column);
     };
 
+    /**
+    * Selection.moveCursorTo(row, column, keepDesiredColumn)
+    * - row (Number): The row to move to
+    * - column (Number): The column to move to
+    * - keepDesiredColumn (Boolean): [If `true`, the cursor move does not respect the previous column]{: #preventUpdateBool}
+    *
+    * Moves the cursor to the row and column provided. [If `preventUpdateDesiredColumn` is `true`, then the cursor stays in the same column position as its original point.]{: #preventUpdateBoolDesc}
+    **/
     this.moveCursorTo = function(row, column, keepDesiredColumn) {
         // Ensure the row/column is not inside of a fold.
         var fold = this.session.getFoldAt(row, column, 1);
@@ -9568,13 +12827,21 @@ var Selection = function(session) {
         }
 
         this.$keepDesiredColumnOnChange = true;
-        this.selectionLead.setPosition(row, column);
+        this.lead.setPosition(row, column);
         this.$keepDesiredColumnOnChange = false;
 
         if (!keepDesiredColumn)
             this.$desiredColumn = null;
     };
 
+    /**
+    * Selection.moveCursorToScreen(row, column, keepDesiredColumn)
+    * - row (Number): The row to move to
+    * - column (Number): The column to move to
+    * - keepDesiredColumn (Boolean): {:preventUpdateBool}
+    *
+    * Moves the cursor to the screen position indicated by row and column. {:preventUpdateBoolDesc}
+    **/
     this.moveCursorToScreen = function(row, column, keepDesiredColumn) {
         var pos = this.session.screenToDocumentPosition(row, column);
         this.moveCursorTo(pos.row, pos.column, keepDesiredColumn);
@@ -9582,8 +12849,8 @@ var Selection = function(session) {
 
     // remove listeners from document
     this.detach = function() {
-        this.selectionLead.detach();
-        this.selectionAnchor.detach();
+        this.lead.detach();
+        this.anchor.detach();
         this.session = this.doc = null;
     }
 
@@ -9620,7 +12887,7 @@ var event = require("ace/lib/event");
 
 // mouse
 function isSamePoint(p1, p2) {
-    return p1.row == p2.row && p1.column == p2.column
+    return p1.row == p2.row && p1.column == p2.column;
 }
 
 function onMouseDown(e) {
@@ -9630,18 +12897,14 @@ function onMouseDown(e) {
     var ctrl = e.getAccelKey();
     var button = e.getButton();
 
+    if (e.editor.inMultiSelectMode && button == 2) {
+        e.editor.textInput.onContextMenu(e.domEvent);
+        return;
+    }
+    
     if (!ctrl && !alt) {
-        if (e.editor.inMultiSelectMode) {
-            if (button == 0) {
-                e.editor.exitMultiSelectMode();
-            } else if (button == 2) {
-                var editor = e.editor;
-                var selectionEmpty = editor.selection.isEmpty();
-                editor.textInput.onContextMenu({x: e.clientX, y: e.clientY}, selectionEmpty);
-                event.capture(editor.container, function(){}, editor.textInput.onContextMenuClose);
-                e.stop();
-            }
-        }
+        if (button == 0 && e.editor.inMultiSelectMode)
+            e.editor.exitMultiSelectMode();
         return;
     }
 
@@ -9649,15 +12912,14 @@ function onMouseDown(e) {
     var selection = editor.selection;
     var isMultiSelect = editor.inMultiSelectMode;
     var pos = e.getDocumentPosition();
-    var cursor = selection.getCursor()
+    var cursor = selection.getCursor();
     var inSelection = e.inSelection() || (selection.isEmpty() && isSamePoint(pos, cursor));
 
 
-    var mouseX = e.pageX, mouseY = e.pageY;
-    var clickX = mouseX, clickY = mouseY;
+    var mouseX = e.x, mouseY = e.y;
     var onMouseSelection = function(e) {
-        mouseX = event.getDocumentX(e);
-        mouseY = event.getDocumentY(e);
+        mouseX = e.clientX;
+        mouseY = e.clientY;
     };
 
     var blockSelect = function() {
@@ -9676,24 +12938,23 @@ function onMouseDown(e) {
         editor.removeSelectionMarkers(rectSel);
         rectSel = selection.rectangularRangeBlock(screenCursor, screenAnchor);
         rectSel.forEach(editor.addSelectionMarker, editor);
-        editor.updateSelectionMarkers()
+        editor.updateSelectionMarkers();
     };
     
     var session = editor.session;
-    var anchor = selection.getCursor();
     var screenAnchor = editor.renderer.pixelToScreenCoordinates(mouseX, mouseY);
-    var clippedAnchor = session.documentToScreenPosition(anchor);
     var screenCursor = screenAnchor;
 
     
 
     if (ctrl && !shift && !alt && button == 0) {
         if (!isMultiSelect && inSelection)
-            return // dragging
+            return; // dragging
 
-        if (!isMultiSelect)
-            selection.addRange(selection.toOrientedRange());
-
+        if (!isMultiSelect) {
+            var range = selection.toOrientedRange();
+            editor.addSelectionMarker(range);
+        }
 
         var oldRange = selection.rangeList.rangeAtPoint(pos);
 
@@ -9702,12 +12963,17 @@ function onMouseDown(e) {
 
             if (oldRange && tmpSel.isEmpty() && isSamePoint(oldRange.cursor, tmpSel.cursor))
                 selection.substractPoint(tmpSel.cursor);
-            else
+            else {
+                if (range) {
+                    editor.removeSelectionMarker(range);
+                    selection.addRange(range);
+                }
                 selection.addRange(tmpSel);
+            }
         });
 
     } else if (!shift && alt && button == 0) {
-        e.stop()
+        e.stop();
 
         if (isMultiSelect && !ctrl)
             selection.toSingleRange();
@@ -9723,13 +12989,13 @@ function onMouseDown(e) {
             clearInterval(timerId);
             editor.removeSelectionMarkers(rectSel);
             for (var i = 0; i < rectSel.length; i++)
-                selection.addRange(rectSel[i])
+                selection.addRange(rectSel[i]);
         };
 
-        onSelectionInterval = blockSelect;
+        var onSelectionInterval = blockSelect;
 
         event.capture(editor.container, onMouseSelection, onMouseSelectionEnd);
-        var timerId = setInterval(function() {onSelectionInterval()}, 20);
+        var timerId = setInterval(function() {onSelectionInterval();}, 20);
 
         return e.preventDefault();
     }
@@ -9741,27 +13007,6 @@ exports.onMouseDown = onMouseDown;
 });
 
 define("ace/commands/multi_select_commands",[], function(require, exports, module) {
-
-// add multiSelectAction annotations to default commands
-require("ace/commands/default_commands").commands.forEach(function(command) {
-    var single = RegExp(["selectall"].join("|"), "");
-    var mapOver = RegExp(["backspace", "del",
-        "golinedown", "golineup", "gotoend", "gotoleft", "gotolineend", "gotolinestart",
-        "gotoright", "gotostart", "gotowordleft", "gotowordright",
-        "indent", "insertstring", "inserttext", "jumptomatching", "outdent",
-        "removetolineend", "removetolinestart", "removewordleft", "removewordright", "removeline",
-        "selectdown", "selectleft", "selectlineend", "selectlinestart", "selectright",
-        "selecttoend", "selecttolineend", "selecttolinestart", "selecttostart",
-        "selectup", "selectwordleft", "selectwordright",
-        "splitline", "tolowercase", "touppercase"].join("|"), "");
-
-    if (single.test(command.name))
-        command.multiSelectAction = "single";
-    else if (mapOver.test(command.name))
-        command.multiSelectAction = "forEach";
-    else if (command.name == "transposeletters")
-        command.multiSelectAction = function(editor) {editor.transposeSelections(1); }
-});
 
 // commands to enter multiselect mode
 exports.defaultCommands = [{
@@ -9804,23 +13049,24 @@ exports.defaultCommands = [{
     exec: function(editor) { editor.selectMore(1, true); },
     bindKey: {win: "Ctrl-Alt-Shift-Right", mac: "Ctrl-Alt-Shift-Right"},
     readonly: true
-},  {
+}, {
     name: "splitIntoLines",
     exec: function(editor) { editor.multiSelect.splitIntoLines(); },
     bindKey: {win: "Ctrl-Shift-L", mac: "Ctrl-Shift-L"},
     readonly: true
-}, ];
+}];
 
 // commands active in multiselect mode
-exports.multiEditCommands = [{
+exports.multiSelectCommands = [{
     name: "singleSelection",
     bindKey: "esc",
     exec: function(editor) { editor.exitMultiSelectMode(); },
-    readonly: true
+    readonly: true,
+    isAvailable: function(editor) {return editor && editor.inMultiSelectMode}
 }];
 
 var HashHandler = require("ace/keyboard/hash_handler").HashHandler;
-exports.keyboardHandler = new HashHandler(exports.multiEditCommands);
+exports.keyboardHandler = new HashHandler(exports.multiSelectCommands);
 
 });
 
@@ -9882,69 +13128,7 @@ var Mode = function() {
     this.createWorker = function(session) {
         return null;
     };
-    
-    this.highlightSelection = function(editor) {
-        var session = editor.session;
-        if (!session.$selectionOccurrences)
-            session.$selectionOccurrences = [];
 
-        if (session.$selectionOccurrences.length)
-            this.clearSelectionHighlight(editor);
-
-        var selection = editor.getSelectionRange();
-        if (selection.isEmpty() || selection.isMultiLine())
-            return;
-
-        var startOuter = selection.start.column - 1;
-        var endOuter = selection.end.column + 1;
-        var line = session.getLine(selection.start.row);
-        var lineCols = line.length;
-        var needle = line.substring(Math.max(startOuter, 0),
-                                    Math.min(endOuter, lineCols));
-
-        // Make sure the outer characters are not part of the word.
-        if ((startOuter >= 0 && /^[\w\d]/.test(needle)) ||
-            (endOuter <= lineCols && /[\w\d]$/.test(needle)))
-            return;
-
-        needle = line.substring(selection.start.column, selection.end.column);
-        if (!/^[\w\d]+$/.test(needle))
-            return;
-
-        var cursor = editor.getCursorPosition();
-
-        var newOptions = {
-            wrap: true,
-            wholeWord: true,
-            caseSensitive: true,
-            needle: needle
-        };
-
-        var currentOptions = editor.$search.getOptions();
-        editor.$search.set(newOptions);
-
-        var ranges = editor.$search.findAll(session);
-        ranges.forEach(function(range) {
-            if (!range.contains(cursor.row, cursor.column)) {
-                var marker = session.addMarker(range, "ace_selected_word", "text");
-                session.$selectionOccurrences.push(marker);
-            }
-        });
-
-        editor.$search.set(currentOptions);
-    };
-
-    this.clearSelectionHighlight = function(editor) {
-        if (!editor.session.$selectionOccurrences)
-            return;
-
-        editor.session.$selectionOccurrences.forEach(function(marker) {
-            editor.session.removeMarker(marker);
-        });
-
-        editor.session.$selectionOccurrences = [];
-    };
-    
     this.createModeDelegates = function (mapping) {
         if (!this.$embeds) {
             return;
@@ -10094,7 +13278,7 @@ oop.inherits(Mode, TextMode);
     this.autoOutdent = function(state, doc, row) {
         this.$outdent.autoOutdent(doc, row);
     };
-
+    
 }).call(Mode.prototype);
 
 exports.Mode = Mode;
@@ -10144,7 +13328,7 @@ oop.inherits(Mode, TextMode);
     this.autoOutdent = function(state, doc, row) {
         this.$outdent.autoOutdent(doc, row);
     };
-
+    
 }).call(Mode.prototype);
 
 exports.Mode = Mode;
@@ -10153,6 +13337,21 @@ exports.Mode = Mode;
 
 define("ace/tokenizer",[], function(require, exports, module) {
 
+/**
+ * class Tokenizer
+ *
+ * This class takes a set of highlighting rules, and creates a tokenizer out of them. For more information, see [the wiki on extending highlighters](https://github.com/ajaxorg/ace/wiki/Creating-or-Extending-an-Edit-Mode#wiki-extendingTheHighlighter).
+ *
+ **/
+
+/**
+ * new Tokenizer(rules, flag)
+ * - rules (Object): The highlighting rules
+ * - flag (String): Any additional regular expression flags to pass (like "i" for case insensitive)
+ *
+ * Constructs a new tokenizer based on the given rules and flags.
+ *
+ **/
 var Tokenizer = function(rules, flag) {
     flag = flag ? "g" + flag : "g";
     this.rules = rules;
@@ -10198,8 +13397,13 @@ var Tokenizer = function(rules, flag) {
 
 (function() {
 
+    /**
+    * Tokenizer.getLineTokens() -> Object
+    *
+    * Returns an object containing two properties: `tokens`, which contains all the tokens; and `state`, the current state.
+    **/
     this.getLineTokens = function(line, startState) {
-        var currentState = startState;
+        var currentState = startState || "start";
         var state = this.rules[currentState];
         var mapping = this.matchMappings[currentState];
         var re = this.regExps[currentState];
@@ -10245,9 +13449,8 @@ var Tokenizer = function(rules, flag) {
                     else
                         type = rule.token;
 
-                    var next = rule.next;                    
-                    if (next && next !== currentState) {
-                        currentState = next;
+                if (rule.next) {
+                    currentState = rule.next;
                         state = this.rules[currentState];
                         mapping = this.matchMappings[currentState];
                         lastIndex = re.lastIndex;
@@ -10309,6 +13512,25 @@ var JavaScriptHighlightRules = require("ace/mode/javascript_highlight_rules").Ja
 var xmlUtil = require("ace/mode/xml_util");
 var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightRules;
 
+var tagMap = {
+    a           : 'anchor',
+    button 	    : 'form',
+    form        : 'form',
+    img         : 'image',
+    input       : 'form',
+    label       : 'form',
+    script      : 'script',
+    select      : 'form',
+    textarea    : 'form',
+    style       : 'style',
+    table       : 'table',
+    tbody       : 'table',
+    td          : 'table',
+    tfoot       : 'table',
+    th          : 'table',
+    tr          : 'table'
+};
+
 var HtmlHighlightRules = function() {
 
     // regexp must not have capturing parentheses
@@ -10328,6 +13550,9 @@ var HtmlHighlightRules = function() {
             regex : "<\\!--",
             next : "comment"
         }, {
+            token : "xml_pe",
+            regex : "<\\!.*?>"
+        }, {
             token : "meta.tag",
             regex : "<(?=\s*script\\b)",
             next : "script"
@@ -10342,6 +13567,9 @@ var HtmlHighlightRules = function() {
         }, {
             token : "text",
             regex : "\\s+"
+        }, {
+            token : "constant.character.entity",
+            regex : "(?:&#[0-9]+;)|(?:&#x[0-9a-fA-F]+;)|(?:&[a-zA-Z0-9_:\\.-]+;)"
         }, {
             token : "text",
             regex : "[^<]+"
@@ -10372,9 +13600,9 @@ var HtmlHighlightRules = function() {
         } ]
     };
     
-    xmlUtil.tag(this.$rules, "tag", "start");
-    xmlUtil.tag(this.$rules, "style", "css-start");
-    xmlUtil.tag(this.$rules, "script", "js-start");
+    xmlUtil.tag(this.$rules, "tag", "start", tagMap);
+    xmlUtil.tag(this.$rules, "style", "css-start", tagMap);
+    xmlUtil.tag(this.$rules, "script", "js-start", tagMap);
     
     this.embedRules(JavaScriptHighlightRules, "js-", [{
         token: "comment",
@@ -10398,58 +13626,64 @@ oop.inherits(HtmlHighlightRules, TextHighlightRules);
 exports.HtmlHighlightRules = HtmlHighlightRules;
 });
 
-define("ace/mode/behaviour/xml",[], function(require, exports, module) {
+define("ace/mode/behaviour/html",[], function(require, exports, module) {
 
 var oop = require("ace/lib/oop");
-var Behaviour = require("ace/mode/behaviour").Behaviour;
+var XmlBehaviour = require("ace/mode/behaviour/xml").XmlBehaviour;
 var CstyleBehaviour = require("ace/mode/behaviour/cstyle").CstyleBehaviour;
+var TokenIterator = require("ace/token_iterator").TokenIterator;
+var voidElements = ['area', 'base', 'br', 'col', 'command', 'embed', 'hr', 'img', 'input', 'keygen', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
 
-var XmlBehaviour = function () {
+function hasType(token, type) {
+    var hasType = true;
+    var typeList = token.type.split('.');
+    var needleList = type.split('.');
+    needleList.forEach(function(needle){
+        if (typeList.indexOf(needle) == -1) {
+            hasType = false;
+            return false;
+        }
+    });
+    return hasType;
+}
+
+var HtmlBehaviour = function () {
+
+    this.inherit(XmlBehaviour); // Get xml behaviour
     
-    this.inherit(CstyleBehaviour, ["string_dquotes"]); // Get string behaviour
-    
-    this.add("brackets", "insertion", function (state, action, editor, session, text) {
-        if (text == '<') {
-            var selection = editor.getSelectionRange();
-            var selected = session.doc.getTextRange(selection);
-            if (selected !== "") {
-                return false;
+    this.add("autoclosing", "insertion", function (state, action, editor, session, text) {
+        if (text == '>') {
+            var position = editor.getCursorPosition();
+            var iterator = new TokenIterator(session, position.row, position.column);
+            var token = iterator.getCurrentToken();
+            var atCursor = false;
+            if (!token || !hasType(token, 'meta.tag') && !(hasType(token, 'text') && token.value.match('/'))){
+                do {
+                    token = iterator.stepBackward();
+                } while (token && (hasType(token, 'string') || hasType(token, 'keyword.operator') || hasType(token, 'entity.attribute-name') || hasType(token, 'text')));
             } else {
-                return {
-                    text: '<>',
-                    selection: [1, 1]
-                }
+                atCursor = true;
             }
-        } else if (text == '>') {
-            var cursor = editor.getCursorPosition();
-            var line = session.doc.getLine(cursor.row);
-            var rightChar = line.substring(cursor.column, cursor.column + 1);
-            if (rightChar == '>') { // need some kind of matching check here
-                return {
-                    text: '',
-                    selection: [1, 1]
-                }
+            if (!token || !hasType(token, 'meta.tag-name') || iterator.stepBackward().value.match('/')) {
+                return
             }
-        } else if (text == "\n") {
-            var cursor = editor.getCursorPosition();
-            var line = session.doc.getLine(cursor.row);
-            var rightChars = line.substring(cursor.column, cursor.column + 2);
-            if (rightChars == '</') {
-                var indent = this.$getIndent(session.doc.getLine(cursor.row)) + session.getTabString();
-                var next_indent = this.$getIndent(session.doc.getLine(cursor.row));
-
-                return {
-                    text: '\n' + indent + '\n' + next_indent,
-                    selection: [1, indent.length, 1, indent.length]
-                }
+            var element = token.value;
+            if (atCursor){
+                var element = element.substring(0, position.column - token.start);
+            }
+            if (voidElements.indexOf(element) !== -1){
+                return;
+            }
+            return {
+               text: '>' + '</' + element + '>',
+               selection: [1, 1]
             }
         }
     });
-    
 }
-oop.inherits(XmlBehaviour, Behaviour);
+oop.inherits(HtmlBehaviour, XmlBehaviour);
 
-exports.XmlBehaviour = XmlBehaviour;
+exports.HtmlBehaviour = HtmlBehaviour;
 });
 
 define("ace/mode/folding/html",[], function(require, exports, module) {
@@ -10525,12 +13759,18 @@ var XmlHighlightRules = function() {
             regex : "<\\!--",
             next : "comment"
         }, {
+            token : "xml_pe",
+            regex : "<\\!.*?>"
+        }, {
             token : "meta.tag", // opening tag
             regex : "<\\/?",
             next : "tag"
         }, {
             token : "text",
             regex : "\\s+"
+        }, {
+            token : "constant.character.entity",
+            regex : "(?:&#[0-9]+;)|(?:&#x[0-9a-fA-F]+;)|(?:&[a-zA-Z0-9_:\\.-]+;)"
         }, {
             token : "text",
             regex : "[^<]+"
@@ -10565,6 +13805,81 @@ var XmlHighlightRules = function() {
 oop.inherits(XmlHighlightRules, TextHighlightRules);
 
 exports.XmlHighlightRules = XmlHighlightRules;
+});
+
+define("ace/mode/behaviour/xml",[], function(require, exports, module) {
+
+var oop = require("ace/lib/oop");
+var Behaviour = require("ace/mode/behaviour").Behaviour;
+var CstyleBehaviour = require("ace/mode/behaviour/cstyle").CstyleBehaviour;
+var TokenIterator = require("ace/token_iterator").TokenIterator;
+
+function hasType(token, type) {
+    var hasType = true;
+    var typeList = token.type.split('.');
+    var needleList = type.split('.');
+    needleList.forEach(function(needle){
+        if (typeList.indexOf(needle) == -1) {
+            hasType = false;
+            return false;
+        }
+    });
+    return hasType;
+}
+
+var XmlBehaviour = function () {
+    
+    this.inherit(CstyleBehaviour, ["string_dquotes"]); // Get string behaviour
+    
+    this.add("autoclosing", "insertion", function (state, action, editor, session, text) {
+        if (text == '>') {
+            var position = editor.getCursorPosition();
+            var iterator = new TokenIterator(session, position.row, position.column);
+            var token = iterator.getCurrentToken();
+            var atCursor = false;
+            if (!token || !hasType(token, 'meta.tag') && !(hasType(token, 'text') && token.value.match('/'))){
+                do {
+                    token = iterator.stepBackward();
+                } while (token && (hasType(token, 'string') || hasType(token, 'keyword.operator') || hasType(token, 'entity.attribute-name') || hasType(token, 'text')));
+            } else {
+                atCursor = true;
+            }
+            if (!token || !hasType(token, 'meta.tag-name') || iterator.stepBackward().value.match('/')) {
+                return
+            }
+            var tag = token.value;
+            if (atCursor){
+                var tag = tag.substring(0, position.column - token.start);
+            }
+
+            return {
+               text: '>' + '</' + tag + '>',
+               selection: [1, 1]
+            }
+        }
+    });
+
+    this.add('autoindent', 'insertion', function (state, action, editor, session, text) {
+        if (text == "\n") {
+            var cursor = editor.getCursorPosition();
+            var line = session.doc.getLine(cursor.row);
+            var rightChars = line.substring(cursor.column, cursor.column + 2);
+            if (rightChars == '</') {
+                var indent = this.$getIndent(session.doc.getLine(cursor.row)) + session.getTabString();
+                var next_indent = this.$getIndent(session.doc.getLine(cursor.row));
+
+                return {
+                    text: '\n' + indent + '\n' + next_indent,
+                    selection: [1, indent.length, 1, indent.length]
+                }
+            }
+        }
+    });
+    
+}
+oop.inherits(XmlBehaviour, Behaviour);
+
+exports.XmlBehaviour = XmlBehaviour;
 });
 
 define("ace/mode/folding/xml",[], function(require, exports, module) {
@@ -10602,7 +13917,7 @@ oop.inherits(FoldMode, BaseFoldMode);
     };
     
     this._getFirstTagInLine = function(session, row) {
-        var tokens = session.getTokens(row, row)[0].tokens;
+        var tokens = session.getTokens(row);
         var value = "";
         for (var i = 0; i < tokens.length; i++) {
             var token = tokens[i];
@@ -10632,7 +13947,7 @@ oop.inherits(FoldMode, BaseFoldMode);
         };
     };
     
-    /**
+    /*
      * reads a full tag and places the iterator after the tag
      */
     this._readTagForward = function(iterator) {
@@ -10912,7 +14227,7 @@ define("ace/mode/coffee_highlight_rules",[], function(require, exports, module) 
                     regex : "\\?|\\:|\\,|\\."
                 }, {
                     token : "keyword.operator",
-                    regex : "(?:[\\-=]>|[-+*/%<>&|^!?=]=|>>>=?|\\-\\-|\\+\\+|::|&&=|\\|\\|=|<<=|>>=|\\?\\.|\\.{2,3}|\\!)"
+                    regex : "(?:[\\-=]>|[-+*/%<>&|^!?=]=|>>>=?|\\-\\-|\\+\\+|::|&&=|\\|\\|=|<<=|>>=|\\?\\.|\\.{2,3}|[!*+-=><])"
                 }, {
                     token : "paren.lparen",
                     regex : "[({[]"
@@ -11029,29 +14344,91 @@ var MatchingBraceOutdent = function() {};
 exports.MatchingBraceOutdent = MatchingBraceOutdent;
 });
 
-define("ace/mode/folding/pythonic",[], function(require, exports, module) {
+define("ace/mode/folding/coffee",[], function(require, exports, module) {
 
 var oop = require("ace/lib/oop");
 var BaseFoldMode = require("ace/mode/folding/fold_mode").FoldMode;
+var Range = require("ace/range").Range;
 
-var FoldMode = exports.FoldMode = function(markers) {
-    this.foldingStartMarker = new RegExp("(?:([\\[{])|(" + markers + "))(?:\\s*)(?:#.*)?$");
-};
+var FoldMode = exports.FoldMode = function() {};
 oop.inherits(FoldMode, BaseFoldMode);
 
 (function() {
 
     this.getFoldWidgetRange = function(session, foldStyle, row) {
+        var range = this.indentationBlock(session, row);
+        if (range)
+            return range;
+
+        var re = /\S/;
         var line = session.getLine(row);
-        var match = line.match(this.foldingStartMarker);
-        if (match) {
-            if (match[1])
-                return this.openingBracketBlock(session, match[1], row, match.index);
-            if (match[2])
-                return this.indentationBlock(session, row, match.index + match[2].length);
-            return this.indentationBlock(session, row);
+        var startLevel = line.search(re);
+        if (startLevel == -1 || line[startLevel] != "#")
+            return;
+
+        var startColumn = line.length;
+        var maxRow = session.getLength();
+        var startRow = row;
+        var endRow = row;
+
+        while (++row < maxRow) {
+            line = session.getLine(row);
+            var level = line.search(re);
+
+            if (level == -1)
+                continue;
+
+            if (line[level] != "#")
+                break;
+
+            endRow = row;
         }
-    }
+
+        if (endRow > startRow) {
+            var endColumn = session.getLine(endRow).length;
+            return new Range(startRow, startColumn, endRow, endColumn);
+        }
+    };
+
+    // must return "" if there's no fold, to enable caching
+    this.getFoldWidget = function(session, foldStyle, row) {
+        var line = session.getLine(row);
+        var indent = line.search(/\S/);
+        var next = session.getLine(row + 1);
+        var prev = session.getLine(row - 1);
+        var prevIndent = prev.search(/\S/);
+        var nextIndent = next.search(/\S/);
+
+        if (indent == -1) {
+            session.foldWidgets[row - 1] = prevIndent!= -1 && prevIndent < nextIndent ? "start" : "";
+            return "";
+        }
+
+        // documentation comments
+        if (prevIndent == -1) {
+            if (indent == nextIndent && line[indent] == "#" && next[indent] == "#") {
+                session.foldWidgets[row - 1] = "";
+                session.foldWidgets[row + 1] = "";
+                return "start";
+            }
+        } else if (prevIndent == indent && line[indent] == "#" && prev[indent] == "#") {
+            if (session.getLine(row - 2).search(/\S/) == -1) {
+                session.foldWidgets[row - 1] = "start";
+                session.foldWidgets[row + 1] = "";
+                return ""
+            }
+        }
+
+        if (prevIndent!= -1 && prevIndent < indent)
+            session.foldWidgets[row - 1] = "start";
+        else
+            session.foldWidgets[row - 1] = "";
+
+        if (indent < nextIndent)
+            return "start";
+        else
+            return "";
+    };
 
 }).call(FoldMode.prototype);
 
@@ -11090,7 +14467,7 @@ var c_cppHighlightRules = function() {
                 token : "comment",
                 regex : "\\/\\/.*$"
             },
-            new DocCommentHighlightRules().getStartRule("doc-start"),
+            DocCommentHighlightRules.getStartRule("doc-start"),
             {
                 token : "comment", // multi line comment
                 merge : true,
@@ -11189,7 +14566,7 @@ var c_cppHighlightRules = function() {
     };
     
     this.embedRules(DocCommentHighlightRules, "doc-",
-        [ new DocCommentHighlightRules().getEndRule("start") ]);
+        [ DocCommentHighlightRules.getEndRule("start") ]);
 };
 
 oop.inherits(c_cppHighlightRules, TextHighlightRules);
@@ -11328,7 +14705,7 @@ var CstyleBehaviour = function () {
                 }
 
                 // Find what token we're inside.
-                var tokens = session.getTokens(selection.start.row, selection.start.row)[0].tokens;
+                var tokens = session.getTokens(selection.start.row);
                 var col = 0, token;
                 var quotepos = -1; // Track whether we're inside an open quote.
 
@@ -11454,8 +14831,12 @@ var JsonHighlightRules = function() {
     this.$rules = {
         "start" : [
             {
+                token : "variable", // single line
+                regex : '["](?:(?:\\\\.)|(?:[^"\\\\]))*?["]\\s*(?=:)'
+            }, {
                 token : "string", // single line
-                regex : '["](?:(?:\\\\.)|(?:[^"\\\\]))*?["]'
+                regex : '"',
+                next  : "string"
             }, {
                 token : "constant.numeric", // hex
                 regex : "0[xX][0-9a-fA-F]+\\b"
@@ -11481,6 +14862,26 @@ var JsonHighlightRules = function() {
                 token : "text",
                 regex : "\\s+"
             }
+        ],
+        "string" : [
+            {
+                token : "constant.language.escape",
+                regex : /\\(?:x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4})/
+            }, {
+                token : "string",
+                regex : '[^"\\\\]+',
+                merge : true
+            }, {
+                token : "string",
+                regex : '"',
+                next  : "start",
+                merge : true
+            }, {
+                token : "string",
+                regex : "",
+                next  : "start",
+                merge : true
+            }
         ]
     };
     
@@ -11497,21 +14898,31 @@ var oop = require("ace/lib/oop");
 var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
 var config = require("ace/config");
 
-var WorkerClient = function(topLevelNamespaces, packagedJs, mod, classname) {
+var WorkerClient = function(topLevelNamespaces, mod, classname) {
 
     this.changeListener = this.changeListener.bind(this);
 
     if (config.get("packaged")) {
-        this.$worker = new Worker(config.get("workerPath") + "/" + packagedJs);
+        this.$worker = new Worker(config.moduleUrl(mod, "worker"));
     }
     else {
-        var workerUrl = this.$normalizePath(require.nameToUrl("ace/worker/worker", null, "_"));
+        var workerUrl;
+        if (typeof require.supports !== "undefined" && require.supports.indexOf("ucjs2-pinf-0") >= 0) {
+            // We are running in the sourcemint loader.
+            workerUrl = require.nameToUrl("ace/worker/worker_sourcemint");
+        } else {
+            // We are running in RequireJS.
+            // nameToUrl is renamed to toUrl in requirejs 2
+            if (require.nameToUrl && !require.toUrl)
+                require.toUrl = require.nameToUrl;
+            workerUrl = this.$normalizePath(require.toUrl("ace/worker/worker", null, "_"));
+        }
         this.$worker = new Worker(workerUrl);
 
         var tlns = {};
         for (var i=0; i<topLevelNamespaces.length; i++) {
             var ns = topLevelNamespaces[i];
-            var path = this.$normalizePath(require.nameToUrl(ns, null, "_").replace(/.js$/, ""));
+            var path = this.$normalizePath(require.toUrl(ns, null, "_").replace(/.js(\?.*)?$/, ""));
 
             tlns[ns] = path;
         }
@@ -11622,51 +15033,67 @@ exports.WorkerClient = WorkerClient;
 
 define("ace/mouse/default_handlers",[], function(require, exports, module) {
 
-var event = require("ace/lib/event");
 var dom = require("ace/lib/dom");
-var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
-
-var STATE_UNKNOWN = 0;
-var STATE_SELECT = 1;
-var STATE_DRAG = 2;
+var useragent = require("ace/lib/useragent");
 
 var DRAG_OFFSET = 5; // pixels
 
-function DefaultHandlers(editor) {
-    this.editor = editor;
-    this.$clickSelection = null;
+function DefaultHandlers(mouseHandler) {
+    mouseHandler.$clickSelection = null;
 
-    editor.setDefaultHandler("mousedown", this.onMouseDown.bind(this));
-    editor.setDefaultHandler("dblclick", this.onDoubleClick.bind(this));
-    editor.setDefaultHandler("tripleclick", this.onTripleClick.bind(this));
-    editor.setDefaultHandler("quadclick", this.onQuadClick.bind(this));
-    editor.setDefaultHandler("mousewheel", this.onScroll.bind(this));
+    var editor = mouseHandler.editor;
+    editor.setDefaultHandler("mousedown", this.onMouseDown.bind(mouseHandler));
+    editor.setDefaultHandler("dblclick", this.onDoubleClick.bind(mouseHandler));
+    editor.setDefaultHandler("tripleclick", this.onTripleClick.bind(mouseHandler));
+    editor.setDefaultHandler("quadclick", this.onQuadClick.bind(mouseHandler));
+    editor.setDefaultHandler("mousewheel", this.onScroll.bind(mouseHandler));
+
+    var exports = ["select", "startSelect", "drag", "dragEnd", "dragWait",
+        "dragWaitEnd", "startDrag", "focusWait"];
+
+    exports.forEach(function(x) {
+        mouseHandler[x] = this[x];
+    }, this);
+
+    mouseHandler.selectByLines = this.extendSelectionBy.bind(mouseHandler, "getLineRange");
+    mouseHandler.selectByWords = this.extendSelectionBy.bind(mouseHandler, "getWordRange");
+
+    mouseHandler.$focusWaitTimout = 250;
 }
 
 (function() {
-    
+
     this.onMouseDown = function(ev) {
         var inSelection = ev.inSelection();
-        var pageX = ev.pageX;
-        var pageY = ev.pageY;
         var pos = ev.getDocumentPosition();
+        this.mousedownEvent = ev;
         var editor = this.editor;
         var _self = this;
-        
-        var selectionRange = editor.getSelectionRange();
-        var selectionEmpty = selectionRange.isEmpty();
-        var state = STATE_UNKNOWN;
-        
+
         var button = ev.getButton();
         if (button !== 0) {
+            var selectionRange = editor.getSelectionRange();
+            var selectionEmpty = selectionRange.isEmpty();
+
             if (selectionEmpty) {
                 editor.moveCursorToPosition(pos);
+                editor.selection.clearSelection();
             }
-            if (button == 2) {
-                editor.textInput.onContextMenu({x: ev.clientX, y: ev.clientY}, selectionEmpty);
-                event.capture(editor.container, function(){}, editor.textInput.onContextMenuClose);
+
+            // 2: contextmenu, 1: linux paste
+            editor.textInput.onContextMenu(ev.domEvent);
+            return; // stopping event here breaks contextmenu on ff mac
+        }
+
+        // if this click caused the editor to be focused should not clear the
+        // selection
+        if (inSelection && !editor.isFocused()) {
+            editor.focus();
+            if (this.$focusWaitTimout && !this.$clickSelection) {
+                this.setState("focusWait");
+                this.captureMouse(ev);
+                return ev.preventDefault();
             }
-            return;
         }
         else {
             // Select the fold as the user clicks it.
@@ -11677,176 +15104,233 @@ function DefaultHandlers(editor) {
             }
         }
 
-        if (!inSelection) {
+        if (!inSelection || this.$clickSelection || ev.getShiftKey()) {
             // Directly pick STATE_SELECT, since the user is not clicking inside
             // a selection.
-            onStartSelect(pos);
+            this.startSelect(pos);
+        } else if (inSelection) {
+            this.mousedownEvent.time = (new Date()).getTime();
+            this.setState("dragWait");
         }
 
-        var mousePageX = pageX, mousePageY = pageY;
-        var mousedownTime = (new Date()).getTime();
-        var dragCursor, dragRange, dragSelectionMarker;
-
-        var onMouseSelection = function(e) {
-            mousePageX = event.getDocumentX(e);
-            mousePageY = event.getDocumentY(e);
-        };
-
-        var onMouseSelectionEnd = function(e) {
-            clearInterval(timerId);
-            if (state == STATE_UNKNOWN)
-                onStartSelect(pos);
-            else if (state == STATE_DRAG)
-                onMouseDragSelectionEnd(e);
-
-            _self.$clickSelection = null;
-            state = STATE_UNKNOWN;
-        };
-
-        var onMouseDragSelectionEnd = function(e) {
-            dom.removeCssClass(editor.container, "ace_dragging");
-            editor.session.removeMarker(dragSelectionMarker);
-
-            if (!editor.$mouseHandler.$clickSelection) {
-                if (!dragCursor) {
-                    editor.moveCursorToPosition(pos);
-                    editor.selection.clearSelection();
-                }
-            }
-
-            if (!dragCursor)
-                return;
-
-            if (dragRange.contains(dragCursor.row, dragCursor.column)) {
-                dragCursor = null;
-                return;
-            }
-
-            editor.clearSelection();
-            if (e && (e.ctrlKey || e.altKey)) {
-                var session = editor.session;
-                var newRange = session.insert(dragCursor, session.getTextRange(dragRange));
-            } else {
-                var newRange = editor.moveText(dragRange, dragCursor);
-            }
-            if (!newRange) {
-                dragCursor = null;
-                return;
-            }
-
-            editor.selection.setSelectionRange(newRange);
-        };
-
-        var onSelectionInterval = function() {
-            if (state == STATE_UNKNOWN) {
-                var distance = calcDistance(pageX, pageY, mousePageX, mousePageY);
-                var time = (new Date()).getTime();
-
-                if (distance > DRAG_OFFSET) {
-                    state = STATE_SELECT;
-                    var cursor = editor.renderer.screenToTextCoordinates(mousePageX, mousePageY);
-                    onStartSelect(cursor);
-                }
-                else if ((time - mousedownTime) > editor.getDragDelay()) {
-                    state = STATE_DRAG;
-                    dragRange = editor.getSelectionRange();
-                    var style = editor.getSelectionStyle();
-                    dragSelectionMarker = editor.session.addMarker(dragRange, "ace_selection", style);
-                    editor.clearSelection();
-                    dom.addCssClass(editor.container, "ace_dragging");
-                }
-
-            }
-
-            if (state == STATE_DRAG)
-                onDragSelectionInterval();
-            else if (state == STATE_SELECT)
-                onUpdateSelectionInterval();
-        };
-
-        function onStartSelect(pos) {
-            if (ev.getShiftKey()) {
-                editor.selection.selectToPosition(pos);
-            }
-            else {
-                if (!_self.$clickSelection) {
-                    editor.moveCursorToPosition(pos);
-                    editor.selection.clearSelection();
-                }
-            }
-            state = STATE_SELECT;
-        }
-
-        var onUpdateSelectionInterval = function() {
-            var anchor;
-            var cursor = editor.renderer.screenToTextCoordinates(mousePageX, mousePageY);
-
-            if (_self.$clickSelection) {
-                if (_self.$clickSelection.contains(cursor.row, cursor.column)) {
-                    editor.selection.setSelectionRange(_self.$clickSelection);
-                }
-                else {
-                    if (_self.$clickSelection.compare(cursor.row, cursor.column) == -1) {
-                        anchor = _self.$clickSelection.end;
-                    }
-                    else {
-                        anchor = _self.$clickSelection.start;
-                    }
-                    editor.selection.setSelectionAnchor(anchor.row, anchor.column);
-                    editor.selection.selectToPosition(cursor);
-                }
-            }
-            else {
-                editor.selection.selectToPosition(cursor);
-            }
-
-            editor.renderer.scrollCursorIntoView();
-        };
-
-        var onDragSelectionInterval = function() {
-            dragCursor = editor.renderer.screenToTextCoordinates(mousePageX, mousePageY);
-            editor.moveCursorToPosition(dragCursor);
-        };
-
-        event.capture(editor.container, onMouseSelection, onMouseSelectionEnd);
-        var timerId = setInterval(onSelectionInterval, 20);
-
+        this.captureMouse(ev);
         return ev.preventDefault();
     };
-    
+
+    this.startSelect = function(pos) {
+        pos = pos || this.editor.renderer.screenToTextCoordinates(this.x, this.y);
+        if (this.mousedownEvent.getShiftKey()) {
+            this.editor.selection.selectToPosition(pos);
+        }
+        else if (!this.$clickSelection) {
+            this.editor.moveCursorToPosition(pos);
+            this.editor.selection.clearSelection();
+        }
+        this.setState("select");
+    }
+
+    this.select = function() {
+        var anchor, editor = this.editor;
+        var cursor = editor.renderer.screenToTextCoordinates(this.x, this.y);
+
+        if (this.$clickSelection) {
+            var cmp = this.$clickSelection.comparePoint(cursor);
+
+            if (cmp == -1) {
+                anchor = this.$clickSelection.end;
+            } else if (cmp == 1) {
+                anchor = this.$clickSelection.start;
+            } else {
+                var orientedRange = calcRangeOrientation(this.$clickSelection, cursor);
+                cursor = orientedRange.cursor;
+                anchor = orientedRange.anchor;
+            }
+            editor.selection.setSelectionAnchor(anchor.row, anchor.column);
+        }
+        editor.selection.selectToPosition(cursor);
+
+        editor.renderer.scrollCursorIntoView();
+    };
+
+    this.extendSelectionBy = function(unitName) {
+        var anchor, editor = this.editor;
+        var cursor = editor.renderer.screenToTextCoordinates(this.x, this.y);
+        var range = editor.selection[unitName](cursor.row, cursor.column);
+
+        if (this.$clickSelection) {
+            var cmpStart = this.$clickSelection.comparePoint(range.start);
+            var cmpEnd = this.$clickSelection.comparePoint(range.end);
+
+            if (cmpStart == -1 && cmpEnd <= 0) {
+                anchor = this.$clickSelection.end;
+                if (range.end.row != cursor.row || range.end.column != cursor.column)
+                    cursor = range.start;
+            } else if (cmpEnd == 1 && cmpStart >= 0) {
+                anchor = this.$clickSelection.start;
+                if (range.start.row != cursor.row || range.start.column != cursor.column)
+                    cursor = range.end;
+            } else if (cmpStart == -1 && cmpEnd == 1) {
+                cursor = range.end;
+                anchor = range.start;
+            } else {
+                var orientedRange = calcRangeOrientation(this.$clickSelection, cursor);
+                cursor = orientedRange.cursor;
+                anchor = orientedRange.anchor;
+            }
+            editor.selection.setSelectionAnchor(anchor.row, anchor.column);
+        }
+        editor.selection.selectToPosition(cursor);
+
+        editor.renderer.scrollCursorIntoView();
+    };
+
+    this.startDrag = function() {
+        var editor = this.editor;
+        this.setState("drag");
+        this.dragRange = editor.getSelectionRange();
+        var style = editor.getSelectionStyle();
+        this.dragSelectionMarker = editor.session.addMarker(this.dragRange, "ace_selection", style);
+        editor.clearSelection();
+        dom.addCssClass(editor.container, "ace_dragging");
+        if (!this.$dragKeybinding) {
+            this.$dragKeybinding = {
+                handleKeyboard: function(data, hashId, keyString, keyCode) {
+                    if (keyString == "esc")
+                        return {command: this.command};
+                },
+                command: {
+                    exec: function(editor) {
+                        var self = editor.$mouseHandler;
+                        self.dragCursor = null
+                        self.dragEnd();
+                        self.startSelect();
+                    }
+                }
+            }
+        }
+
+        editor.keyBinding.addKeyboardHandler(this.$dragKeybinding);
+    };
+
+    this.focusWait = function() {
+        var distance = calcDistance(this.mousedownEvent.x, this.mousedownEvent.y, this.x, this.y);
+        var time = (new Date()).getTime();
+
+        if (distance > DRAG_OFFSET ||time - this.mousedownEvent.time > this.$focusWaitTimout)
+            this.startSelect();
+    };
+
+    this.dragWait = function(e) {
+        var distance = calcDistance(this.mousedownEvent.x, this.mousedownEvent.y, this.x, this.y);
+        var time = (new Date()).getTime();
+        var editor = this.editor;
+
+        if (distance > DRAG_OFFSET) {
+            this.startSelect();
+        } else if (time - this.mousedownEvent.time > editor.getDragDelay()) {
+            this.startDrag();
+        }
+    };
+
+    this.dragWaitEnd = function(e) {
+        this.mousedownEvent.domEvent = e;
+        this.startSelect();
+    };
+
+    this.drag = function() {
+        var editor = this.editor;
+        this.dragCursor = editor.renderer.screenToTextCoordinates(this.x, this.y);
+        editor.moveCursorToPosition(this.dragCursor);
+        editor.renderer.scrollCursorIntoView();
+    };
+
+    this.dragEnd = function(e) {
+        var editor = this.editor;
+        var dragCursor = this.dragCursor;
+        var dragRange = this.dragRange;
+        dom.removeCssClass(editor.container, "ace_dragging");
+        editor.session.removeMarker(this.dragSelectionMarker);
+        editor.keyBinding.removeKeyboardHandler(this.$dragKeybinding);
+
+        if (!dragCursor)
+            return;
+
+        editor.clearSelection();
+        if (e && (e.ctrlKey || e.altKey)) {
+            var session = editor.session;
+            var newRange = dragRange;
+            newRange.end = session.insert(dragCursor, session.getTextRange(dragRange));
+            newRange.start = dragCursor;
+        } else if (dragRange.contains(dragCursor.row, dragCursor.column)) {
+            return;
+        } else {
+            var newRange = editor.moveText(dragRange, dragCursor);
+        }
+
+        if (!newRange)
+            return;
+
+        editor.selection.setSelectionRange(newRange);
+    };
+
     this.onDoubleClick = function(ev) {
         var pos = ev.getDocumentPosition();
         var editor = this.editor;
-        
-        editor.moveCursorToPosition(pos);
-        editor.selection.selectWord();
-        this.$clickSelection = editor.getSelectionRange();
+        var session = editor.session
+
+        var range = session.getBracketRange(pos);
+        if (range) {
+            if (range.isEmpty()) {
+                range.start.column--;
+                range.end.column++;
+            }
+            this.$clickSelection = range;
+            this.setState("select");
+            return;
+        }
+
+        this.$clickSelection = editor.selection.getWordRange(pos.row, pos.column);
+        this.setState("selectByWords");
     };
-    
+
     this.onTripleClick = function(ev) {
         var pos = ev.getDocumentPosition();
         var editor = this.editor;
-        
-        editor.moveCursorToPosition(pos);
-        editor.selection.selectLine();
-        this.$clickSelection = editor.getSelectionRange();
+
+        this.setState("selectByLines");
+        this.$clickSelection = editor.selection.getLineRange(pos.row);
     };
-    
+
     this.onQuadClick = function(ev) {
         var editor = this.editor;
-        
+
         editor.selectAll();
         this.$clickSelection = editor.getSelectionRange();
+        this.setState("null");
     };
-    
+
     this.onScroll = function(ev) {
         var editor = this.editor;
-        
+        var isScrolable = editor.renderer.isScrollableBy(ev.wheelX * ev.speed, ev.wheelY * ev.speed);
+        if (isScrolable) {
+            this.$passScrollEvent = false;
+        } else {
+            if (this.$passScrollEvent)
+                return;
+
+            if (!this.$scrollStopTimeout) {
+                var self = this;
+                this.$scrollStopTimeout = setTimeout(function() {
+                    self.$passScrollEvent = true;
+                    self.$scrollStopTimeout = null;
+                }, 200);
+            }
+        }
+
         editor.renderer.scrollBy(ev.wheelX * ev.speed, ev.wheelY * ev.speed);
-        if (editor.renderer.isScrollableBy(ev.wheelX * ev.speed, ev.wheelY * ev.speed))
-            return ev.preventDefault();
+        return ev.preventDefault();
     };
-    
+
 }).call(DefaultHandlers.prototype);
 
 exports.DefaultHandlers = DefaultHandlers;
@@ -11855,17 +15339,44 @@ function calcDistance(ax, ay, bx, by) {
     return Math.sqrt(Math.pow(bx - ax, 2) + Math.pow(by - ay, 2));
 }
 
+function calcRangeOrientation(range, cursor) {
+    if (range.start.row == range.end.row)
+        var cmp = 2 * cursor.column - range.start.column - range.end.column;
+    else
+        var cmp = 2 * cursor.row - range.start.row - range.end.row;
+
+    if (cmp < 0)
+        return {cursor: range.start, anchor: range.end};
+    else
+        return {cursor: range.end, anchor: range.start};
+}
+
 });
 
 define("ace/mouse/default_gutter_handler",[], function(require, exports, module) {
+var dom = require("ace/lib/dom");
 
-function GutterHandler(editor) {
-    editor.setDefaultHandler("gutterclick", function(e) {
+function GutterHandler(mouseHandler) {
+    var editor = mouseHandler.editor;
+
+    mouseHandler.editor.setDefaultHandler("guttermousedown", function(e) {
+        if (!editor.isFocused())
+            return;
+        var gutterRegion = editor.renderer.$gutterLayer.getRegion(e);
+
+        if (gutterRegion)
+            return;
+
         var row = e.getDocumentPosition().row;
         var selection = editor.session.selection;
-        
-        selection.moveCursorTo(row, 0);
-        selection.selectLine();
+
+        if (e.getShiftKey())
+            selection.selectTo(row, 0);
+        else
+            mouseHandler.$clickSelection = editor.selection.getLineRange(row);
+
+        mouseHandler.captureMouse(e, "selectByLines");
+        return e.preventDefault();
     });
 }
 
@@ -11876,19 +15387,17 @@ exports.GutterHandler = GutterHandler;
 define("ace/mouse/mouse_event",[], function(require, exports, module) {
 
 var event = require("ace/lib/event");
+var useragent = require("ace/lib/useragent");
 
-/**
+/*
  * Custom Ace mouse event
  */
 var MouseEvent = exports.MouseEvent = function(domEvent, editor) {
     this.domEvent = domEvent;
     this.editor = editor;
     
-    this.pageX = event.getDocumentX(domEvent);
-    this.pageY = event.getDocumentY(domEvent);
-    
-    this.clientX = domEvent.clientX;
-    this.clientY = domEvent.clientY;
+    this.x = this.clientX = domEvent.clientX;
+    this.y = this.clientY = domEvent.clientY;
 
     this.$pos = null;
     this.$inSelection = null;
@@ -11914,7 +15423,7 @@ var MouseEvent = exports.MouseEvent = function(domEvent, editor) {
         this.preventDefault();
     };
 
-    /**
+    /*
      * Get the document position below the mouse cursor
      * 
      * @return {Object} 'row' and 'column' of the document position
@@ -11922,14 +15431,12 @@ var MouseEvent = exports.MouseEvent = function(domEvent, editor) {
     this.getDocumentPosition = function() {
         if (this.$pos)
             return this.$pos;
-            
-        var pageX = event.getDocumentX(this.domEvent);
-        var pageY = event.getDocumentY(this.domEvent);
-        this.$pos = this.editor.renderer.screenToTextCoordinates(pageX, pageY);
+        
+        this.$pos = this.editor.renderer.screenToTextCoordinates(this.clientX, this.clientY);
         return this.$pos;
     };
     
-    /**
+    /*
      * Check if the mouse cursor is inside of the text selection
      * 
      * @return {Boolean} whether the mouse cursor is inside of the selection
@@ -11955,7 +15462,7 @@ var MouseEvent = exports.MouseEvent = function(domEvent, editor) {
         return this.$inSelection;
     };
     
-    /**
+    /*
      * Get the clicked mouse button
      * 
      * @return {Number} 0 for left button, 1 for middle button, 2 for right button
@@ -11964,19 +15471,87 @@ var MouseEvent = exports.MouseEvent = function(domEvent, editor) {
         return event.getButton(this.domEvent);
     };
     
-    /**
+    /*
      * @return {Boolean} whether the shift key was pressed when the event was emitted
      */
     this.getShiftKey = function() {
         return this.domEvent.shiftKey;
     };
     
-    this.getAccelKey = function() {
-        return this.domEvent.ctrlKey || this.domEvent.metaKey ;
-    };
+    this.getAccelKey = useragent.isMac
+        ? function() { return this.domEvent.metaKey; }
+        : function() { return this.domEvent.ctrlKey; };
     
 }).call(MouseEvent.prototype);
 
+});
+
+define("ace/mouse/dragdrop",[], function(require, exports, module) {
+
+var event = require("ace/lib/event");
+
+var DragdropHandler = function(mouseHandler) {
+    var editor = mouseHandler.editor;
+    var dragSelectionMarker, x, y;
+    var timerId, range, isBackwards;
+    var dragCursor, counter = 0;
+
+    var mouseTarget = editor.container;
+    event.addListener(mouseTarget, "dragenter", function(e) {
+        counter++;
+        if (!dragSelectionMarker) {
+            range = editor.getSelectionRange();
+            isBackwards = editor.selection.isBackwards();
+            var style = editor.getSelectionStyle();
+            dragSelectionMarker = editor.session.addMarker(range, "ace_selection", style);
+            editor.clearSelection();
+            clearInterval(timerId);
+            timerId = setInterval(onDragInterval, 20);
+        }
+        return event.preventDefault(e);
+    });
+
+    event.addListener(mouseTarget, "dragover", function(e) {
+        x = e.clientX;
+        y = e.clientY;
+        return event.preventDefault(e);
+    });
+    
+    var onDragInterval =  function() {
+        dragCursor = editor.renderer.screenToTextCoordinates(x, y);
+        editor.moveCursorToPosition(dragCursor);
+        editor.renderer.scrollCursorIntoView();
+    };
+    
+    event.addListener(mouseTarget, "dragleave", function(e) {
+        counter--;
+        if (counter > 0)
+            return;
+        console.log(e.type, counter,e.target);
+        clearInterval(timerId);
+        editor.session.removeMarker(dragSelectionMarker);
+        dragSelectionMarker = null;
+        editor.selection.setSelectionRange(range, isBackwards);
+        return event.preventDefault(e);
+    });
+    
+    event.addListener(mouseTarget, "drop", function(e) {
+        console.log(e.type, counter,e.target);
+        counter = 0;
+        clearInterval(timerId);
+        editor.session.removeMarker(dragSelectionMarker);
+        dragSelectionMarker = null;
+
+        range.end = editor.session.insert(dragCursor, e.dataTransfer.getData('Text'));
+        range.start = dragCursor;
+        editor.focus();
+        editor.selection.setSelectionRange(range);
+        return event.preventDefault(e);
+    });
+
+};
+
+exports.DragdropHandler = DragdropHandler;
 });
 
 // Most of the following code is taken from SproutCore with a few changes.
@@ -11985,7 +15560,7 @@ define("ace/lib/keys",[], function(require, exports, module) {
 
 var oop = require("ace/lib/oop");
 
-/**
+/*
  * Helper functions and hashes for key handling.
  */
 var Keys = (function() {
@@ -12084,16 +15659,30 @@ var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
 var Range = require("ace/range").Range;
 var Anchor = require("ace/anchor").Anchor;
 
+/**
+ * class Document
+ *
+ * Contains the text of the document. Documents are controlled by a single [[EditSession `EditSession`]]. At its core, `Document`s are just an array of strings, with each row in the document matching up to the array index.
+ *
+ *
+ **/
+
+ /**
+ * new Document([text])
+ * - text (String | Array): The starting text
+ *
+ * Creates a new `Document`. If `text` is included, the `Document` contains those strings; otherwise, it's empty.
+ *
+ **/
 var Document = function(text) {
     this.$lines = [];
 
-    if (Array.isArray(text)) {
-        this.insertLines(0, text);
-    }
     // There has to be one line at least in the document. If you pass an empty
     // string to the insert function, nothing will happen. Workaround.
-    else if (text.length == 0) {
+    if (text.length == 0) {
         this.$lines = [""];
+    } else if (Array.isArray(text)) {
+        this.insertLines(0, text);
     } else {
         this.insert({row: 0, column:0}, text);
     }
@@ -12103,19 +15692,47 @@ var Document = function(text) {
 
     oop.implement(this, EventEmitter);
 
+    /**
+    * Document.setValue(text) -> Void
+    * - text (String): The text to use
+    *
+    * Replaces all the lines in the current `Document` with the value of `text`.
+    **/
     this.setValue = function(text) {
         var len = this.getLength();
         this.remove(new Range(0, 0, len, this.getLine(len-1).length));
         this.insert({row: 0, column:0}, text);
     };
 
+    /**
+    * Document.getValue() -> String
+    * 
+    * Returns all the lines in the document as a single string, split by the new line character.
+    **/
     this.getValue = function() {
         return this.getAllLines().join(this.getNewLineCharacter());
     };
 
+    /** 
+    * Document.createAnchor(row, column) -> Anchor
+    * - row (Number): The row number to use
+    * - column (Number): The column number to use
+    *
+    * Creates a new `Anchor` to define a floating point in the document.
+    **/
     this.createAnchor = function(row, column) {
         return new Anchor(this, row, column);
     };
+
+    /** internal, hide
+    * Document.$split(text) -> [String]
+    * - text (String): The text to work with
+    * + ([String]): A String array, with each index containing a piece of the original `text` string.
+    * 
+    * Splits a string of text on any newline (`\n`) or carriage-return ('\r') characters.
+    *
+    *
+    **/
 
     // check for IE split bug
     if ("aaa".split(/a/).length == 0)
@@ -12128,6 +15745,11 @@ var Document = function(text) {
         };
 
 
+    /** internal, hide
+    * Document.$detectNewLine(text) -> Void
+    * 
+    * 
+    **/
     this.$detectNewLine = function(text) {
         var match = text.match(/^.*?(\r\n|\r|\n)/m);
         if (match) {
@@ -12137,6 +15759,17 @@ var Document = function(text) {
         }
     };
 
+    /**
+    * Document.getNewLineCharacter() -> String
+    * + (String): If `newLineMode == windows`, `\r\n` is returned.<br/>
+    *  If `newLineMode == unix`, `\n` is returned.<br/>
+    *  If `newLineMode == auto`, the value of `autoNewLine` is returned.
+    * 
+    * Returns the newline character that's being used, depending on the value of `newLineMode`. 
+    *
+    * 
+    * 
+    **/
     this.getNewLineCharacter = function() {
       switch (this.$newLineMode) {
           case "windows":
@@ -12152,6 +15785,12 @@ var Document = function(text) {
 
     this.$autoNewLine = "\n";
     this.$newLineMode = "auto";
+    /**
+     * Document.setNewLineMode(newLineMode) -> Void
+     * - newLineMode(String): [The newline mode to use; can be either `windows`, `unix`, or `auto`]{: #Document.setNewLineMode.param}
+     * 
+     * [Sets the new line mode.]{: #Document.setNewLineMode.desc}
+     **/
     this.setNewLineMode = function(newLineMode) {
         if (this.$newLineMode === newLineMode)
             return;
@@ -12159,51 +15798,92 @@ var Document = function(text) {
         this.$newLineMode = newLineMode;
     };
 
+    /**
+    * Document.getNewLineMode() -> String
+    * 
+    * [Returns the type of newlines being used; either `windows`, `unix`, or `auto`]{: #Document.getNewLineMode}
+    *
+    **/
     this.getNewLineMode = function() {
         return this.$newLineMode;
     };
 
+    /**
+    * Document.isNewLine(text) -> Boolean
+    * - text (String): The text to check
+    *
+    * Returns `true` if `text` is a newline character (either `\r\n`, `\r`, or `\n`).
+    *
+    **/
     this.isNewLine = function(text) {
         return (text == "\r\n" || text == "\r" || text == "\n");
     };
 
     /**
-     * Get a verbatim copy of the given line as it is in the document
-     */
+    * Document.getLine(row) -> String
+    * - row (Number): The row index to retrieve
+    * 
+    * Returns a verbatim copy of the given line as it is in the document
+    *
+    **/
     this.getLine = function(row) {
         return this.$lines[row] || "";
     };
 
+    /**
+    * Document.getLines(firstRow, lastRow) -> [String]
+    * - firstRow (Number): The first row index to retrieve
+    * - lastRow (Number): The final row index to retrieve
+    * 
+    * Returns an array of strings of the rows between `firstRow` and `lastRow`. This function is inclusive of `lastRow`.
+    *
+    **/
     this.getLines = function(firstRow, lastRow) {
         return this.$lines.slice(firstRow, lastRow + 1);
     };
 
     /**
-     * Returns all lines in the document as string array. Warning: The caller
-     * should not modify this array!
-     */
+    * Document.getAllLines() -> [String]
+    * 
+    * Returns all lines in the document as string array. Warning: The caller should not modify this array!
+    **/
     this.getAllLines = function() {
         return this.getLines(0, this.getLength());
     };
 
+    /**
+    * Document.getLength() -> Number
+    * 
+    * Returns the number of rows in the document.
+    **/
     this.getLength = function() {
         return this.$lines.length;
     };
 
+    /**
+    * Document.getTextRange(range) -> String
+    * - range (Range): The range to work with
+    * 
+    * [Given a range within the document, this function returns all the text within that range as a single string.]{: #Document.getTextRange.desc}
+    **/
     this.getTextRange = function(range) {
         if (range.start.row == range.end.row) {
             return this.$lines[range.start.row].substring(range.start.column,
                                                          range.end.column);
         }
         else {
-            var lines = [];
-            lines.push(this.$lines[range.start.row].substring(range.start.column));
-            lines.push.apply(lines, this.getLines(range.start.row+1, range.end.row-1));
-            lines.push(this.$lines[range.end.row].substring(0, range.end.column));
+            var lines = this.getLines(range.start.row+1, range.end.row-1);
+            lines.unshift((this.$lines[range.start.row] || "").substring(range.start.column));
+            lines.push((this.$lines[range.end.row] || "").substring(0, range.end.column));
             return lines.join(this.getNewLineCharacter());
         }
     };
 
+    /** internal, hide
+    * Document.$clipPosition(position) -> Number
+    * 
+    * 
+    **/
     this.$clipPosition = function(position) {
         var length = this.getLength();
         if (position.row >= length) {
@@ -12213,6 +15893,15 @@ var Document = function(text) {
         return position;
     };
 
+    /**
+    * Document.insert(position, text) -> Number
+    * - position (Number): The position to start inserting at 
+    * - text (String): A chunk of text to insert
+    * + (Number): The position of the last line of `text`. If the length of `text` is 0, this function simply returns `position`. 
+    * Inserts a block of `text` and the indicated `position`.
+    *
+    * 
+    **/
     this.insert = function(position, text) {
         if (!text || text.length === 0)
             return position;
@@ -12236,9 +15925,29 @@ var Document = function(text) {
         return position;
     };
 
+    /**
+    * Document.insertLines(row, lines) -> Object
+    * - row (Number): The index of the row to insert at
+    * - lines (Array): An array of strings
+    * + (Object): Returns an object containing the final row and column, like this:<br/>
+    *   ```{row: endRow, column: 0}```<br/>
+    *   If `lines` is empty, this function returns an object containing the current row, and column, like this:<br/>
+    *   ```{row: row, column: 0}```
+    *
+    * Inserts the elements in `lines` into the document, starting at the row index given by `row`. This method also triggers the `'change'` event.
+    *
+    *
+    **/
     this.insertLines = function(row, lines) {
         if (lines.length == 0)
             return {row: row, column: 0};
+
+        // apply doesn't work for big arrays (smallest threshold is on safari 0xFFFF)
+        // to circumvent that we have to break huge inserts into smaller chunks here
+        if (lines.length > 0xFFFF) {
+            var end = this.insertLines(row, lines.slice(0xFFFF));
+            lines = lines.slice(0, 0xFFFF);
+        }
 
         var args = [row, 0];
         args.push.apply(args, lines);
@@ -12251,9 +15960,20 @@ var Document = function(text) {
             lines: lines
         };
         this._emit("change", { data: delta });
-        return range.end;
+        return end || range.end;
     };
 
+    /**
+    * Document.insertNewLine(position) -> Object
+    * - position (String): The position to insert at
+    * + (Object): Returns an object containing the final row and column, like this:<br/>
+    *    ```{row: endRow, column: 0}```
+    * 
+    * Inserts a new line into the document at the current row's `position`. This method also triggers the `'change'` event. 
+    *
+    *   
+    *
+    **/
     this.insertNewLine = function(position) {
         position = this.$clipPosition(position);
         var line = this.$lines[position.row] || "";
@@ -12276,6 +15996,19 @@ var Document = function(text) {
         return end;
     };
 
+    /**
+    * Document.insertInLine(position, text) -> Object | Number
+    * - position (Number): The position to insert at
+    * - text (String): A chunk of text
+    * + (Object): Returns an object containing the final row and column, like this:<br/>
+    *     ```{row: endRow, column: 0}```
+    * + (Number): If `text` is empty, this function returns the value of `position`
+    * 
+    * Inserts `text` into the `position` at the current row. This method also triggers the `'change'` event.
+    *
+    *
+    *
+    **/
     this.insertInLine = function(position, text) {
         if (text.length == 0)
             return position;
@@ -12300,6 +16033,15 @@ var Document = function(text) {
         return end;
     };
 
+    /**
+    * Document.remove(range) -> Object
+    * - range (Range): A specified Range to remove
+    * + (Object): Returns the new `start` property of the range, which contains `startRow` and `startColumn`. If `range` is empty, this function returns the unmodified value of `range.start`.
+    * 
+    * Removes the `range` from the document.
+    *
+    *
+    **/
     this.remove = function(range) {
         // clip to document
         range.start = this.$clipPosition(range.start);
@@ -12332,6 +16074,17 @@ var Document = function(text) {
         return range.start;
     };
 
+    /**
+    * Document.removeInLine(row, startColumn, endColumn) -> Object
+    * - row (Number): The row to remove from
+    * - startColumn (Number): The column to start removing at 
+    * - endColumn (Number): The column to stop removing at
+    * + (Object): Returns an object containing `startRow` and `startColumn`, indicating the new row and column values.<br/>If `startColumn` is equal to `endColumn`, this function returns nothing.
+    *
+    * Removes the specified columns from the `row`. This method also triggers the `'change'` event.
+    *
+    * 
+    **/
     this.removeInLine = function(row, startColumn, endColumn) {
         if (startColumn == endColumn)
             return;
@@ -12352,12 +16105,15 @@ var Document = function(text) {
     };
 
     /**
-     * Removes a range of full lines
-     *
-     * @param firstRow {Integer} The first row to be removed
-     * @param lastRow {Integer} The last row to be removed
-     * @return {String[]} The removed lines
-     */
+    * Document.removeLines(firstRow, lastRow) -> [String]
+    * - firstRow (Number): The first row to be removed
+    * - lastRow (Number): The last row to be removed
+    * + ([String]): Returns all the removed lines.
+    * 
+    * Removes a range of full lines. This method also triggers the `'change'` event.
+    * 
+    *
+    **/
     this.removeLines = function(firstRow, lastRow) {
         var range = new Range(firstRow, 0, lastRow + 1, 0);
         var removed = this.$lines.splice(firstRow, lastRow - firstRow + 1);
@@ -12372,6 +16128,13 @@ var Document = function(text) {
         return removed;
     };
 
+    /**
+    * Document.removeNewLine(row) -> Void
+    * - row (Number): The row to check
+    * 
+    * Removes the new line between `row` and the row immediately following it. This method also triggers the `'change'` event.
+    *
+    **/
     this.removeNewLine = function(row) {
         var firstLine = this.getLine(row);
         var secondLine = this.getLine(row+1);
@@ -12389,6 +16152,18 @@ var Document = function(text) {
         this._emit("change", { data: delta });
     };
 
+    /**
+    * Document.replace(range, text) -> Object
+    * - range (Range): A specified Range to replace
+    * - text (String): The new text to use as a replacement
+    * + (Object): Returns an object containing the final row and column, like this:
+    *     {row: endRow, column: 0}
+    * If the text and range are empty, this function returns an object containing the current `range.start` value.
+    * If the text is the exact same as what currently exists, this function returns an object containing the current `range.end` value.
+    *
+    * Replaces a range in the document with the new `text`.
+    *
+    **/
     this.replace = function(range, text) {
         if (text.length == 0 && range.isEmpty())
             return range.start;
@@ -12409,6 +16184,11 @@ var Document = function(text) {
         return end;
     };
 
+    /**
+    * Document.applyDeltas(deltas) -> Void
+    * 
+    * Applies all the changes previously accumulated. These can be either `'includeText'`, `'insertLines'`, `'removeText'`, and `'removeLines'`.
+    **/
     this.applyDeltas = function(deltas) {
         for (var i=0; i<deltas.length; i++) {
             var delta = deltas[i];
@@ -12425,6 +16205,11 @@ var Document = function(text) {
         }
     };
 
+    /**
+    * Document.revertDeltas(deltas) -> Void
+    * 
+    * Reverts any changes previously applied. These can be either `'includeText'`, `'insertLines'`, `'removeText'`, and `'removeLines'`.
+    **/
     this.revertDeltas = function(deltas) {
         for (var i=deltas.length-1; i>=0; i--) {
             var delta = deltas[i];
@@ -12452,9 +16237,30 @@ define("ace/background_tokenizer",[], function(require, exports, module) {
 var oop = require("ace/lib/oop");
 var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
 
+// tokenizing lines longer than this makes editor very slow
+var MAX_LINE_LENGTH = 5000;
+
+/**
+ * class BackgroundTokenizer
+ *
+ * Tokenizes the current [[Document `Document`]] in the background, and caches the tokenized rows for future use. If a certain row is changed, everything below that row is re-tokenized.
+ *
+ **/
+
+/**
+ * new BackgroundTokenizer(tokenizer, editor)
+ * - tokenizer (Tokenizer): The tokenizer to use
+ * - editor (Editor): The editor to associate with
+ *
+ * Creates a new `BackgroundTokenizer` object.
+ *
+ *
+ **/
+
 var BackgroundTokenizer = function(tokenizer, editor) {
-    this.running = false;    
+    this.running = false;
     this.lines = [];
+    this.states = [];
     this.currentLine = 0;
     this.tokenizer = tokenizer;
 
@@ -12471,11 +16277,12 @@ var BackgroundTokenizer = function(tokenizer, editor) {
 
         var len = doc.getLength();
         while (self.currentLine < len) {
-            self.lines[self.currentLine] = self.$tokenizeRows(self.currentLine, self.currentLine)[0];
-            self.currentLine++;
+            self.$tokenizeRow(self.currentLine);
+            while (self.lines[self.currentLine])
+                self.currentLine++;
 
             // only check every 5 lines
-            processedLines += 1;
+            processedLines ++;
             if ((processedLines % 5 == 0) && (new Date() - workerStart) > 20) {
                 self.fireUpdateEvent(startLine, self.currentLine-1);
                 self.running = setTimeout(self.$worker, 20);
@@ -12493,20 +16300,44 @@ var BackgroundTokenizer = function(tokenizer, editor) {
 
     oop.implement(this, EventEmitter);
 
+    /**
+     * BackgroundTokenizer.setTokenizer(tokenizer)
+     * - tokenizer (Tokenizer): The new tokenizer to use
+     *
+     * Sets a new tokenizer for this object.
+     *
+     **/
     this.setTokenizer = function(tokenizer) {
         this.tokenizer = tokenizer;
         this.lines = [];
+        this.states = [];
 
         this.start(0);
     };
 
+    /**
+     * BackgroundTokenizer.setDocument(doc)
+     * - doc (Document): The new document to associate with
+     *
+     * Sets a new document to associate with this object.
+     *
+     **/
     this.setDocument = function(doc) {
         this.doc = doc;
         this.lines = [];
+        this.states = [];
 
         this.stop();
     };
 
+    /**
+     * BackgroundTokenizer.fireUpdateEvent(firstRow, lastRow)
+     * - firstRow (Number): The starting row region
+     * - lastRow (Number): The final row region
+     *
+     * Emits the `'update'` event. `firstRow` and `lastRow` are used to define the boundaries of the region to be updated.
+     *
+     **/
     this.fireUpdateEvent = function(firstRow, lastRow) {
         var data = {
             first: firstRow,
@@ -12515,75 +16346,163 @@ var BackgroundTokenizer = function(tokenizer, editor) {
         this._emit("update", {data: data});
     };
 
+    /**
+     * BackgroundTokenizer.start(startRow)
+     * - startRow (Number): The row to start at
+     *
+     * Starts tokenizing at the row indicated.
+     *
+     **/
     this.start = function(startRow) {
-        this.currentLine = Math.min(startRow || 0, this.currentLine,
-                                    this.doc.getLength());
+        this.currentLine = Math.min(startRow || 0, this.currentLine, this.doc.getLength());
 
         // remove all cached items below this line
         this.lines.splice(this.currentLine, this.lines.length);
+        this.states.splice(this.currentLine, this.states.length);
 
         this.stop();
         // pretty long delay to prevent the tokenizer from interfering with the user
         this.running = setTimeout(this.$worker, 700);
     };
 
+    this.$updateOnChange = function(delta) {
+        var range = delta.range;
+        var startRow = range.start.row;
+        var len = range.end.row - startRow;
+
+        if (len === 0) {
+            this.lines[startRow] = null;
+        } else if (delta.action == "removeText" || delta.action == "removeLines") {
+            this.lines.splice(startRow, len + 1, null);
+            this.states.splice(startRow, len + 1, null);
+        } else {
+            var args = Array(len + 1);
+            args.unshift(startRow, 1);
+            this.lines.splice.apply(this.lines, args);
+            this.states.splice.apply(this.states, args);
+        }
+
+        this.currentLine = Math.min(startRow, this.currentLine, this.doc.getLength());
+
+        this.stop();
+        // pretty long delay to prevent the tokenizer from interfering with the user
+        this.running = setTimeout(this.$worker, 700);
+    };
+
+    /**
+     * BackgroundTokenizer.stop()
+     *
+     * Stops tokenizing.
+     *
+     **/
     this.stop = function() {
         if (this.running)
             clearTimeout(this.running);
         this.running = false;
     };
 
-    this.getTokens = function(firstRow, lastRow) {
-        return this.$tokenizeRows(firstRow, lastRow);
+    /** related to: BackgroundTokenizer.$tokenizeRows
+     * BackgroundTokenizer.getTokens(firstRow, lastRow) -> [Object]
+     * - firstRow (Number): The row to start at
+     * - lastRow (Number): The row to finish at
+     *
+     * Starts tokenizing at the row indicated. Returns a list of objects of the tokenized rows.
+     *
+     **/
+    this.getTokens = function(row) {
+        return this.lines[row] || this.$tokenizeRow(row);
     };
 
+    /**
+     * BackgroundTokenizer.getState(row) -> String
+     * - row (Number): The row to start at
+     *
+     * [Returns the state of tokenization at the end of a row.]{: #BackgroundTokenizer.getState}
+     **/
     this.getState = function(row) {
-        return this.$tokenizeRows(row, row)[0].state;
+        if (this.currentLine == row)
+            this.$tokenizeRow(row);
+        return this.states[row] || "start";
     };
 
-    this.$tokenizeRows = function(firstRow, lastRow) {
-        if (!this.doc || isNaN(firstRow) || isNaN(lastRow))
-            return [{'state':'start','tokens':[]}];
-            
-        var rows = [];
+    this.$tokenizeRow = function(row) {
+        var line = this.doc.getLine(row);
+        var state = this.states[row - 1];
 
-        // determine start state
-        var state = "start";
-        var doCache = false;
-        if (firstRow > 0 && this.lines[firstRow - 1]) {
-            state = this.lines[firstRow - 1].state;
-            doCache = true;
-        } else if (firstRow == 0) {
-            state = "start";
-            doCache = true;
-        } else if (this.lines.length > 0) {
-            // Guess that we haven't changed state.
-            state = this.lines[this.lines.length-1].state;
+        if (line.length > MAX_LINE_LENGTH) {
+            var overflow = {value: line.substr(MAX_LINE_LENGTH), type: "text"};
+            line = line.slice(0, MAX_LINE_LENGTH);
+        }
+        var data = this.tokenizer.getLineTokens(line, state);
+        if (overflow) {
+            data.tokens.push(overflow);
+            data.state = "start";
         }
 
-        var lines = this.doc.getLines(firstRow, lastRow);
-        for (var row=firstRow; row<=lastRow; row++) {
-            if (!this.lines[row]) {
-                var tokens = this.tokenizer.getLineTokens(lines[row-firstRow] || "", state);
-                var state = tokens.state;
-                rows.push(tokens);
-
-                if (doCache) {
-                    this.lines[row] = tokens;
-                }
-            }
-            else {
-                var tokens = this.lines[row];
-                state = tokens.state;
-                rows.push(tokens);
-            }
+        if (this.states[row] !== data.state) {
+            this.states[row] = data.state;
+            this.lines[row + 1] = null;
+            if (this.currentLine > row + 1)
+                this.currentLine = row + 1;
+        } else if (this.currentLine == row) {
+            this.currentLine = row + 1;
         }
-        return rows;
+
+        return this.lines[row] = data.tokens;
     };
 
 }).call(BackgroundTokenizer.prototype);
 
 exports.BackgroundTokenizer = BackgroundTokenizer;
+});
+
+define("ace/search_highlight",[], function(require, exports, module) {
+
+var lang = require("ace/lib/lang");
+var oop = require("ace/lib/oop");
+var Range = require("ace/range").Range;
+
+var SearchHighlight = function(regExp, clazz, type) {
+    this.setRegexp(regExp);
+    this.clazz = clazz;
+    this.type = type || "text";
+};
+
+(function() {
+    this.setRegexp = function(regExp) {
+        if (this.regExp+"" == regExp+"")
+            return;
+        this.regExp = regExp;
+        this.cache = [];
+    };
+
+    this.update = function(html, markerLayer, session, config) {
+        if (!this.regExp)
+            return;
+        var start = config.firstRow, end = config.lastRow;
+
+        for (var i = start; i <= end; i++) {
+            var ranges = this.cache[i];
+            if (ranges == null) {
+                ranges = lang.getMatchOffsets(session.getLine(i), this.regExp);
+                ranges = ranges.map(function(match) {
+                    return new Range(i, match.offset, i, match.offset + match.length);
+                });
+                this.cache[i] = ranges.length ? ranges : "";
+            }
+
+            for (var j = ranges.length; j --; ) {
+                markerLayer.drawSingleLineMarker(
+                    html, ranges[j].toScreenRange(session), this.clazz, config,
+                    null, this.type
+                );
+            }
+        }
+    };
+
+}).call(SearchHighlight.prototype);
+
+exports.SearchHighlight = SearchHighlight;
 });
 
 define("ace/edit_session/folding",[], function(require, exports, module) {
@@ -12594,7 +16513,7 @@ var Fold = require("ace/edit_session/fold").Fold;
 var TokenIterator = require("ace/token_iterator").TokenIterator;
 
 function Folding() {
-    /**
+    /*
      * Looks up a fold at a given row/column. Possible values for side:
      *   -1: ignore a fold if fold.start = row/column
      *   +1: ignore a fold if fold.end = row/column
@@ -12618,7 +16537,7 @@ function Folding() {
         }
     };
 
-    /**
+    /*
      * Returns all folds in the given range. Note, that this will return folds
      *
      */
@@ -12664,7 +16583,7 @@ function Folding() {
         return foundFolds;
     };
     
-    /**
+    /*
      * Returns all folds in the document
      */
     this.getAllFolds = function() {
@@ -12687,7 +16606,7 @@ function Folding() {
         return folds;
     };
 
-    /**
+    /*
      * Returns the string between folds at the given position.
      * E.g.
      *  foo<fold>b|ar<fold>wolrd -> "bar"
@@ -12806,7 +16725,7 @@ function Folding() {
         return foldLine;
     };
 
-    /**
+    /*
      * Adds a new fold.
      *
      * @returns
@@ -12889,6 +16808,8 @@ function Folding() {
 
         if (this.$useWrapMode)
             this.$updateWrapData(foldLine.start.row, foldLine.start.row);
+        else
+            this.$updateRowLengthCache(foldLine.start.row, foldLine.start.row);
 
         // Notify that fold data has changed.
         this.$modified = true;
@@ -12944,9 +16865,10 @@ function Folding() {
             newFoldLine.start.column = folds[0].start.column;
         }
 
-        if (this.$useWrapMode) {
+        if (this.$useWrapMode)
             this.$updateWrapData(startRow, endRow);
-        }
+        else
+            this.$updateRowLengthCache(startRow, endRow);
 
         // Notify that fold data has changed.
         this.$modified = true;
@@ -13006,7 +16928,7 @@ function Folding() {
         }
     };
 
-    /**
+    /*
      * Checks if a given documentRow is folded. This is true if there are some
      * folded parts such that some parts of the line is still visible.
      **/
@@ -13313,7 +17235,7 @@ function Folding() {
                     return;
                 }
             }
-			
+            
 			if (onlyAjacent)
 				return this.foldAdjacent(range.start.row)
             
@@ -13325,7 +17247,7 @@ function Folding() {
         } else {
             if (addSubfolds)
                 this.foldAll(row + 1);
-            e.target.className += " invalid"
+            (e.target || e.srcElement).className += " invalid"
         }
     };
     
@@ -13355,9 +17277,36 @@ exports.Folding = Folding;
 define("ace/edit_session/bracket_match",[], function(require, exports, module) {
 
 var TokenIterator = require("ace/token_iterator").TokenIterator;
+var Range = require("ace/range").Range;
 
+/**
+ * class BracketMatch
+ *
+ * 
+ *
+ *
+ **/
+
+/**
+ * new BracketMatch(position)
+ * - platform (String): Identifier for the platform; must be either `'mac'` or `'win'`
+ * - commands (Array): A list of commands
+ *
+ * TODO
+ *
+ *
+ **/
 function BracketMatch() {
 
+    /**
+     * new findMatchingBracket(position)
+     * - position (Number): Identifier for the platform; must be either `'mac'` or `'win'`
+     * - commands (Array): A list of commands
+     *
+     * TODO
+     *
+     *
+     **/
     this.findMatchingBracket = function(position) {
         if (position.column == 0) return null;
 
@@ -13365,15 +17314,53 @@ function BracketMatch() {
         if (charBeforeCursor == "") return null;
 
         var match = charBeforeCursor.match(/([\(\[\{])|([\)\]\}])/);
-        if (!match) {
+        if (!match)
             return null;
+
+        if (match[1])
+            return this.$findClosingBracket(match[1], position);
+        else
+            return this.$findOpeningBracket(match[2], position);
+    };
+    
+    this.getBracketRange = function(pos) {
+        var line = this.getLine(pos.row);
+        var before = true, range;
+
+        var chr = line.charAt(pos.column-1);
+        var match = chr && chr.match(/([\(\[\{])|([\)\]\}])/);
+        if (!match) {
+            chr = line.charAt(pos.column);
+            pos = {row: pos.row, column: pos.column + 1};
+            match = chr && chr.match(/([\(\[\{])|([\)\]\}])/);
+            before = false;
         }
+        if (!match)
+            return null;
 
         if (match[1]) {
-            return this.$findClosingBracket(match[1], position);
+            var bracketPos = this.$findClosingBracket(match[1], pos);
+            if (!bracketPos)
+                return null;
+            range = Range.fromPoints(pos, bracketPos);
+            if (!before) {
+                range.end.column++;
+                range.start.column--;
+            }
+            range.cursor = range.end;
         } else {
-            return this.$findOpeningBracket(match[2], position);
+            var bracketPos = this.$findOpeningBracket(match[2], pos);
+            if (!bracketPos)
+                return null;
+            range = Range.fromPoints(bracketPos, pos);
+            if (!before) {
+                range.start.column++;
+                range.end.column--;
+            }
+            range.cursor = range.start;
         }
+        
+        return range;
     };
 
     this.$brackets = {
@@ -13392,17 +17379,17 @@ function BracketMatch() {
         var iterator = new TokenIterator(this, position.row, position.column);
         var token = iterator.getCurrentToken();
         if (!token)
-			token = iterator.stepForward();
-		if (!token)
-			return
+            token = iterator.stepForward();
+        if (!token)
+            return
         
          if (!typeRe){
-			typeRe = new RegExp(
-				"(\\.?" +
-				token.type.replace(".", "\\.").replace("rparen", ".paren")
-				+ ")+"
-			);
-		}
+            typeRe = new RegExp(
+                "(\\.?" +
+                token.type.replace(".", "\\.").replace("rparen", ".paren")
+                + ")+"
+            );
+        }
         
         // Start searching in token, just before the character at position.column
         var valueIndex = position.column - iterator.getCurrentTokenColumn() - 2;
@@ -13448,17 +17435,17 @@ function BracketMatch() {
         var iterator = new TokenIterator(this, position.row, position.column);
         var token = iterator.getCurrentToken();
         if (!token)
-			token = iterator.stepForward();
-		if (!token)
-			return
+            token = iterator.stepForward();
+        if (!token)
+            return
 
         if (!typeRe){
-			typeRe = new RegExp(
-				"(\\.?" +
-				token.type.replace(".", "\\.").replace("lparen", ".paren")
-				+ ")+"
-			);
-		}
+            typeRe = new RegExp(
+                "(\\.?" +
+                token.type.replace(".", "\\.").replace("lparen", ".paren")
+                + ")+"
+            );
+        }
 
         // Start searching in token, after the character at position.column
         var valueIndex = position.column - iterator.getCurrentTokenColumn();
@@ -13521,9 +17508,8 @@ function HashHandler(config, platform) {
 
         this.commands[command.name] = command;
 
-        if (command.bindKey) {
+        if (command.bindKey)
             this._buildKeyHash(command);
-        }
     };
 
     this.removeCommand = function(command) {
@@ -13540,6 +17526,22 @@ function HashHandler(config, platform) {
                     delete ckb[hashId][key];
             }
         }
+    };
+
+    this.bindKey = function(key, command) {
+        if(!key)
+            return;
+        if (typeof command == "function") {
+            this.addCommand({exec: command, bindKey: key, name: key});
+            return;
+        }
+
+        var ckb = this.commmandKeyBinding;
+        key.split("|").forEach(function(keyPart) {
+            var binding = this.parseKeys(keyPart, command);
+            var hashId = binding.hashId;
+            (ckb[hashId] || (ckb[hashId] = {}))[binding.key] = command;
+        }, this);
     };
 
     this.addCommands = function(commands) {
@@ -13564,18 +17566,6 @@ function HashHandler(config, platform) {
         }, this);
     };
 
-    this.bindKey = function(key, command) {
-        if(!key)
-            return;
-
-        var ckb = this.commmandKeyBinding;
-        key.split("|").forEach(function(keyPart) {
-            var binding = parseKeys(keyPart, command);
-            var hashId = binding.hashId;
-            (ckb[hashId] || (ckb[hashId] = {}))[binding.key] = command;
-        });
-    };
-
     this.bindKeys = function(keyList) {
         Object.keys(keyList).forEach(function(key) {
             this.bindKey(key, keyList[key]);
@@ -13591,10 +17581,10 @@ function HashHandler(config, platform) {
         this.bindKey(key, command);
     };
 
-    function parseKeys(keys, val, ret) {
+    this.parseKeys = function(keys) {
         var key;
         var hashId = 0;
-        var parts = splitSafe(keys.toLowerCase());
+        var parts = keys.toLowerCase().trim().split(/\s*\-\s*/);
 
         for (var i = 0, l = parts.length; i < l; i++) {
             if (keyUtil.KEY_MODS[parts[i]])
@@ -13614,20 +17604,17 @@ function HashHandler(config, platform) {
             key: key,
             hashId: hashId
         };
-    }
-
-    function splitSafe(s) {
-        return (s.trim()
-            .split(new RegExp("[\\s ]*\\-[\\s ]*", "g"), 999));
-    }
+    };
 
     this.findKeyCommand = function findKeyCommand(hashId, keyString) {
         var ckbr = this.commmandKeyBinding;
         return ckbr[hashId] && ckbr[hashId][keyString.toLowerCase()];
-    }
+    };
 
     this.handleKeyboard = function(data, hashId, keyString, keyCode) {
-        return this.findKeyCommand(hashId, keyString)
+        return {
+            command: this.findKeyCommand(hashId, keyString)
+        };
     };
 
 }).call(HashHandler.prototype)
@@ -13664,8 +17651,6 @@ var TextHighlightRules = function() {
                 var rule = state[i];
                 if (rule.next) {
                     rule.next = prefix + rule.next;
-                } else {
-                    rule.next = prefix + key;
                 }
             }
             this.$rules[prefix + key] = state;
@@ -13955,7 +17940,7 @@ var JavaScriptHighlightRules = function() {
                 token : "comment",
                 regex : /\/\/.*$/
             },
-            new DocCommentHighlightRules().getStartRule("doc-start"),
+            DocCommentHighlightRules.getStartRule("doc-start"),
             {
                 token : "comment", // multi line comment
                 merge : true,
@@ -13963,11 +17948,11 @@ var JavaScriptHighlightRules = function() {
                 next : "comment"
             }, {
                 token : "string",
-                regex : "'",
+                regex : "'(?=.)",
                 next  : "qstring"
             }, {
                 token : "string",
-                regex : '"',
+                regex : '"(?=.)',
                 next  : "qqstring"
             }, {
                 token : "constant.numeric", // hex
@@ -13987,11 +17972,10 @@ var JavaScriptHighlightRules = function() {
                     "text",
                     "storage.type",
                     "text",
-                    "paren.lparen",
-                    "variable.parameter",
-                    "paren.rparen"
+                    "paren.lparen"
                 ],
-                regex : "(" + identifierRe + ")(\\.)(prototype)(\\.)(" + identifierRe +")(\\s*)(=)(\\s*)(function)(\\s*)(\\()(.*?)(\\))"
+                regex : "(" + identifierRe + ")(\\.)(prototype)(\\.)(" + identifierRe +")(\\s*)(=)(\\s*)(function)(\\s*)(\\()",
+                next: "function_arguments"
             }, { // match stuff like: Sound.prototype.play = myfunc
                 token : [
                     "storage.type",
@@ -14003,7 +17987,8 @@ var JavaScriptHighlightRules = function() {
                     "keyword.operator",
                     "text"
                 ],
-                regex : "(" + identifierRe + ")(\\.)(prototype)(\\.)(" + identifierRe +")(\\s*)(=)(\\s*)"
+                regex : "(" + identifierRe + ")(\\.)(prototype)(\\.)(" + identifierRe +")(\\s*)(=)(\\s*)",
+                next: "function_arguments"
             }, { // match stuff like: Sound.play = function() {  }
                 token : [
                     "storage.type",
@@ -14014,11 +17999,10 @@ var JavaScriptHighlightRules = function() {
                     "text",
                     "storage.type",
                     "text",
-                    "paren.lparen",
-                    "variable.parameter",
-                    "paren.rparen"
+                    "paren.lparen"
                 ],
-                regex : "(" + identifierRe + ")(\\.)(" + identifierRe +")(\\s*)(=)(\\s*)(function)(\\s*)(\\()(.*?)(\\))"
+                regex : "(" + identifierRe + ")(\\.)(" + identifierRe +")(\\s*)(=)(\\s*)(function)(\\s*)(\\()",
+                next: "function_arguments"
             }, { // match stuff like: play = function() {  }
                 token : [
                     "entity.name.function",
@@ -14027,22 +18011,36 @@ var JavaScriptHighlightRules = function() {
                     "text",
                     "storage.type",
                     "text",
-                    "paren.lparen",
-                    "variable.parameter",
-                    "paren.rparen"
+                    "paren.lparen"
                 ],
-                regex : "(" + identifierRe +")(\\s*)(=)(\\s*)(function)(\\s*)(\\()(.*?)(\\))"
+                regex : "(" + identifierRe +")(\\s*)(=)(\\s*)(function)(\\s*)(\\()",
+                next: "function_arguments"
+            }, { // match stuff like: Sound.play = function play() {  }
+                token : [
+                    "storage.type",
+                    "punctuation.operator",
+                    "entity.name.function",
+                    "text",
+                    "keyword.operator",
+                    "text",
+                    "storage.type",
+                    "text",
+                    "entity.name.function",
+                    "text",
+                    "paren.lparen"
+                ],
+                regex : "(" + identifierRe + ")(\\.)(" + identifierRe +")(\\s*)(=)(\\s*)(function)(\\s+)(\\w+)(\\s*)(\\()",
+                next: "function_arguments"
             }, { // match regular function like: function myFunc(arg) { }
                 token : [
                     "storage.type",
                     "text",
                     "entity.name.function",
                     "text",
-                    "paren.lparen",
-                    "variable.parameter",
-                    "paren.rparen"
+                    "paren.lparen"
                 ],
-                regex : "(function)(\\s+)(" + identifierRe + ")(\\s*)(\\()(.*?)(\\))"
+                regex : "(function)(\\s+)(" + identifierRe + ")(\\s*)(\\()",
+                next: "function_arguments"
             }, { // match stuff like: foobar: function() { }
                 token : [
                     "entity.name.function",
@@ -14051,22 +18049,20 @@ var JavaScriptHighlightRules = function() {
                     "text",
                     "storage.type",
                     "text",
-                    "paren.lparen",
-                    "variable.parameter",
-                    "paren.rparen"
+                    "paren.lparen"
                 ],
-                regex : "(" + identifierRe + ")(\\s*)(:)(\\s*)(function)(\\s*)(\\()(.*?)(\\))"
+                regex : "(" + identifierRe + ")(\\s*)(:)(\\s*)(function)(\\s*)(\\()",
+                next: "function_arguments"
             }, { // Attempt to match : function() { } (this is for issues with 'foo': function() { })
                 token : [
                     "text",
                     "text",
                     "storage.type",
                     "text",
-                    "paren.lparen",
-                    "variable.parameter",
-                    "paren.rparen"
+                    "paren.lparen"
                 ],
-                regex : "(:)(\\s*)(function)?(\\s*)(\\()([^)]*)(\\))"
+                regex : "(:)(\\s*)(function)(\\s*)(\\()",
+                next: "function_arguments"
             }, {
                 token : "constant.language.boolean",
                 regex : /(?:true|false)\b/
@@ -14075,17 +18071,17 @@ var JavaScriptHighlightRules = function() {
                 regex : "(?:" + kwBeforeRe + ")\\b",
                 next : "regex_allowed"
             }, {
-                token : "support.function",
-                regex : /\b(?:s(?:h(?:ift|ow(?:Mod(?:elessDialog|alDialog)|Help))|croll(?:X|By(?:Pages|Lines)?|Y|To)?|t(?:op|rike)|i(?:n|zeToContent|debar|gnText)|ort|u(?:p|b(?:str(?:ing)?)?)|pli(?:ce|t)|e(?:nd|t(?:Re(?:sizable|questHeader)|M(?:i(?:nutes|lliseconds)|onth)|Seconds|Ho(?:tKeys|urs)|Year|Cursor|Time(?:out)?|Interval|ZOptions|Date|UTC(?:M(?:i(?:nutes|lliseconds)|onth)|Seconds|Hours|Date|FullYear)|FullYear|Active)|arch)|qrt|lice|avePreferences|mall)|h(?:ome|andleEvent)|navigate|c(?:har(?:CodeAt|At)|o(?:s|n(?:cat|textual|firm)|mpile)|eil|lear(?:Timeout|Interval)?|a(?:ptureEvents|ll)|reate(?:StyleSheet|Popup|EventObject))|t(?:o(?:GMTString|S(?:tring|ource)|U(?:TCString|pperCase)|Lo(?:caleString|werCase))|est|a(?:n|int(?:Enabled)?))|i(?:s(?:NaN|Finite)|ndexOf|talics)|d(?:isableExternalCapture|ump|etachEvent)|u(?:n(?:shift|taint|escape|watch)|pdateCommands)|j(?:oin|avaEnabled)|p(?:o(?:p|w)|ush|lugins.refresh|a(?:ddings|rse(?:Int|Float)?)|r(?:int|ompt|eference))|e(?:scape|nableExternalCapture|val|lementFromPoint|x(?:p|ec(?:Script|Command)?))|valueOf|UTC|queryCommand(?:State|Indeterm|Enabled|Value)|f(?:i(?:nd|le(?:ModifiedDate|Size|CreatedDate|UpdatedDate)|xed)|o(?:nt(?:size|color)|rward)|loor|romCharCode)|watch|l(?:ink|o(?:ad|g)|astIndexOf)|a(?:sin|nchor|cos|t(?:tachEvent|ob|an(?:2)?)|pply|lert|b(?:s|ort))|r(?:ou(?:nd|teEvents)|e(?:size(?:By|To)|calc|turnValue|place|verse|l(?:oad|ease(?:Capture|Events)))|andom)|g(?:o|et(?:ResponseHeader|M(?:i(?:nutes|lliseconds)|onth)|Se(?:conds|lection)|Hours|Year|Time(?:zoneOffset)?|Da(?:y|te)|UTC(?:M(?:i(?:nutes|lliseconds)|onth)|Seconds|Hours|Da(?:y|te)|FullYear)|FullYear|A(?:ttention|llResponseHeaders)))|m(?:in|ove(?:B(?:y|elow)|To(?:Absolute)?|Above)|ergeAttributes|a(?:tch|rgins|x))|b(?:toa|ig|o(?:ld|rderWidths)|link|ack))\b(?=\()/
+                token : ["punctuation.operator", "support.function"],
+                regex : /(\.)(s(?:h(?:ift|ow(?:Mod(?:elessDialog|alDialog)|Help))|croll(?:X|By(?:Pages|Lines)?|Y|To)?|t(?:opzzzz|rike)|i(?:n|zeToContent|debar|gnText)|ort|u(?:p|b(?:str(?:ing)?)?)|pli(?:ce|t)|e(?:nd|t(?:Re(?:sizable|questHeader)|M(?:i(?:nutes|lliseconds)|onth)|Seconds|Ho(?:tKeys|urs)|Year|Cursor|Time(?:out)?|Interval|ZOptions|Date|UTC(?:M(?:i(?:nutes|lliseconds)|onth)|Seconds|Hours|Date|FullYear)|FullYear|Active)|arch)|qrt|lice|avePreferences|mall)|h(?:ome|andleEvent)|navigate|c(?:har(?:CodeAt|At)|o(?:s|n(?:cat|textual|firm)|mpile)|eil|lear(?:Timeout|Interval)?|a(?:ptureEvents|ll)|reate(?:StyleSheet|Popup|EventObject))|t(?:o(?:GMTString|S(?:tring|ource)|U(?:TCString|pperCase)|Lo(?:caleString|werCase))|est|a(?:n|int(?:Enabled)?))|i(?:s(?:NaN|Finite)|ndexOf|talics)|d(?:isableExternalCapture|ump|etachEvent)|u(?:n(?:shift|taint|escape|watch)|pdateCommands)|j(?:oin|avaEnabled)|p(?:o(?:p|w)|ush|lugins.refresh|a(?:ddings|rse(?:Int|Float)?)|r(?:int|ompt|eference))|e(?:scape|nableExternalCapture|val|lementFromPoint|x(?:p|ec(?:Script|Command)?))|valueOf|UTC|queryCommand(?:State|Indeterm|Enabled|Value)|f(?:i(?:nd|le(?:ModifiedDate|Size|CreatedDate|UpdatedDate)|xed)|o(?:nt(?:size|color)|rward)|loor|romCharCode)|watch|l(?:ink|o(?:ad|g)|astIndexOf)|a(?:sin|nchor|cos|t(?:tachEvent|ob|an(?:2)?)|pply|lert|b(?:s|ort))|r(?:ou(?:nd|teEvents)|e(?:size(?:By|To)|calc|turnValue|place|verse|l(?:oad|ease(?:Capture|Events)))|andom)|g(?:o|et(?:ResponseHeader|M(?:i(?:nutes|lliseconds)|onth)|Se(?:conds|lection)|Hours|Year|Time(?:zoneOffset)?|Da(?:y|te)|UTC(?:M(?:i(?:nutes|lliseconds)|onth)|Seconds|Hours|Da(?:y|te)|FullYear)|FullYear|A(?:ttention|llResponseHeaders)))|m(?:in|ove(?:B(?:y|elow)|To(?:Absolute)?|Above)|ergeAttributes|a(?:tch|rgins|x))|b(?:toa|ig|o(?:ld|rderWidths)|link|ack))\b(?=\()/
             }, {
-                token : "support.function.dom",
-                regex : /\b(?:s(?:ub(?:stringData|mit)|plitText|e(?:t(?:NamedItem|Attribute(?:Node)?)|lect))|has(?:ChildNodes|Feature)|namedItem|c(?:l(?:ick|o(?:se|neNode))|reate(?:C(?:omment|DATASection|aption)|T(?:Head|extNode|Foot)|DocumentFragment|ProcessingInstruction|E(?:ntityReference|lement)|Attribute))|tabIndex|i(?:nsert(?:Row|Before|Cell|Data)|tem)|open|delete(?:Row|C(?:ell|aption)|T(?:Head|Foot)|Data)|focus|write(?:ln)?|a(?:dd|ppend(?:Child|Data))|re(?:set|place(?:Child|Data)|move(?:NamedItem|Child|Attribute(?:Node)?)?)|get(?:NamedItem|Element(?:sBy(?:Name|TagName)|ById)|Attribute(?:Node)?)|blur)\b(?=\()/
+                token : ["punctuation.operator", "support.function.dom"],
+                regex : /(\.)(s(?:ub(?:stringData|mit)|plitText|e(?:t(?:NamedItem|Attribute(?:Node)?)|lect))|has(?:ChildNodes|Feature)|namedItem|c(?:l(?:ick|o(?:se|neNode))|reate(?:C(?:omment|DATASection|aption)|T(?:Head|extNode|Foot)|DocumentFragment|ProcessingInstruction|E(?:ntityReference|lement)|Attribute))|tabIndex|i(?:nsert(?:Row|Before|Cell|Data)|tem)|open|delete(?:Row|C(?:ell|aption)|T(?:Head|Foot)|Data)|focus|write(?:ln)?|a(?:dd|ppend(?:Child|Data))|re(?:set|place(?:Child|Data)|move(?:NamedItem|Child|Attribute(?:Node)?)?)|get(?:NamedItem|Element(?:sBy(?:Name|TagName)|ById)|Attribute(?:Node)?)|blur)\b(?=\()/
             }, {
-                token : "support.constant",
-                regex : /\b(?:s(?:ystemLanguage|cr(?:ipts|ollbars|een(?:X|Y|Top|Left))|t(?:yle(?:Sheets)?|atus(?:Text|bar)?)|ibling(?:Below|Above)|ource|uffixes|e(?:curity(?:Policy)?|l(?:ection|f)))|h(?:istory|ost(?:name)?|as(?:h|Focus))|y|X(?:MLDocument|SLDocument)|n(?:ext|ame(?:space(?:s|URI)|Prop))|M(?:IN_VALUE|AX_VALUE)|c(?:haracterSet|o(?:n(?:structor|trollers)|okieEnabled|lorDepth|mp(?:onents|lete))|urrent|puClass|l(?:i(?:p(?:boardData)?|entInformation)|osed|asses)|alle(?:e|r)|rypto)|t(?:o(?:olbar|p)|ext(?:Transform|Indent|Decoration|Align)|ags)|SQRT(?:1_2|2)|i(?:n(?:ner(?:Height|Width)|put)|ds|gnoreCase)|zIndex|o(?:scpu|n(?:readystatechange|Line)|uter(?:Height|Width)|p(?:sProfile|ener)|ffscreenBuffering)|NEGATIVE_INFINITY|d(?:i(?:splay|alog(?:Height|Top|Width|Left|Arguments)|rectories)|e(?:scription|fault(?:Status|Ch(?:ecked|arset)|View)))|u(?:ser(?:Profile|Language|Agent)|n(?:iqueID|defined)|pdateInterval)|_content|p(?:ixelDepth|ort|ersonalbar|kcs11|l(?:ugins|atform)|a(?:thname|dding(?:Right|Bottom|Top|Left)|rent(?:Window|Layer)?|ge(?:X(?:Offset)?|Y(?:Offset)?))|r(?:o(?:to(?:col|type)|duct(?:Sub)?|mpter)|e(?:vious|fix)))|e(?:n(?:coding|abledPlugin)|x(?:ternal|pando)|mbeds)|v(?:isibility|endor(?:Sub)?|Linkcolor)|URLUnencoded|P(?:I|OSITIVE_INFINITY)|f(?:ilename|o(?:nt(?:Size|Family|Weight)|rmName)|rame(?:s|Element)|gColor)|E|whiteSpace|l(?:i(?:stStyleType|n(?:eHeight|kColor))|o(?:ca(?:tion(?:bar)?|lName)|wsrc)|e(?:ngth|ft(?:Context)?)|a(?:st(?:M(?:odified|atch)|Index|Paren)|yer(?:s|X)|nguage))|a(?:pp(?:MinorVersion|Name|Co(?:deName|re)|Version)|vail(?:Height|Top|Width|Left)|ll|r(?:ity|guments)|Linkcolor|bove)|r(?:ight(?:Context)?|e(?:sponse(?:XML|Text)|adyState))|global|x|m(?:imeTypes|ultiline|enubar|argin(?:Right|Bottom|Top|Left))|L(?:N(?:10|2)|OG(?:10E|2E))|b(?:o(?:ttom|rder(?:Width|RightWidth|BottomWidth|Style|Color|TopWidth|LeftWidth))|ufferDepth|elow|ackground(?:Color|Image)))\b/
+                token : ["punctuation.operator", "support.constant"],
+                regex : /(\.)(s(?:ystemLanguage|cr(?:ipts|ollbars|een(?:X|Y|Top|Left))|t(?:yle(?:Sheets)?|atus(?:Text|bar)?)|ibling(?:Below|Above)|ource|uffixes|e(?:curity(?:Policy)?|l(?:ection|f)))|h(?:istory|ost(?:name)?|as(?:h|Focus))|y|X(?:MLDocument|SLDocument)|n(?:ext|ame(?:space(?:s|URI)|Prop))|M(?:IN_VALUE|AX_VALUE)|c(?:haracterSet|o(?:n(?:structor|trollers)|okieEnabled|lorDepth|mp(?:onents|lete))|urrent|puClass|l(?:i(?:p(?:boardData)?|entInformation)|osed|asses)|alle(?:e|r)|rypto)|t(?:o(?:olbar|p)|ext(?:Transform|Indent|Decoration|Align)|ags)|SQRT(?:1_2|2)|i(?:n(?:ner(?:Height|Width)|put)|ds|gnoreCase)|zIndex|o(?:scpu|n(?:readystatechange|Line)|uter(?:Height|Width)|p(?:sProfile|ener)|ffscreenBuffering)|NEGATIVE_INFINITY|d(?:i(?:splay|alog(?:Height|Top|Width|Left|Arguments)|rectories)|e(?:scription|fault(?:Status|Ch(?:ecked|arset)|View)))|u(?:ser(?:Profile|Language|Agent)|n(?:iqueID|defined)|pdateInterval)|_content|p(?:ixelDepth|ort|ersonalbar|kcs11|l(?:ugins|atform)|a(?:thname|dding(?:Right|Bottom|Top|Left)|rent(?:Window|Layer)?|ge(?:X(?:Offset)?|Y(?:Offset)?))|r(?:o(?:to(?:col|type)|duct(?:Sub)?|mpter)|e(?:vious|fix)))|e(?:n(?:coding|abledPlugin)|x(?:ternal|pando)|mbeds)|v(?:isibility|endor(?:Sub)?|Linkcolor)|URLUnencoded|P(?:I|OSITIVE_INFINITY)|f(?:ilename|o(?:nt(?:Size|Family|Weight)|rmName)|rame(?:s|Element)|gColor)|E|whiteSpace|l(?:i(?:stStyleType|n(?:eHeight|kColor))|o(?:ca(?:tion(?:bar)?|lName)|wsrc)|e(?:ngth|ft(?:Context)?)|a(?:st(?:M(?:odified|atch)|Index|Paren)|yer(?:s|X)|nguage))|a(?:pp(?:MinorVersion|Name|Co(?:deName|re)|Version)|vail(?:Height|Top|Width|Left)|ll|r(?:ity|guments)|Linkcolor|bove)|r(?:ight(?:Context)?|e(?:sponse(?:XML|Text)|adyState))|global|x|m(?:imeTypes|ultiline|enubar|argin(?:Right|Bottom|Top|Left))|L(?:N(?:10|2)|OG(?:10E|2E))|b(?:o(?:ttom|rder(?:Width|RightWidth|BottomWidth|Style|Color|TopWidth|LeftWidth))|ufferDepth|elow|ackground(?:Color|Image)))\b/
             }, {
                 token : ["storage.type", "punctuation.operator", "support.function.firebug"],
-                regex : /\b(console)(\.)(warn|info|log|error|time|timeEnd|assert)\b/
+                regex : /(console)(\.)(warn|info|log|error|time|timeEnd|assert)\b/
             }, {
                 token : function(value) {
                     if (globals.hasOwnProperty(value))
@@ -14136,6 +18132,7 @@ var JavaScriptHighlightRules = function() {
         // regular expressions are only allowed after certain tokens. This
         // makes sure we don't mix up regexps with the divison operator
         "regex_allowed": [
+            DocCommentHighlightRules.getStartRule("doc-start"),
             {
                 token : "comment", // multi line comment
                 merge : true,
@@ -14163,10 +18160,9 @@ var JavaScriptHighlightRules = function() {
         "regex": [
             {
                 token: "regexp.keyword.operator",
-                regex: "\\\\(?:u[\\da-fA-F]{4}|x[\\da-fA-F]{2}|.)",
-                next: "regex"
+                regex: "\\\\(?:u[\\da-fA-F]{4}|x[\\da-fA-F]{2}|.)"
             }, {
-				// flag
+                // flag
                 token: "string.regexp",
                 regex: "/\\w*",
                 next: "start",
@@ -14174,7 +18170,6 @@ var JavaScriptHighlightRules = function() {
             }, {
                 token: "string.regexp",
                 regex: "[^\\\\/\\[]+",
-                next: "regex",
                 merge: true
             }, {
                 token: "string.regexp.charachterclass",
@@ -14190,8 +18185,7 @@ var JavaScriptHighlightRules = function() {
         "regex_character_class": [
             {
                 token: "regexp.keyword.operator",
-                regex: "\\\\(?:u[\\da-fA-F]{4}|x[\\da-fA-F]{2}|.)",
-                next: "regex_character_class"
+                regex: "\\\\(?:u[\\da-fA-F]{4}|x[\\da-fA-F]{2}|.)"
             }, {
                 token: "string.regexp.charachterclass",
                 regex: "]",
@@ -14200,7 +18194,24 @@ var JavaScriptHighlightRules = function() {
             }, {
                 token: "string.regexp.charachterclass",
                 regex: "[^\\\\\\]]+",
-                next: "regex_character_class",
+                merge: true
+            }, {
+                token: "empty",
+                regex: "",
+                next: "start"
+            }
+        ],
+        "function_arguments": [
+            {
+                token: "variable.parameter",
+                regex: identifierRe
+            }, {
+                token: "punctuation.operator",
+                regex: "[, ]+",
+                merge: true
+            }, {
+                token: "punctuation.operator",
+                regex: "$",
                 merge: true
             }, {
                 token: "empty",
@@ -14238,11 +18249,18 @@ var JavaScriptHighlightRules = function() {
                 regex : escapedRe
             }, {
                 token : "string",
-                regex : '[^"\\\\]+'
+                regex : '[^"\\\\]+',
+                merge : true
             }, {
                 token : "string",
-                regex : '"',
-                next  : "start"
+                regex : "\\\\$",
+                next  : "qqstring",
+                merge : true
+            }, {
+                token : "string",
+                regex : '"|$',
+                next  : "start",
+                merge : true
             }
         ],
         "qstring" : [
@@ -14251,17 +18269,24 @@ var JavaScriptHighlightRules = function() {
                 regex : escapedRe
             }, {
                 token : "string",
-                regex : "[^'\\\\]+"
+                regex : "[^'\\\\]+",
+                merge : true
             }, {
                 token : "string",
-                regex : "'",
-                next  : "start"
+                regex : "\\\\$",
+                next  : "qstring",
+                merge : true
+            }, {
+                token : "string",
+                regex : "'|$",
+                next  : "start",
+                merge : true
             }
         ]
     };
 
     this.embedRules(DocCommentHighlightRules, "doc-",
-        [ new DocCommentHighlightRules().getEndRule("start") ]);
+        [ DocCommentHighlightRules.getEndRule("start") ]);
 };
 
 oop.inherits(JavaScriptHighlightRules, TextHighlightRules);
@@ -14278,31 +18303,7 @@ var TextHighlightRules = require("ace/mode/text_highlight_rules").TextHighlightR
 var CssHighlightRules = function() {
 
     var properties = lang.arrayToMap(
-        ("-moz-appearance|-moz-box-sizing|-webkit-box-sizing|-moz-outline-radius|-moz-transform|-webkit-transform|" +
-        "appearance|azimuth|background-attachment|background-color|background-image|" +
-        "background-origin|background-position|background-repeat|background|border-bottom-color|" +
-        "border-bottom-style|border-bottom-width|border-bottom|border-collapse|" +
-        "border-color|border-left-color|border-left-style|border-left-width|" +
-        "border-left|border-right-color|border-right-style|border-right-width|" +
-        "border-right|border-spacing|border-style|border-top-color|" +
-        "border-top-style|border-top-width|border-top|border-width|border|" +
-        "bottom|box-sizing|caption-side|clear|clip|color|content|counter-increment|" +
-        "counter-reset|cue-after|cue-before|cue|cursor|direction|display|" +
-        "elevation|empty-cells|float|font-family|font-size-adjust|font-size|" +
-        "font-stretch|font-style|font-variant|font-weight|font|height|left|" +
-        "letter-spacing|line-height|list-style-image|list-style-position|" +
-        "list-style-type|list-style|margin-bottom|margin-left|margin-right|" +
-        "margin-top|marker-offset|margin|marks|max-height|max-width|min-height|" +
-        "min-width|-moz-border-radius|opacity|orphans|outline-color|outline-offset|outline-radius|" +
-        "outline-style|outline-width|outline|overflow|overflow-x|overflow-y|padding-bottom|" +
-        "padding-left|padding-right|padding-top|padding|page-break-after|" +
-        "page-break-before|page-break-inside|page|pause-after|pause-before|" +
-        "pause|pitch-range|pitch|play-during|pointer-events|position|quotes|resize|richness|right|" +
-        "size|speak-header|speak-numeral|speak-punctuation|speech-rate|speak|" +
-        "stress|table-layout|text-align|text-decoration|text-indent|" +
-        "text-shadow|text-transform|top|transform|unicode-bidi|vertical-align|" +
-        "visibility|voice-family|volume|white-space|widows|width|word-spacing|" +
-        "z-index").split("|")
+        ("animation-fill-mode|alignment-adjust|alignment-baseline|animation-delay|animation-direction|animation-duration|animation-iteration-count|animation-name|animation-play-state|animation-timing-function|animation|appearance|azimuth|backface-visibility|background-attachment|background-break|background-clip|background-color|background-image|background-origin|background-position|background-repeat|background-size|background|baseline-shift|binding|bleed|bookmark-label|bookmark-level|bookmark-state|bookmark-target|border-bottom|border-bottom-color|border-bottom-left-radius|border-bottom-right-radius|border-bottom-style|border-bottom-width|border-collapse|border-color|border-image|border-image-outset|border-image-repeat|border-image-slice|border-image-source|border-image-width|border-left|border-left-color|border-left-style|border-left-width|border-radius|border-right|border-right-color|border-right-style|border-right-width|border-spacing|border-style|border-top|border-top-color|border-top-left-radius|border-top-right-radius|border-top-style|border-top-width|border-width|border|bottom|box-align|box-decoration-break|box-direction|box-flex-group|box-flex|box-lines|box-ordinal-group|box-orient|box-pack|box-shadow|box-sizing|break-after|break-before|break-inside|caption-side|clear|clip|color-profile|color|column-count|column-fill|column-gap|column-rule|column-rule-color|column-rule-style|column-rule-width|column-span|column-width|columns|content|counter-increment|counter-reset|crop|cue-after|cue-before|cue|cursor|direction|display|dominant-baseline|drop-initial-after-adjust|drop-initial-after-align|drop-initial-before-adjust|drop-initial-before-align|drop-initial-size|drop-initial-value|elevation|empty-cells|fit|fit-position|float-offset|float|font-family|font-size|font-size-adjust|font-stretch|font-style|font-variant|font-weight|font|grid-columns|grid-rows|hanging-punctuation|height|hyphenate-after|hyphenate-before|hyphenate-character|hyphenate-lines|hyphenate-resource|hyphens|icon|image-orientation|image-rendering|image-resolution|inline-box-align|left|letter-spacing|line-height|line-stacking-ruby|line-stacking-shift|line-stacking-strategy|line-stacking|list-style-image|list-style-position|list-style-type|list-style|margin-bottom|margin-left|margin-right|margin-top|margin|mark-after|mark-before|mark|marks|marquee-direction|marquee-play-count|marquee-speed|marquee-style|max-height|max-width|min-height|min-width|move-to|nav-down|nav-index|nav-left|nav-right|nav-up|opacity|orphans|outline-color|outline-offset|outline-style|outline-width|outline|overflow-style|overflow-x|overflow-y|overflow|padding-bottom|padding-left|padding-right|padding-top|padding|page-break-after|page-break-before|page-break-inside|page-policy|page|pause-after|pause-before|pause|perspective-origin|perspective|phonemes|pitch-range|pitch|play-during|position|presentation-level|punctuation-trim|quotes|rendering-intent|resize|rest-after|rest-before|rest|richness|right|rotation-point|rotation|ruby-align|ruby-overhang|ruby-position|ruby-span|size|speak-header|speak-numeral|speak-punctuation|speak|speech-rate|stress|string-set|table-layout|target-name|target-new|target-position|target|text-align-last|text-align|text-decoration|text-emphasis|text-height|text-indent|text-justify|text-outline|text-shadow|text-transform|text-wrap|top|transform-origin|transform-style|transform|transition-delay|transition-duration|transition-property|transition-timing-function|transition|unicode-bidi|vertical-align|visibility|voice-balance|voice-duration|voice-family|voice-pitch-range|voice-pitch|voice-rate|voice-stress|voice-volume|volume|white-space-collapse|white-space|widows|width|word-break|word-spacing|word-wrap|z-index").split("|")
     );
 
     var functions = lang.arrayToMap(
@@ -14310,27 +18311,7 @@ var CssHighlightRules = function() {
     );
 
     var constants = lang.arrayToMap(
-        ("absolute|all-scroll|always|armenian|auto|baseline|below|bidi-override|" +
-        "block|bold|bolder|border-box|both|bottom|break-all|break-word|capitalize|center|" +
-        "char|circle|cjk-ideographic|col-resize|collapse|content-box|crosshair|dashed|" +
-        "decimal-leading-zero|decimal|default|disabled|disc|" +
-        "distribute-all-lines|distribute-letter|distribute-space|" +
-        "distribute|dotted|double|e-resize|ellipsis|fixed|georgian|groove|" +
-        "hand|hebrew|help|hidden|hiragana-iroha|hiragana|horizontal|" +
-        "ideograph-alpha|ideograph-numeric|ideograph-parenthesis|" +
-        "ideograph-space|inactive|inherit|inline-block|inline|inset|inside|" +
-        "inter-ideograph|inter-word|italic|justify|katakana-iroha|katakana|" +
-        "keep-all|left|lighter|line-edge|line-through|line|list-item|loose|" +
-        "lower-alpha|lower-greek|lower-latin|lower-roman|lowercase|lr-tb|ltr|" +
-        "medium|middle|move|n-resize|ne-resize|newspaper|no-drop|no-repeat|" +
-        "nw-resize|none|normal|not-allowed|nowrap|oblique|outset|outside|" +
-        "overline|pointer|progress|relative|repeat-x|repeat-y|repeat|right|" +
-        "ridge|row-resize|rtl|s-resize|scroll|se-resize|separate|small-caps|" +
-        "solid|square|static|strict|super|sw-resize|table-footer-group|" +
-        "table-header-group|tb-rl|text-bottom|text-top|text|thick|thin|top|" +
-        "transparent|underline|upper-alpha|upper-latin|upper-roman|uppercase|" +
-        "vertical-ideographic|vertical-text|visible|w-resize|wait|whitespace|" +
-        "zero").split("|")
+        ("absolute|after-edge|after|all-scroll|all|alphabetic|always|antialiased|armenian|auto|avoid-column|avoid-page|avoid|balance|baseline|before-edge|before|below|bidi-override|block-line-height|block|bold|bolder|border-box|both|bottom|box|break-all|break-word|capitalize|caps-height|caption|center|central|char|circle|cjk-ideographic|clone|close-quote|col-resize|collapse|column|consider-shifts|contain|content-box|cover|crosshair|cubic-bezier|dashed|decimal-leading-zero|decimal|default|disabled|disc|disregard-shifts|distribute-all-lines|distribute-letter|distribute-space|distribute|dotted|double|e-resize|ease-in|ease-in-out|ease-out|ease|ellipsis|end|exclude-ruby|fill|fixed|font-size|font|georgian|glyphs|grid-height|groove|hand|hanging|hebrew|help|hidden|hiragana-iroha|hiragana|horizontal|icon|ideograph-alpha|ideograph-numeric|ideograph-parenthesis|ideograph-space|ideographic|inactive|include-ruby|inherit|initial|inline-block|inline-box|inline-line-height|inline-table|inline|inset|inside|inter-ideograph|inter-word|invert|italic|justify|katakana-iroha|katakana|keep-all|last|left|lighter|line-edge|line-through|line|linear|list-item|local|loose|lower-alpha|lower-greek|lower-latin|lower-roman|lowercase|lr-tb|ltr|mathematical|max-height|max-size|medium|menu|message-box|middle|move|n-resize|ne-resize|newspaper|no-change|no-close-quote|no-drop|no-open-quote|no-repeat|none|normal|not-allowed|nowrap|nw-resize|oblique|open-quote|outset|outside|overline|padding-box|page|pointer|pre-line|pre-wrap|pre|preserve-3d|progress|relative|repeat-x|repeat-y|repeat|replaced|reset-size|ridge|right|round|row-resize|rtl|s-resize|scroll|se-resize|separate|slice|small-caps|small-caption|solid|space|square|start|static|status-bar|step-end|step-start|steps|stretch|strict|sub|super|sw-resize|table-caption|table-cell|table-column-group|table-column|table-footer-group|table-header-group|table-row-group|table-row|table|tb-rl|text-after-edge|text-before-edge|text-bottom|text-size|text-top|text|thick|thin|top|transparent|underline|upper-alpha|upper-latin|upper-roman|uppercase|use-script|vertical-ideographic|vertical-text|visible|w-resize|wait|whitespace|z-index|zero").split("|")
     );
 
     var colors = lang.arrayToMap(
@@ -14348,6 +18329,8 @@ var CssHighlightRules = function() {
     // regexps are ordered -> the first match is used
 
     var numRe = "\\-?(?:(?:[0-9]+)|(?:[0-9]*\\.[0-9]+))";
+    var pseudoElements = "(\\:+)\\b(after|before|first-letter|first-line|moz-selection|selection)\\b";
+    var pseudoClasses = "(:)\\b(active|checked|disabled|empty|enabled|first-child|first-of-type|focus|hover|indeterminate|invalid|last-child|last-of-type|link|not|nth-child|nth-last-child|nth-last-of-type|nth-of-type|only-child|only-of-type|required|root|target|valid|visited)\\b";
     
     var base_ruleset = [
         {
@@ -14355,7 +18338,7 @@ var CssHighlightRules = function() {
             merge : true,
             regex : "\\/\\*",
             next : "ruleset_comment"
-        },{
+        }, {
             token : "string", // single line
             regex : '["](?:(?:\\\\.)|(?:[^"\\\\]))*?["]'
         }, {
@@ -14363,7 +18346,7 @@ var CssHighlightRules = function() {
             regex : "['](?:(?:\\\\.)|(?:[^'\\\\]))*?[']"
         }, {
             token : ["constant.numeric", "keyword"],
-            regex : "(" + numRe + ")(em|ex|px|ch|cm|mm|in|pt|pc|deg|rad|dpi|grad|ms|s|hz|khz|%)"
+            regex : "(" + numRe + ")(ch|cm|deg|em|ex|fr|gd|grad|Hz|in|kHz|mm|ms|pc|pt|px|rad|rem|s|turn|vh|vm|vw|%)"
         }, {
             token : ["constant.numeric"],
             regex : "([0-9]+)"
@@ -14373,6 +18356,12 @@ var CssHighlightRules = function() {
         }, {
             token : "constant.numeric", // hex3 color
             regex : "#[a-f0-9]{3}"
+        }, {
+            token : ["punctuation", "entity.other.attribute-name.pseudo-element.css"], 
+            regex : pseudoElements
+        }, {
+            token : ["punctuation", "entity.other.attribute-name.pseudo-class.css"], 
+            regex : pseudoClasses
         }, {
             token : function(value) {
                 if (properties.hasOwnProperty(value.toLowerCase())) {
@@ -14512,16 +18501,6 @@ exports.CssHighlightRules = CssHighlightRules;
 
 define("ace/mode/xml_util",[], function(require, exports, module) {
 
-var lang = require("ace/lib/lang");
-
-var formTags = lang.arrayToMap(
-    ("button|form|input|label|select|textarea").split("|")
-);
-
-var tableTags = lang.arrayToMap(
-    ("table|tbody|td|tfoot|th|tr").split("|")
-);
-
 function string(state) {
     return [{
         token : "string",
@@ -14555,7 +18534,7 @@ function multiLineString(quote, state) {
     }];
 }
 
-exports.tag = function(states, name, nextState) {
+exports.tag = function(states, name, nextState, tagMap) {
     states[name] = [{
         token : "text",
         regex : "\\s+"
@@ -14563,30 +18542,14 @@ exports.tag = function(states, name, nextState) {
         //token : "meta.tag",
         
     token : function(value) {
-            if ( value==='a' ) {
-                return "meta.tag.anchor";
-            }
-            else if ( value==='img' ) {
-                return "meta.tag.image";
-            }
-            else if ( value==='script' ) {
-                return "meta.tag.script";
-            }
-            else if ( value==='style' ) {
-                return "meta.tag.style";
-            }
-            else if (formTags.hasOwnProperty(value.toLowerCase())) {
-                return "meta.tag.form";
-            }
-            else if (tableTags.hasOwnProperty(value.toLowerCase())) {
-                return "meta.tag.table";
-            }
-            else {
-                return "meta.tag";
+            if (tagMap && tagMap[value]) {
+                return "meta.tag.tag-name" + '.' + tagMap[value];
+            } else {
+                return "meta.tag.tag-name";
             }
         },        
         merge : true,
-        regex : "[-_a-zA-Z0-9:!]+",
+        regex : "[-_a-zA-Z0-9:]+",
         next : name + "_embed_attribute_list" 
     }, {
         token: "empty",
@@ -14617,6 +18580,130 @@ exports.tag = function(states, name, nextState) {
     }].concat(string(name));
 };
 
+});
+
+define("ace/token_iterator",[], function(require, exports, module) {
+
+/**
+ * class TokenIterator
+ *
+ * This class provides an essay way to treat the document as a stream of tokens, and provides methods to iterate over these tokens.
+ *
+ **/
+
+/**
+ * new TokenIterator(session, initialRow, initialColumn)
+ * - session (EditSession): The session to associate with
+ * - initialRow (Number): The row to start the tokenizing at
+ * - initialColumn (Number): The column to start the tokenizing at
+ *
+ * Creates a new token iterator object. The inital token index is set to the provided row and column coordinates.
+ *
+ **/
+var TokenIterator = function(session, initialRow, initialColumn) {
+    this.$session = session;
+    this.$row = initialRow;
+    this.$rowTokens = session.getTokens(initialRow);
+
+    var token = session.getTokenAt(initialRow, initialColumn);
+    this.$tokenIndex = token ? token.index : -1;
+};
+
+(function() {
+   
+    /**
+    * TokenIterator.stepBackward() -> [String]
+    * + (String): If the current point is not at the top of the file, this function returns `null`. Otherwise, it returns an array of the tokenized strings.
+    * 
+    * Tokenizes all the items from the current point to the row prior in the document. 
+    **/ 
+    this.stepBackward = function() {
+        this.$tokenIndex -= 1;
+        
+        while (this.$tokenIndex < 0) {
+            this.$row -= 1;
+            if (this.$row < 0) {
+                this.$row = 0;
+                return null;
+            }
+                
+            this.$rowTokens = this.$session.getTokens(this.$row);
+            this.$tokenIndex = this.$rowTokens.length - 1;
+        }
+            
+        return this.$rowTokens[this.$tokenIndex];
+    };
+  
+    /**
+    * TokenIterator.stepForward() -> String
+    * 
+    * Tokenizes all the items from the current point until the next row in the document. If the current point is at the end of the file, this function returns `null`. Otherwise, it returns the tokenized string.
+    **/   
+    this.stepForward = function() {
+        var rowCount = this.$session.getLength();
+        this.$tokenIndex += 1;
+        
+        while (this.$tokenIndex >= this.$rowTokens.length) {
+            this.$row += 1;
+            if (this.$row >= rowCount) {
+                this.$row = rowCount - 1;
+                return null;
+            }
+
+            this.$rowTokens = this.$session.getTokens(this.$row);
+            this.$tokenIndex = 0;
+        }
+            
+        return this.$rowTokens[this.$tokenIndex];
+    };
+ 
+    /**
+    * TokenIterator.getCurrentToken() -> String
+    * 
+    * Returns the current tokenized string.
+    *
+    **/      
+    this.getCurrentToken = function () {
+        return this.$rowTokens[this.$tokenIndex];
+    };
+
+    /**
+    * TokenIterator.getCurrentTokenRow() -> Number
+    * 
+    * Returns the current row.
+    *
+    **/      
+    this.getCurrentTokenRow = function () {
+        return this.$row;
+    };
+
+    /**
+    * TokenIterator.getCurrentTokenColumn() -> Number
+    * 
+    * Returns the current column.
+    *
+    **/     
+    this.getCurrentTokenColumn = function() {
+        var rowTokens = this.$rowTokens;
+        var tokenIndex = this.$tokenIndex;
+        
+        // If a column was cached by EditSession.getTokenAt, then use it
+        var column = rowTokens[tokenIndex].start;
+        if (column !== undefined)
+            return column;
+            
+        column = 0;
+        while (tokenIndex > 0) {
+            tokenIndex -= 1;
+            column += rowTokens[tokenIndex].value.length;
+        }
+        
+        return column;  
+    };
+            
+}).call(TokenIterator.prototype);
+
+exports.TokenIterator = TokenIterator;
 });
 
 define("ace/mode/folding/mixed",[], function(require, exports, module) {
@@ -14692,25 +18779,27 @@ var FoldMode = exports.FoldMode = function() {};
             return "end";
         return "";
     };
-    
+
     this.getFoldWidgetRange = function(session, foldStyle, row) {
         return null;
     };
 
     this.indentationBlock = function(session, row, column) {
-        var re = /^\s*/;
+        var re = /\S/;
+        var line = session.getLine(row);
+        var startLevel = line.search(re);
+        if (startLevel == -1)
+            return;
+
+        var startColumn = column || line.length;
+        var maxRow = session.getLength();
         var startRow = row;
         var endRow = row;
-        var line = session.getLine(row);
-        var startColumn = column || line.length;
-        var startLevel = line.match(re)[0].length;
-        var maxRow = session.getLength()
-        
-        while (++row < maxRow) {
-            line = session.getLine(row);
-            var level = line.match(re)[0].length;
 
-            if (level == line.length)
+        while (++row < maxRow) {
+            var level = session.getLine(row).search(re);
+
+            if (level == -1)
                 continue;
 
             if (level <= startLevel)
@@ -14725,9 +18814,9 @@ var FoldMode = exports.FoldMode = function() {};
         }
     };
 
-    this.openingBracketBlock = function(session, bracket, row, column) {
+    this.openingBracketBlock = function(session, bracket, row, column, typeRe) {
         var start = {row: row, column: column + 1};
-        var end = session.$findClosingBracket(bracket, start);
+        var end = session.$findClosingBracket(bracket, start, typeRe);
         if (!end)
             return;
 
@@ -14735,7 +18824,7 @@ var FoldMode = exports.FoldMode = function() {};
         if (fw == null)
             fw = this.getFoldWidget(session, end.row);
 
-        if (fw == "start") {
+        if (fw == "start" && end.row > start.row) {
             end.row --;
             end.column = session.getLine(end.row).length;
         }
@@ -14744,85 +18833,6 @@ var FoldMode = exports.FoldMode = function() {};
 
 }).call(FoldMode.prototype);
 
-});
-
-define("ace/token_iterator",[], function(require, exports, module) {
-
-var TokenIterator = function(session, initialRow, initialColumn) {
-    this.$session = session;
-    this.$row = initialRow;
-    this.$rowTokens = session.getTokens(initialRow, initialRow)[0].tokens;
-
-    var token = session.getTokenAt(initialRow, initialColumn);
-    this.$tokenIndex = token ? token.index : -1;
-};
-
-(function() {
-    
-    this.stepBackward = function() {
-        this.$tokenIndex -= 1;
-        
-        while (this.$tokenIndex < 0) {
-            this.$row -= 1;
-            if (this.$row < 0) {
-                this.$row = 0;
-                return null;
-            }
-                
-            this.$rowTokens = this.$session.getTokens(this.$row, this.$row)[0].tokens;
-            this.$tokenIndex = this.$rowTokens.length - 1;
-        }
-            
-        return this.$rowTokens[this.$tokenIndex];
-    };
-    
-    this.stepForward = function() {
-        var rowCount = this.$session.getLength();
-        this.$tokenIndex += 1;
-        
-        while (this.$tokenIndex >= this.$rowTokens.length) {
-            this.$row += 1;
-            if (this.$row >= rowCount) {
-                this.$row = rowCount - 1;
-                return null;
-            }
-
-            this.$rowTokens = this.$session.getTokens(this.$row, this.$row)[0].tokens;
-            this.$tokenIndex = 0;
-        }
-            
-        return this.$rowTokens[this.$tokenIndex];
-    };
-    
-    this.getCurrentToken = function () {
-        return this.$rowTokens[this.$tokenIndex];
-    };
-    
-    this.getCurrentTokenRow = function () {
-        return this.$row;
-    };
-    
-    this.getCurrentTokenColumn = function() {
-        var rowTokens = this.$rowTokens;
-        var tokenIndex = this.$tokenIndex;
-        
-        // If a column was cached by EditSession.getTokenAt, then use it
-        var column = rowTokens[tokenIndex].start;
-        if (column !== undefined)
-            return column;
-            
-        column = 0;
-        while (tokenIndex > 0) {
-            tokenIndex -= 1;
-            column += rowTokens[tokenIndex].value.length;
-        }
-        
-        return column;  
-    };
-            
-}).call(TokenIterator.prototype);
-
-exports.TokenIterator = TokenIterator;
 });
 
 define("ace/mode/doc_comment_highlight_rules",[], function(require, exports, module) {
@@ -14858,27 +18868,24 @@ var DocCommentHighlightRules = function() {
 
 oop.inherits(DocCommentHighlightRules, TextHighlightRules);
 
-(function() {
-
-    this.getStartRule = function(start) {
-        return {
-            token : "comment.doc", // doc comment
-            merge : true,
-            regex : "\\/\\*(?=\\*)",
-            next  : start
-        };
+DocCommentHighlightRules.getStartRule = function(start) {
+    return {
+        token : "comment.doc", // doc comment
+        merge : true,
+        regex : "\\/\\*(?=\\*)",
+        next  : start
     };
-    
-    this.getEndRule = function (start) {
-        return {
-            token : "comment.doc", // closing comment
-            merge : true,
-            regex : "\\*\\/",
-            next  : start
-        };
-    };
+};
 
-}).call(DocCommentHighlightRules.prototype);
+DocCommentHighlightRules.getEndRule = function (start) {
+    return {
+        token : "comment.doc", // closing comment
+        merge : true,
+        regex : "\\*\\/",
+        next  : start
+    };
+};
+
 
 exports.DocCommentHighlightRules = DocCommentHighlightRules;
 
@@ -14890,9 +18897,22 @@ var oop = require("ace/lib/oop");
 var EventEmitter = require("ace/lib/event_emitter").EventEmitter;
 
 /**
- * An Anchor is a floating pointer in the document. Whenever text is inserted or
- * deleted before the cursor, the position of the cursor is updated
- */
+ * class Anchor
+ *
+ * Defines the floating pointer in the document. Whenever text is inserted or deleted before the cursor, the position of the cursor is updated
+ *
+ **/
+
+/**
+ * new Anchor(doc, row, column)
+ * - doc (Document): The document to associate with the anchor
+ * - row (Number): The starting row position
+ * - column (Number): The starting column position
+ *
+ * Creates a new `Anchor` and associates it with a document.
+ *
+ **/
+
 var Anchor = exports.Anchor = function(doc, row, column) {
     this.document = doc;
     
@@ -14909,14 +18929,36 @@ var Anchor = exports.Anchor = function(doc, row, column) {
 
     oop.implement(this, EventEmitter);
     
+    /**
+     * Anchor.getPosition() -> Object
+     *
+     * Returns an object identifying the `row` and `column` position of the current anchor.
+     *
+     **/
+
     this.getPosition = function() {
         return this.$clipPositionToDocument(this.row, this.column);
     };
-    
+ 
+     /**
+     * Anchor.getDocument() -> Document
+     *
+     * Returns the current document.
+     *
+     **/
+        
     this.getDocument = function() {
         return this.document;
     };
     
+     /**
+     * Anchor@onChange(e)
+     * - e (Event): Contains data about the event
+     *
+     * Fires whenever the anchor position changes. Events that can trigger this function include `'includeText'`, `'insertLines'`, `'removeText'`, and `'removeLines'`.
+     *
+     **/
+
     this.onChange = function(e) {
         var delta = e.data;
         var range = delta.range;
@@ -14982,6 +19024,16 @@ var Anchor = exports.Anchor = function(doc, row, column) {
         this.setPosition(row, column, true);
     };
 
+     /**
+     * Anchor.setPosition(row, column, noClip)
+     * - row (Number): The row index to move the anchor to
+     * - column (Number): The column index to move the anchor to
+     * - noClip (Boolean): Identifies if you want the position to be clipped
+     *
+     * Sets the anchor position to the specified row and column. If `noClip` is `true`, the position is not clipped.
+     *
+     **/
+
     this.setPosition = function(row, column, noClip) {
         var pos;
         if (noClip) {
@@ -15010,10 +19062,26 @@ var Anchor = exports.Anchor = function(doc, row, column) {
         });
     };
     
+    /**
+     * Anchor.detach()
+     *
+     * When called, the `'change'` event listener is removed.
+     *
+     **/
+
     this.detach = function() {
         this.document.removeEventListener("change", this.$onChange);
     };
     
+    /** internal, hide
+     * Anchor.clipPositionToDocument(row, column)
+     * - row (Number): The row index to clip the anchor to
+     * - column (Number): The column index to clip the anchor to
+     *
+     * Clips the anchor position to the specified row and column.
+     *
+     **/
+
     this.$clipPositionToDocument = function(row, column) {
         var pos = {};
     
@@ -15044,7 +19112,7 @@ define("ace/edit_session/fold_line",[], function(require, exports, module) {
 
 var Range = require("ace/range").Range;
 
-/**
+/*
  * If an array is passed in, the folds are expected to be sorted already.
  */
 function FoldLine(foldData, folds) {
@@ -15067,7 +19135,7 @@ function FoldLine(foldData, folds) {
 }
 
 (function() {
-    /**
+    /*
      * Note: This doesn't update wrapData!
      */
     this.shiftRow = function(shift) {
@@ -15180,7 +19248,9 @@ function FoldLine(foldData, folds) {
                 && fold.start.column != column
                 && fold.start.row != row)
             {
-                throw "Moving characters inside of a fold should never be reached";
+                //throwing here breaks whole editor
+                //@todo properly handle this
+                window.console && window.console.log(row, column, fold);
             } else if (fold.start.row == row) {
                 folds = this.folds;
                 var i = folds.indexOf(fold);
@@ -15278,7 +19348,7 @@ exports.FoldLine = FoldLine;
 
 define("ace/edit_session/fold",[], function(require, exports, module) {
 
-/**
+/*
  * Simple fold-data struct.
  **/
 var Fold = exports.Fold = function(range, placeholder) {

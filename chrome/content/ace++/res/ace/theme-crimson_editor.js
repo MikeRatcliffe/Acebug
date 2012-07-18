@@ -1,6 +1,14 @@
 define("ace/theme/crimson_editor",[], function(require, exports, module) {
 exports.isDark = false;
-exports.cssText = ".ace-crimson-editor .ace_editor {\
+exports.cssText = require('ace/theme/crimson_editor.css');
+
+exports.cssClass = "ace-crimson-editor";
+
+var dom = require("ace/lib/dom");
+dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/crimson_editor.css",[], ".ace-crimson-editor .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
 \
@@ -9,8 +17,7 @@ exports.cssText = ".ace-crimson-editor .ace_editor {\
 }\
 \
 .ace-crimson-editor .ace_gutter {\
-  width: 50px;\
-  background: #e8e8e8;\
+  background: #ebebeb;\
   color: #333;\
   overflow : hidden;\
 }\
@@ -20,17 +27,12 @@ exports.cssText = ".ace-crimson-editor .ace_editor {\
   text-align: right;\
 }\
 \
-.ace-crimson-editor .ace_gutter-layer .ace_gutter-cell {\
-  padding-right: 6px;\
-}\
-\
 .ace-crimson-editor .ace_print_margin {\
   width: 1px;\
   background: #e8e8e8;\
 }\
 \
 .ace-crimson-editor .ace_text-layer {\
-  cursor: text;\
   color: rgb(64, 64, 64);\
 }\
 \
@@ -141,6 +143,10 @@ exports.cssText = ".ace-crimson-editor .ace_editor {\
   background: rgb(232, 242, 254);\
 }\
 \
+.ace-crimson-editor .ace_gutter_active_line {\
+    background-color : #dcdcdc;\
+}\
+\
 .ace-crimson-editor .ace_meta.ace_tag {\
   color:rgb(28, 2, 255);\
 }\
@@ -152,11 +158,9 @@ exports.cssText = ".ace-crimson-editor .ace_editor {\
 \
 .ace-crimson-editor .ace_string.ace_regex {\
   color: rgb(192, 0, 192);\
-}";
-
-exports.cssClass = "ace-crimson-editor";
-
-var dom = require("ace/lib/dom");
-dom.importCssString(exports.cssText, exports.cssClass);
-});
+}\
+\
+.ace-crimson-editor .ace_indent-guide {\
+  background: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAE0lEQVQImWP4////f4bLly//BwAmVgd1/w11/gAAAABJRU5ErkJggg==\") right repeat-y;\
+}");
 

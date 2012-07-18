@@ -2,7 +2,13 @@ define("ace/theme/merbivore_soft",[], function(require, exports, module) {
 
 exports.isDark = true;
 exports.cssClass = "ace-merbivore-soft";
-exports.cssText = "\
+exports.cssText = require('ace/theme/merbivore_soft.css');
+
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/merbivore_soft.css",[], "\
 .ace-merbivore-soft .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
@@ -12,13 +18,13 @@ exports.cssText = "\
 }\
 \
 .ace-merbivore-soft .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #262424;\
+  color: #E6E1DC;\
 }\
 \
 .ace-merbivore-soft .ace_print_margin {\
   width: 1px;\
-  background: #e8e8e8;\
+  background: #262424;\
 }\
 \
 .ace-merbivore-soft .ace_scroller {\
@@ -26,7 +32,6 @@ exports.cssText = "\
 }\
 \
 .ace-merbivore-soft .ace_text-layer {\
-  cursor: text;\
   color: #E6E1DC;\
 }\
 \
@@ -38,13 +43,18 @@ exports.cssText = "\
   border-left: 0px;\
   border-bottom: 1px solid #FFFFFF;\
 }\
- \
+\
 .ace-merbivore-soft .ace_marker-layer .ace_selection {\
   background: #494949;\
 }\
 \
+.ace-merbivore-soft.multiselect .ace_selection.start {\
+  box-shadow: 0 0 3px 0px #1C1C1C;\
+  border-radius: 2px;\
+}\
+\
 .ace-merbivore-soft .ace_marker-layer .ace_step {\
-  background: rgb(198, 219, 174);\
+  background: rgb(102, 82, 0);\
 }\
 \
 .ace-merbivore-soft .ace_marker-layer .ace_bracket {\
@@ -56,10 +66,14 @@ exports.cssText = "\
   background: #333435;\
 }\
 \
+.ace-merbivore-soft .ace_gutter_active_line {\
+  background-color: #333435;\
+}\
+\
 .ace-merbivore-soft .ace_marker-layer .ace_selected_word {\
   border: 1px solid #494949;\
 }\
-       \
+\
 .ace-merbivore-soft .ace_invisible {\
   color: #404040;\
 }\
@@ -69,6 +83,14 @@ exports.cssText = "\
 }\
 \
 .ace-merbivore-soft .ace_constant, .ace-merbivore-soft .ace_constant.ace_other {\
+  color:#68C1D8;\
+}\
+\
+.ace-merbivore-soft .ace_constant.ace_character,  {\
+  color:#68C1D8;\
+}\
+\
+.ace-merbivore-soft .ace_constant.ace_character.ace_escape,  {\
   color:#68C1D8;\
 }\
 \
@@ -131,9 +153,9 @@ color:#AC4BB8;\
 \
 .ace-merbivore-soft .ace_markup.ace_underline {\
     text-decoration:underline;\
-}";
-
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText, exports.cssClass);
-});
+}\
+\
+.ace-merbivore-soft .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWOQkZH5zzBz5sz/AA8EBB6crd1rAAAAAElFTkSuQmCC) right repeat-y;\
+}");
 

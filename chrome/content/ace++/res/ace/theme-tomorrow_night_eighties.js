@@ -2,7 +2,13 @@ define("ace/theme/tomorrow_night_eighties",[], function(require, exports, module
 
 exports.isDark = true;
 exports.cssClass = "ace-tomorrow-night-eighties";
-exports.cssText = "\
+exports.cssText = require('ace/theme/tomorrow_night_eighties.css');
+
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/tomorrow_night_eighties.css",[], "\
 .ace-tomorrow-night-eighties .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
@@ -12,13 +18,13 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night-eighties .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #272727;\
+  color: #CCC;\
 }\
 \
 .ace-tomorrow-night-eighties .ace_print_margin {\
   width: 1px;\
-  background: #e8e8e8;\
+  background: #272727;\
 }\
 \
 .ace-tomorrow-night-eighties .ace_scroller {\
@@ -26,7 +32,6 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night-eighties .ace_text-layer {\
-  cursor: text;\
   color: #CCCCCC;\
 }\
 \
@@ -38,13 +43,18 @@ exports.cssText = "\
   border-left: 0px;\
   border-bottom: 1px solid #CCCCCC;\
 }\
- \
+\
 .ace-tomorrow-night-eighties .ace_marker-layer .ace_selection {\
   background: #515151;\
 }\
 \
+.ace-tomorrow-night-eighties.multiselect .ace_selection.start {\
+  box-shadow: 0 0 3px 0px #2D2D2D;\
+  border-radius: 2px;\
+}\
+\
 .ace-tomorrow-night-eighties .ace_marker-layer .ace_step {\
-  background: rgb(198, 219, 174);\
+  background: rgb(102, 82, 0);\
 }\
 \
 .ace-tomorrow-night-eighties .ace_marker-layer .ace_bracket {\
@@ -56,10 +66,14 @@ exports.cssText = "\
   background: #393939;\
 }\
 \
+.ace-tomorrow-night-eighties .ace_gutter_active_line {\
+  background-color: #393939;\
+}\
+\
 .ace-tomorrow-night-eighties .ace_marker-layer .ace_selected_word {\
   border: 1px solid #515151;\
 }\
-       \
+\
 .ace-tomorrow-night-eighties .ace_invisible {\
   color: #6A6A6A;\
 }\
@@ -153,9 +167,9 @@ background-color:#CC99CC;\
 \
 .ace-tomorrow-night-eighties .ace_markup.ace_heading {\
   color:#99CC99;\
-}";
-
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText, exports.cssClass);
-});
+}\
+\
+.ace-tomorrow-night-eighties .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWPQ1dX9z7Bq1ar/ABE1BITwhhuFAAAAAElFTkSuQmCC) right repeat-y;\
+}");
 

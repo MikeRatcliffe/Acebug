@@ -2,7 +2,13 @@ define("ace/theme/cobalt",[], function(require, exports, module) {
 
 exports.isDark = true;
 exports.cssClass = "ace-cobalt";
-exports.cssText = "\
+exports.cssText = require('ace/theme/cobalt.css');
+
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/cobalt.css",[], "\
 .ace-cobalt .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
@@ -12,13 +18,13 @@ exports.cssText = "\
 }\
 \
 .ace-cobalt .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #011e3a;\
+  color: #fff;\
 }\
 \
 .ace-cobalt .ace_print_margin {\
   width: 1px;\
-  background: #e8e8e8;\
+  background: #011e3a;\
 }\
 \
 .ace-cobalt .ace_scroller {\
@@ -26,7 +32,6 @@ exports.cssText = "\
 }\
 \
 .ace-cobalt .ace_text-layer {\
-  cursor: text;\
   color: #FFFFFF;\
 }\
 \
@@ -38,13 +43,18 @@ exports.cssText = "\
   border-left: 0px;\
   border-bottom: 1px solid #FFFFFF;\
 }\
- \
+\
 .ace-cobalt .ace_marker-layer .ace_selection {\
   background: rgba(179, 101, 57, 0.75);\
 }\
 \
+.ace-cobalt.multiselect .ace_selection.start {\
+  box-shadow: 0 0 3px 0px #002240;\
+  border-radius: 2px;\
+}\
+\
 .ace-cobalt .ace_marker-layer .ace_step {\
-  background: rgb(198, 219, 174);\
+  background: rgb(127, 111, 19);\
 }\
 \
 .ace-cobalt .ace_marker-layer .ace_bracket {\
@@ -56,10 +66,14 @@ exports.cssText = "\
   background: rgba(0, 0, 0, 0.35);\
 }\
 \
+.ace-cobalt .ace_gutter_active_line {\
+  background-color : rgba(0, 0, 0, 0.35);\
+}\
+\
 .ace-cobalt .ace_marker-layer .ace_selected_word {\
   border: 1px solid rgba(179, 101, 57, 0.75);\
 }\
-       \
+\
 .ace-cobalt .ace_invisible {\
   color: rgba(255, 255, 255, 0.15);\
 }\
@@ -69,6 +83,14 @@ exports.cssText = "\
 }\
 \
 .ace-cobalt .ace_constant, .ace-cobalt .ace_constant.ace_other {\
+  color:#FF628C;\
+}\
+\
+.ace-cobalt .ace_constant.ace_character,  {\
+  color:#FF628C;\
+}\
+\
+.ace-cobalt .ace_constant.ace_character.ace_escape,  {\
   color:#FF628C;\
 }\
 \
@@ -130,9 +152,9 @@ background-color:#001221;\
 \
 .ace-cobalt .ace_markup.ace_list {\
   background-color:#130D26;\
-}";
-
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText, exports.cssClass);
-});
+}\
+\
+.ace-cobalt .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWNgUHL4zzBz5sz/AA80BCzv+WXhAAAAAElFTkSuQmCC) right repeat-y;\
+}");
 

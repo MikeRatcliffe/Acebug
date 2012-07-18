@@ -2,7 +2,13 @@ define("ace/theme/tomorrow_night_blue",[], function(require, exports, module) {
 
 exports.isDark = true;
 exports.cssClass = "ace-tomorrow-night-blue";
-exports.cssText = "\
+exports.cssText = require('ace/theme/tomorrow_night_blue.css');
+
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/tomorrow_night_blue.css",[], "\
 .ace-tomorrow-night-blue .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
@@ -12,13 +18,13 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night-blue .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #00204b;\
+  color: #7388b5;\
 }\
 \
 .ace-tomorrow-night-blue .ace_print_margin {\
   width: 1px;\
-  background: #e8e8e8;\
+  background: #00204b;\
 }\
 \
 .ace-tomorrow-night-blue .ace_scroller {\
@@ -26,7 +32,6 @@ exports.cssText = "\
 }\
 \
 .ace-tomorrow-night-blue .ace_text-layer {\
-  cursor: text;\
   color: #FFFFFF;\
 }\
 \
@@ -38,13 +43,18 @@ exports.cssText = "\
   border-left: 0px;\
   border-bottom: 1px solid #FFFFFF;\
 }\
- \
+\
 .ace-tomorrow-night-blue .ace_marker-layer .ace_selection {\
   background: #003F8E;\
 }\
 \
+.ace-tomorrow-night-blue.multiselect .ace_selection.start {\
+  box-shadow: 0 0 3px 0px #002451;\
+  border-radius: 2px;\
+}\
+\
 .ace-tomorrow-night-blue .ace_marker-layer .ace_step {\
-  background: rgb(198, 219, 174);\
+  background: rgb(127, 111, 19);\
 }\
 \
 .ace-tomorrow-night-blue .ace_marker-layer .ace_bracket {\
@@ -56,10 +66,14 @@ exports.cssText = "\
   background: #00346E;\
 }\
 \
+.ace-tomorrow-night-blue .ace_gutter_active_line {\
+  background-color: #022040;\
+}\
+\
 .ace-tomorrow-night-blue .ace_marker-layer .ace_selected_word {\
   border: 1px solid #003F8E;\
 }\
-       \
+\
 .ace-tomorrow-night-blue .ace_invisible {\
   color: #404F7D;\
 }\
@@ -157,9 +171,9 @@ background-color:#EBBBFF;\
 \
 .ace-tomorrow-night-blue .ace_markup.ace_heading {\
   color:#D1F1A9;\
-}";
-
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText, exports.cssClass);
-});
+}\
+\
+.ace-tomorrow-night-blue .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWNgUAn8z7Bq1ar/ABBUBHJ4/r3JAAAAAElFTkSuQmCC) right repeat-y;\
+}");
 

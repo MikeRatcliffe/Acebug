@@ -2,7 +2,13 @@ define("ace/theme/solarized_dark",[], function(require, exports, module) {
 
 exports.isDark = true;
 exports.cssClass = "ace-solarized-dark";
-exports.cssText = "\
+exports.cssText = require('ace/theme/solarized_dark.css');
+
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/solarized_dark.css",[], "\
 .ace-solarized-dark .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
@@ -12,8 +18,8 @@ exports.cssText = "\
 }\
 \
 .ace-solarized-dark .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #01313f;\
+  color: #d0edf7;\
 }\
 \
 .ace-solarized-dark .ace_print_margin {\
@@ -26,7 +32,6 @@ exports.cssText = "\
 }\
 \
 .ace-solarized-dark .ace_text-layer {\
-  cursor: text;\
   color: #93A1A1;\
 }\
 \
@@ -38,13 +43,18 @@ exports.cssText = "\
   border-left: 0px;\
   border-bottom: 1px solid #D30102;\
 }\
- \
+\
 .ace-solarized-dark .ace_marker-layer .ace_selection {\
   background: #073642;\
 }\
 \
+.ace-solarized-dark.multiselect .ace_selection.start {\
+  box-shadow: 0 0 3px 0px #002B36;\
+  border-radius: 2px;\
+}\
+\
 .ace-solarized-dark .ace_marker-layer .ace_step {\
-  background: rgb(198, 219, 174);\
+  background: rgb(102, 82, 0);\
 }\
 \
 .ace-solarized-dark .ace_marker-layer .ace_bracket {\
@@ -56,10 +66,14 @@ exports.cssText = "\
   background: #073642;\
 }\
 \
+.ace-solarized-dark .ace_gutter_active_line {\
+  background-color: #0d3440;\
+}\
+\
 .ace-solarized-dark .ace_marker-layer .ace_selected_word {\
   border: 1px solid #073642;\
 }\
-       \
+\
 .ace-solarized-dark .ace_invisible {\
   color: rgba(147, 161, 161, 0.50);\
 }\
@@ -124,9 +138,9 @@ color:#657B83;\
 \
 .ace-solarized-dark .ace_markup.ace_underline {\
     text-decoration:underline;\
-}";
-
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText, exports.cssClass);
-});
+}\
+\
+.ace-solarized-dark .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWNg0Db7zzBz5sz/AA82BCv7wOIDAAAAAElFTkSuQmCC) right repeat-y;\
+}");
 

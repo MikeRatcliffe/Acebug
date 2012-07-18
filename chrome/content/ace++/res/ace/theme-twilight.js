@@ -2,7 +2,13 @@ define("ace/theme/twilight",[], function(require, exports, module) {
 
 exports.isDark = true;
 exports.cssClass = "ace-twilight";
-exports.cssText = "\
+exports.cssText = require('ace/theme/twilight.css');
+
+    var dom = require("ace/lib/dom");
+    dom.importCssString(exports.cssText, exports.cssClass);
+});
+
+define("ace/theme/twilight.css",[], "\
 .ace-twilight .ace_editor {\
   border: 2px solid rgb(159, 159, 159);\
 }\
@@ -12,13 +18,13 @@ exports.cssText = "\
 }\
 \
 .ace-twilight .ace_gutter {\
-  background: #e8e8e8;\
-  color: #333;\
+  background: #232323;\
+  color: #F8F8F8;\
 }\
 \
 .ace-twilight .ace_print_margin {\
   width: 1px;\
-  background: #e8e8e8;\
+  background: #232323;\
 }\
 \
 .ace-twilight .ace_scroller {\
@@ -26,7 +32,6 @@ exports.cssText = "\
 }\
 \
 .ace-twilight .ace_text-layer {\
-  cursor: text;\
   color: #F8F8F8;\
 }\
 \
@@ -38,13 +43,18 @@ exports.cssText = "\
   border-left: 0px;\
   border-bottom: 1px solid #A7A7A7;\
 }\
- \
+\
 .ace-twilight .ace_marker-layer .ace_selection {\
   background: rgba(221, 240, 255, 0.20);\
 }\
 \
+.ace-twilight.multiselect .ace_selection.start {\
+  box-shadow: 0 0 3px 0px #141414;\
+  border-radius: 2px;\
+}\
+\
 .ace-twilight .ace_marker-layer .ace_step {\
-  background: rgb(198, 219, 174);\
+  background: rgb(102, 82, 0);\
 }\
 \
 .ace-twilight .ace_marker-layer .ace_bracket {\
@@ -56,10 +66,14 @@ exports.cssText = "\
   background: rgba(255, 255, 255, 0.031);\
 }\
 \
+.ace-twilight .ace_gutter_active_line {\
+  background-color: rgba(255, 255, 255, 0.031);\
+}\
+\
 .ace-twilight .ace_marker-layer .ace_selected_word {\
   border: 1px solid rgba(221, 240, 255, 0.20);\
 }\
-       \
+\
 .ace-twilight .ace_invisible {\
   color: rgba(255, 255, 255, 0.25);\
 }\
@@ -69,6 +83,14 @@ exports.cssText = "\
 }\
 \
 .ace-twilight .ace_constant, .ace-twilight .ace_constant.ace_other {\
+  color:#CF6A4C;\
+}\
+\
+.ace-twilight .ace_constant.ace_character,  {\
+  color:#CF6A4C;\
+}\
+\
+.ace-twilight .ace_constant.ace_character.ace_escape,  {\
   color:#CF6A4C;\
 }\
 \
@@ -147,9 +169,9 @@ color:#5F5A60;\
 \
 .ace-twilight .ace_markup.ace_list {\
   color:#F9EE98;\
-}";
-
-    var dom = require("ace/lib/dom");
-    dom.importCssString(exports.cssText, exports.cssClass);
-});
+}\
+\
+.ace-twilight .ace_indent-guide {\
+  background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAACCAYAAACZgbYnAAAAEklEQVQImWMQERH5zzBz5sz/AA5EBAYqeZXWAAAAAElFTkSuQmCC) right repeat-y;\
+}");
 
