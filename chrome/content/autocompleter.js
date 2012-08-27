@@ -554,14 +554,17 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
                     ans.push({name:'\u2555"'+x.nodeName+'")',comName: '"'+x.nodeName.toLowerCase(),description:x.value, depth:-1,isSpecial:true});
                 }
             } else if (fu == "addEventListener" || fu == "removeEventListener" || fu =='on') {
-                var er
-                if (er = this.object._eventRegistry) try{
-                    if(er.forEach)
-                        er.forEach(createItem)
-                    else
-                        Object.keys(er).forEach(createItem)
-                } catch(e){}
-                descr = "browser event name"
+                var er;
+                ["_eventRegistry", "$eventsStack"].forEach(function(eventHolder) {
+                    if (er = this.object[eventHolder]) try{
+                        if(er.forEach)
+                            er.forEach(createItem)
+                        else
+                            Object.keys(er).forEach(createItem)
+                    } catch(e){}
+                    descr = "browser event name"
+                }, this)
+                pre = '\u2564"';
                 eventNames.forEach(createItem);
             } else if ('createElementNS,createAttributeNS,hasAttributeNS'.indexOf(fu)!=-1) {
                 descr = "ns";

@@ -8,6 +8,7 @@ FBL.ns(function() {
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Str
+var Dom = Firebug.require("firebug/lib/dom")
 
 /***********************************************************/
 var $strBundle = document.getElementById("strings_acebug")
@@ -421,6 +422,10 @@ Firebug.largeCommandLineEditor = {
 		
 		var goodOrBad = Firebug.largeCommandLineEditor.logSuccess
 		this.evaluate(expr, context, null, null, goodOrBad, goodOrBad);
+        
+        var consolePanel = Firebug.currentContext.panelMap.console;
+        if (consolePanel)
+            Dom.scrollToBottom(consolePanel.panelNode);
 	},
 
 	jsOrCoffee: function(v) {	
@@ -573,7 +578,9 @@ Firebug.largeCommandLineEditor = {
         if (runSelection)
             var text = editor.getCopyText();
 
-        if (!text) {
+        if (text) { 
+            text = this.jsOrCoffee(text)
+        } else {
             //log lines with breakpoints
             var bp = editor.session.$breakpoints;
             if (cell.coffeeError) {
@@ -609,9 +616,13 @@ Firebug.largeCommandLineEditor = {
 			}
             Firebug.CommandLine.commandHistory.appendToHistory(cell.body.join('\n'));
         }
-        text = text.replace(/\.\s*$/, '');
+        text = text.replace(/[\.,]\s*$/, '').replace(/([^\-+])[\-+]\s*$/, '$1');
 
         Firebug.largeCommandLineEditor.runUserCode(text, cell);
+
+        var consolePanel = Firebug.currentContext.panelMap.console;
+        if (consolePanel)
+            Dom.scrollToBottom(consolePanel.panelNode);
     },
 
     setThisValue: function(code, cell){

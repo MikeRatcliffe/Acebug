@@ -405,7 +405,7 @@ function js_beautify(js_source_text, options) {
                 var sign = input.charAt(parser_pos);
                 parser_pos += 1;
 
-                var t = get_next_token(parser_pos);
+                var t = get_next_token();
                 c += sign + t[0];
                 return [c, 'TK_WORD'];
             }
@@ -491,7 +491,7 @@ function js_beautify(js_source_text, options) {
         (c === '/' &&
             ((last_type === 'TK_WORD' && is_special_word(last_text)) ||
                 (last_text === ')' && in_array(flags.previous_mode, ['(COND-EXPRESSION)', '(FOR-EXPRESSION)'])) ||
-                (last_type === 'TK_COMMENT' || last_type === 'TK_START_EXPR' || last_type === 'TK_START_BLOCK' || last_type === 'TK_END_BLOCK' || last_type === 'TK_OPERATOR' || last_type === 'TK_EQUALS' || last_type === 'TK_EOF' || last_type === 'TK_SEMICOLON')))) { // regexp
+                (last_type === 'TK_COMMA' || last_type === 'TK_COMMENT' || last_type === 'TK_START_EXPR' || last_type === 'TK_START_BLOCK' || last_type === 'TK_END_BLOCK' || last_type === 'TK_OPERATOR' || last_type === 'TK_EQUALS' || last_type === 'TK_EOF' || last_type === 'TK_SEMICOLON')))) { // regexp
             var sep = c;
             var esc = false;
             var esc1 = 0;
@@ -702,7 +702,7 @@ function js_beautify(js_source_text, options) {
 
     parser_pos = 0;
     while (true) {
-        var t = get_next_token(parser_pos);
+        var t = get_next_token();
         token_text = t[0];
         token_type = t[1];
         if (token_type === 'TK_EOF') {
@@ -917,7 +917,7 @@ function js_beautify(js_source_text, options) {
             prefix = 'NONE';
 
             if (token_text === 'function') {
-                if (flags.var_line) {
+                if (flags.var_line && last_type !== 'TK_EQUALS' ) {
                     flags.var_line_reindented = true;
                 }
                 if ((just_added_newline || last_text === ';') && last_text !== '{'
@@ -943,7 +943,7 @@ function js_beautify(js_source_text, options) {
                     // foo = function
                     print_single_space();
                 } else if (is_expression(flags.mode)) {
-                    // print nothing
+                        //ää print nothing
                 } else {
                     print_newline();
                 }
@@ -1104,7 +1104,7 @@ function js_beautify(js_source_text, options) {
 
         case 'TK_COMMA':
             if (flags.var_line) {
-                if (is_expression(flags.mode)) {
+                if (is_expression(flags.mode) || last_type === 'TK_END_BLOCK' ) {
                     // do not break on comma, for(var a = 1, b = 2)
                     flags.var_line_tainted = false;
                 }
@@ -1294,6 +1294,7 @@ function js_beautify(js_source_text, options) {
                 }
             }
             print_token();
+            print_newline();
             break;
 
         case 'TK_UNKNOWN':
@@ -2031,3 +2032,7 @@ function style_html(html_source, options) {
   }
   return multi_parser.output.join('');
 }
+
+
+if (typeof exports !== "undefined")
+    exports.html_beautify = style_html;

@@ -549,5 +549,5 @@ exports.launch = function(env, options) {
 		div.style.MozBoxSizing="border-box"
 		div.style.top="-100px"
 		div.style.zIndex="1"
-	}();
+	};
 }});
