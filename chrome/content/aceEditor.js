@@ -17,7 +17,7 @@ var $ACESTR = function(name) {return FBL.$STR(name, $strBundle)};
 if (Firebug.CommandEditor)
 	Firebug.CommandEditor.initialize=function(){} 
 
-Firebug.Ace = {
+Firebug.Ace = FBL.extend(Firebug.Module, {
     dispatchName: "Ace",
 
     initializeUI: function() {
@@ -387,7 +387,7 @@ Firebug.Ace = {
         }
         return range&&!range.isEmpty();
     }
-};
+});
 
 Firebug.largeCommandLineEditor = {
 	hook: function(){
