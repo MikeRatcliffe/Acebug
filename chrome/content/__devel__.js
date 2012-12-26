@@ -111,11 +111,11 @@ window.addEventListener("load", function() {
 	
 	insertXML(
 		tb,
-		<menupopup>
-			<menuitem label='ace' action='ace'/>
-			<menuitem label='reload editor' action='editor'/>
-			<menuitem label='fullreload&#10227;' action='full'/>
-		</menupopup>.toXMLString().replace(/>\s*</,'><'),
+		"<menupopup>\
+			<menuitem label='ace' action='ace'/>\
+			<menuitem label='reload editor' action='editor'/>\
+			<menuitem label='fullreload&#10227;' action='full'/>\
+		</menupopup>".replace(/>\s*</,'><'),
 		tb.lastChild
 	)
 }, false)

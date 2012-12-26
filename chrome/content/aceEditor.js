@@ -139,7 +139,7 @@ Firebug.Ace = FBL.extend(Firebug.Module, {
     showPanel: function(browser, panel) {
         this.win1.startAce(null, this.getOptions());
         this.showPanel = function(browser, panel) {
-            if(panel.name=='console'){
+            if (panel.name=='console') {
 				if(!this.win2.editor)
 					Firebug.largeCommandLineEditor.value
                 this.win2.editor.renderer.onResize();
@@ -885,38 +885,13 @@ function writeToFile(file, text) {
     converter.close();
 }
 
-
-// ************************************************************************************************
-// html panel
-
-var HTMLPanelEditor = function() {
-    this.__noSuchMethod__ = dump;
-    this.aceWindow = Firebug.Ace.win1;
-    this.editor = this.aceWindow.editor;
-    this.session = this.aceWindow.createSession('', '.html');
-    this.onInput = FBL.bind(this.onInput, this);
-    this.session.on('change', this.onInput);
-    this.session.owner = 'htmlEditor';
-    this.session.saveCmd = this.hide.bind(this);
-    //
-    this.cmdID = "cmd_firebug_toggleHTMLEditing";
-    if (!Firebug.chrome.$(this.cmdID)) {
-        this.cmdID = this.cmdID.replace("firebug_", "")
-    }
-    
-};
-
-HTMLPanelEditor.prototype = {
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+var panelEditorCommon = {
     // needed to get rid from Firebug.Editor's "help"
     multiLine: true,
     tabNavigation: false,
     arrowCompletion: false,
 
-    //
-	getInitialValue: function(target, value)
-    {
-        return value;
-    },
 	
     getValue: function() {
         return this.editor.session.getValue()
@@ -959,69 +934,56 @@ HTMLPanelEditor.prototype = {
         delete this.panel;
         this.editing = false;
     },
-
-    prepare: function(target) {
-        this.target = target;
-        this.editingElements = [target.repObject, null];
-    },
-
-    cleanup: function(target) {
-        Firebug.chrome.getSelectedPanel().select(this.editingElements[0]);
-        delete this.editingElements;
-        delete this.target;
-    },
-
-    saveEdit: function() {
-        // Make sure that we create at least one node here, even if it's just
-        // an empty space, because this code depends on having something to replace
-        var value = this.getValue() || " ";
-
-        // Remove all of the nodes in the last range we created, except for
-        // the first one, because setOuterHTML will replace it
-        var first = this.editingElements[0], last = this.editingElements[1];
-        if (last && last != first)
-        {
-            for (var child = first.nextSibling; child;)
-            {
-                var next = child.nextSibling;
-                child.parentNode.removeChild(child);
-                if (child == last)
-                    break;
-                else
-                    child = next;
-            }
-        }
-
-        if (this.innerEditMode)
-            this.editingElements[0].innerHTML = value;
-        else
-            this.editingElements = FBL.setOuterHTML(this.editingElements[0], value);
-    },
-
-    endEditing: function() {
-        return true;
-    },
-
-    beginEditing: function() {
-    },
-    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-
     onInput: function(defer) {
         if (this.ignoreChange)
             return;
-
-        if (!defer) {
-            this.saveEdit();
-            return;
-        }
-
-        if (this.timerId) {
-            clearTimeout(this.timerId);
-        }
-        var self = this;
-        this.timerId = setTimeout(function() {self.timerId = null;self.onInput()}, 200);
+        Firebug.Editor.update()
     }
+}
+// ************************************************************************************************
+// html panel
+
+var HTMLPanelEditor = function() {
+    //this.__noSuchMethod__ = dump;
+    this.aceWindow = Firebug.Ace.win1;
+    this.editor = this.aceWindow.editor;
+    this.session = this.aceWindow.createSession('', '.html');
+    this.onInput = FBL.bind(this.onInput, this);
+    this.session.on('change', this.onInput);
+    this.session.owner = 'htmlEditor';
+    this.session.saveCmd = this.hide.bind(this);
+    //
+    this.cmdID = "cmd_firebug_toggleHTMLEditing";
+    if (!Firebug.chrome.$(this.cmdID)) {
+        this.cmdID = this.cmdID.replace("firebug_", "")
+    }
+    
 };
+
+HTMLPanelEditor.prototype = FBL.extend(Firebug.HTMLPanel.Editors.html.prototype, {
+    // firebug editor uses same function to set up editor and initialize content variables :(
+    prepare: function(target) {
+        this.target = target;
+        var el = target.repObject;
+        if (this.innerEditMode)
+        {
+            this.editingParent = el;
+        }
+        else
+        {
+            this.editingRange = el.ownerDocument.createRange();
+            this.editingRange.selectNode(el);
+            this.originalLocalName = el.localName;
+        }
+    },
+
+    cleanup: function(target) {
+        delete this.editingParent;
+        delete this.editingRange;
+        delete this.originalLocalName;
+        delete this.target;
+    }
+}, panelEditorCommon);
 
 Firebug.HTMLPanel.Editors.html = HTMLPanelEditor;
 
@@ -1045,12 +1007,9 @@ var StyleSheetEditor = function() {
     }
 };
 
-StyleSheetEditor.prototype = FBL.extend(HTMLPanelEditor.prototype, {
-    saveEdit: function() {
-        Firebug.CSSModule.freeEdit(this.styleSheet, this.getValue())
-    },
-
+StyleSheetEditor.prototype = FBL.extend(Firebug.StyleSheetEditor.prototype, {
     prepare: function(target) {
+        this.target = target
         Firebug.chrome.$('fbCmdSaveButton1').collapsed = false;
         // hack to set file path on session
         try{
@@ -1062,6 +1021,8 @@ StyleSheetEditor.prototype = FBL.extend(HTMLPanelEditor.prototype, {
     cleanup: function(target) {
         delete this.styleSheet;
         Firebug.chrome.$('fbCmdSaveButton1').collapsed = true;
+        //this.panel.refresh();
+        delete this.target;
     },
 
     addContextMenuItems: function(items, editor, editorText) {
@@ -1083,7 +1044,7 @@ StyleSheetEditor.prototype = FBL.extend(HTMLPanelEditor.prototype, {
         );
     },
 
-});
+}, panelEditorCommon);
 
 Firebug.StyleSheetEditor = StyleSheetEditor;
 
