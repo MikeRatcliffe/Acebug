@@ -16,7 +16,3 @@ Getting the Source
 
 follow instructions from [MDN](https://developer.mozilla.org/en/Setting_up_extension_development_environment#Custom_code_location) to install unpacked addon.
 
-Webpage
-=======
-
-[http://www.flailingmonkey.com/acebug/](http://www.flailingmonkey.com/acebug/)
