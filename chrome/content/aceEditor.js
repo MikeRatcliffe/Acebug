@@ -512,13 +512,19 @@ Firebug.largeCommandLineEditor = {
     set value(val) {
         if (this._setValue)
             return this.setValue(val);
-        if (arguments.callee.caller == Firebug.CommandLine.commandHistory.onMouseUp) {
-            var mode = Firebug.Ace.win2.editor.session.getMode()
-            if (mode.setCellText)
-                return mode.setCellText(val)
-            return this.setValue(val);
-        }
         return val;
+    },
+
+    onSelectHistoryEntry: function(ev) {
+        var index = ev.target.value;
+        if (index == undefined)
+            return;
+        var val = Firebug.CommandLine.commandHistory.commands[index];
+        var mode = Firebug.Ace.win2.editor.session.getMode();
+        if (mode.setCellText)
+            mode.setCellText(val);
+        else
+            Firebug.largeCommandLineEditor.setValue(val);
     },
 
     addEventListener: function() {
@@ -743,6 +749,9 @@ Firebug.largeCommandLineEditor = {
 	}
 
 };
+
+Firebug.chrome.$("fbCommandHistory").addEventListener("mouseup",
+    Firebug.largeCommandLineEditor.onSelectHistoryEntry);
 
 var inputNumber = 0;
 /***********************************************************/
