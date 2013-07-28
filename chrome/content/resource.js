@@ -1,7 +1,7 @@
 /* See license.txt for terms of usage */
 
 FBL.ns(function() { with (FBL) {
-
+"use strict"
 var $strBundle = document.getElementById("strings_acebug")
 var $ACESTR = function(name) {return FBL.$STR(name, $strBundle)};
 
