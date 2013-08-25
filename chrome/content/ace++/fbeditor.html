@@ -54,7 +54,7 @@ loadScripts = function(deps, callback, lastUrl) {
 
     var url = deps.shift();
     if (!url)
-        return callback && callback(_require(lastUrl));
+        return callback && callback();
 
     var script = document.createElementNS('http://www.w3.org/1999/xhtml', "script")
     script.type = "text/javascript;version=1.8";
@@ -68,75 +68,7 @@ loadScripts = function(deps, callback, lastUrl) {
     document.documentElement.appendChild(script);
 };
 
-//*******************************************************************************************
-//mini require from ace doesn't work :(
-var _define = function(module, deps, payload) {
-    if (arguments.length == 2)
-        payload = deps;
 
-    if (typeof module !== 'string') {
-        console.error('dropping module because define wasn\'t a string.');
-        return;
-    }
-    if(!require.modules[module])
-        require.modules[module] = payload;
-};
-
-window.define = _define;
-
-var _require = function(module, callback) {
-    if (Object.prototype.toString.call(module) === "[object Array]") {
-        var params = [];
-        for (var i = 0, l = module.length; i < l; ++i) {
-            var dep = lookup(module[i]);
-            if (!dep)
-                return loadScripts.apply(window, arguments);
-            params.push(dep);
-        }
-        if (callback) {
-            callback.apply(null, params);
-        }
-    }
-    else if (typeof module === 'string') {
-        var payload = lookup(module);
-        if (!payload && _require.original)
-            return;
-
-        if (callback)
-            callback();
-
-        return payload;
-    }
-    else {
-        if (_require.original)
-            return _require.original.apply(window, arguments);
-    }
-};
-
-_require.modules = {};
-if (window.require)
-    _require.original = window.require;
-
-window.require = _require;
-require.packaged = true;
-
-var lookup = function(moduleName) {
-    var module = require.modules[moduleName];
-    if (module == null) {
-        //console.error('Missing module: ' + moduleName);
-        return null;
-    }
-
-    if (typeof module === 'function') {
-        var exports = {}, req = require, mod = {id: moduleName, uri: ''};
-        module(req, exports, mod);
-        // cache the resulting module object for next time
-        return require.modules[moduleName] = mod.exports || exports;
-    }
-
-    return module;
-};
-//*********************************************************************************************
 
 var onLaunch, launched;
 var startAce = function(callback, options, deps) {
@@ -148,7 +80,7 @@ var startAce = function(callback, options, deps) {
     }
     onLaunch = callback || true;
     // "ace/mode/javascript", "ace/mode/css", are loaded with html 
-    var rootDeps = ["fbace/startup", "res/ace/ace"];
+    var rootDeps = ["fbace/startup"];
     if (!options)
         options = {
 			softtabs: true,
@@ -166,8 +98,10 @@ var startAce = function(callback, options, deps) {
 		
 	if(deps)
 		rootDeps.unshift.apply(rootDeps, deps)
+    
+    rootDeps.unshift("res/ace/ace", "ace/mode/html", "ace/mode/coffee", "ace/mode/livescript")
 
-	require(rootDeps, function() {
+	loadScripts(rootDeps, function() {
         require("fbace/startup").launch({}, options);
 		launched = true
 		

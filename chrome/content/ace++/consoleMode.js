@@ -1,4 +1,5 @@
 var coffeeScriptCompiler
+
 define("ace/mode/consoleMode", function(require, exports, module) {
 
 var oop = require("ace/lib/oop");
@@ -77,7 +78,22 @@ modes = {
 	js: new jsMode,
 	get coffee() {
 		var req  = window.require, def = window.define
-		require(["res/coffee-script"], function(){
+		loadScripts(["res/coffee-script"], function(){
+            var cf = require("ace/mode/coffee").Mode
+            modes.coffee = new cf
+			
+			coffeeScriptCompiler = this.CoffeeScript
+			// now that we have real coffee, highlight session
+			// relies on global editor
+			editor.session.bgTokenizer.start()
+		})
+		delete this.coffee
+		this.coffee = new TextMode
+		return this.coffee
+	}
+    get ls() {
+		var req  = window.require, def = window.define
+		loadScripts(["res/coffee-script"], function(){
             var cf = require("ace/mode/coffee").Mode
             modes.coffee = new cf
 			
@@ -130,7 +146,9 @@ tk.getLineTokens = function(line, startState) {
 		var type = !isHeader?'firstcell.':''
 		var tok = [{type:type+'cellHead', value: delimiter}]
 		if(match = line.match(/lang\s*=\s*(\w+)\b/)){
-			lang = testLang(match[1],'coffeeScript')?'coffee':'js'
+			lang = testLang(match[1],'coffeeScript')
+                ? 'coffee' :testLang(match[1],'liveScript')
+                ? 'ls' : 'js'
 
 			if(dl < match.index) {
 				tok.push({type:type, value:line.substring(dl, match.index)})

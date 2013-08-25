@@ -93,11 +93,12 @@ exports.launch = function(env, options) {
                 var rem = this.$breakpoints.splice(firstRow + 1, -len);
 				
                 if(!this.$breakpoints[firstRow]){
-					for each(var oldBP in rem)
-						if (oldBP){
-							this.$breakpoints[firstRow] = oldBP
+					for (var oldBP in rem) {
+						if (rem[oldBP]){
+							this.$breakpoints[firstRow] = rem[oldBP]
 							break
 						}
+                    }
 				}
 			}
 		}
@@ -184,7 +185,8 @@ exports.launch = function(env, options) {
         var path = "ace/keyboard/" + name.toLowerCase();
         var module = require(path);
         if (!module)
-            require([path], function(module) {
+            loadScripts([path], function() {
+                module = require(path)
                 env.editor.setKeyboardHandler(env.editor.normalKeySet = module.handler);
             });
         else
@@ -414,7 +416,7 @@ exports.launch = function(env, options) {
 			if (window.js_beautify)
                 a();
             else
-                require(["res/beautify"], a);
+                loadScripts(["res/beautify"], a);
         },
         uglify: function() {
 

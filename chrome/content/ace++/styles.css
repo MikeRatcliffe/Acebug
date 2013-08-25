@@ -105,7 +105,7 @@ separator{
 }
 
 #toggleGutter:hover{
-    -moz-box-shadow: 2px -1px 5px 3px #91B6D5;
+    box-shadow: 2px -1px 5px 3px #91B6D5;
     border-right: 1px solid #A1A1CF;
     border-top: 1px solid #A1A1CF;
 }

@@ -438,6 +438,10 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
                 description: cell.coffeeText,
                 isSpecial: true
             },{
+                name:'\u2555lang=ls',
+                comName:'\u2555lang=ls',
+                isSpecial: true
+            },{
                 name: '\u2555this=',
                 comName: '\u2555this=',
                 description: cell.coffeeText,
