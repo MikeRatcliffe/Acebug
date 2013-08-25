@@ -1,10 +1,10 @@
 /* See license.txt for terms of usage */
 
-FBL.ns(function() {
+(function() {
 
 // ************************************************************************************************
 // Constants
-
+window.top.dump("+++++++++++++++++++++++++++++++++")
 var Cc = Components.classes;
 var Ci = Components.interfaces;
 var Str
@@ -19,8 +19,15 @@ if (Firebug.CommandEditor)
 
 Firebug.Ace = FBL.extend(Firebug.Module, {
     dispatchName: "Ace",
-
+    
+    destroy: function() {
+        acebugPrefObserver.unregister();
+    },
+    
     initializeUI: function() {
+        Firebug.AceBug.initializeUI()
+    },
+    _doLoad: function() {
         var browser = FBL.$("fbAceBrowser");
         var win2Wrapped = browser.contentWindow;
         this.win2 = win2Wrapped.wrappedJSObject;
@@ -746,12 +753,23 @@ Firebug.largeCommandLineEditor = {
 		var val = this.getValue();
 		if (val && val.length > 5)
 			writeToFile(Firebug.Ace.getUserFile('autosave'), val);
-	}
-
+	},
+    destroy: function() {
+        this.shutdown();
+        
+        Firebug.chrome.$("fbCommandHistory").removeEventListener("mouseup",
+            Firebug.largeCommandLineEditor.onSelectHistoryEntry);
+        
+        Firebug.HTMLPanel.Editors.html = Firebug.HTMLPanel.Editors.html_orig;
+        Firebug.StyleSheetEditor = Firebug.StyleSheetEditor_orig;
+    }
 };
 
 Firebug.chrome.$("fbCommandHistory").addEventListener("mouseup",
     Firebug.largeCommandLineEditor.onSelectHistoryEntry);
+    
+Firebug.HTMLPanel.Editors.html_orig = Firebug.HTMLPanel.Editors.html;
+Firebug.StyleSheetEditor_orig = Firebug.StyleSheetEditor;
 
 var inputNumber = 0;
 /***********************************************************/
@@ -996,6 +1014,7 @@ HTMLPanelEditor.prototype = FBL.extend(Firebug.HTMLPanel.Editors.html.prototype,
 
 Firebug.HTMLPanel.Editors.html = HTMLPanelEditor;
 
+
 // stylesheet panel
 
 var StyleSheetEditor = function() {
@@ -1076,5 +1095,9 @@ Firebug.CSSStyleSheetPanel.prototype.startBuiltInEditing = function(css) {
 Firebug.registerModule(Firebug.Ace);
 
 // ************************************************************************************************
+window.top.dump("***********************************")
 
-});
+Firebug.isInitialized && setTimeout(function() {
+    Firebug.Ace.initializeUI()
+}, 10)
+})();

@@ -7,4 +7,4 @@ locale      acebug  nl      chrome/locale/nl/
 locale      acebug  sr      chrome/locale/sr/
 locale      acebug  sv-SE   chrome/locale/sv-SE/
 locale      acebug  zh-CN   chrome/locale/zh-CN/
-overlay        chrome://firebug/content/firebugOverlay.xul        chrome://acebug/content/firebugOverlay.xul
+

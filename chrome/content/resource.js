@@ -1,6 +1,6 @@
 /* See license.txt for terms of usage */
 
-FBL.ns(function() { with (FBL) {
+(function() { with (FBL) {
 "use strict"
 var $strBundle = document.getElementById("strings_acebug")
 var $ACESTR = function(name) {return FBL.$STR(name, $strBundle)};
@@ -237,12 +237,14 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
         this.filterText = text || ''
         var locationList = this.data;
         locationList.visibleItems = [];
+        var allItems = locationList.allItems
         if (!text) {
-            for each(var item in locationList.allItems) {
-               locationList.visibleItems.push(item)
+            for (var i in allItems) {
+                locationList.visibleItems.push(allItems[i])
             }
         } else {
-            for each(var item in locationList.allItems) {
+            for (var i in allItems) {
+                var item = allItems[i]
                 if(item.href.indexOf(text) != -1)
                     locationList.visibleItems.push(item);
             }
@@ -301,6 +303,7 @@ Firebug.ResourcePanel.prototype = extend(Firebug.Panel,
     },
 
     hide: function() {
+        if (!this.browser) return;
         var treePane = this.browser.firstChild;
         treePane.hidden = true;
         treePane.nextSibling.hidden = true;
@@ -545,4 +548,4 @@ Firebug.registerPanel(Firebug.ResourcePanel);
 
 // ************************************************************************************************
 
-}});
+}})();

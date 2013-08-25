@@ -1,6 +1,6 @@
 /* See license.txt for terms of usage */
 
-FBL.ns(function() {
+(function() {
 "use strict"
 // ************************************************************************************************
 // Constants
@@ -112,8 +112,8 @@ Firebug.Ace.BaseAutocompleter = {
         if (!this.selectionListener)
             this.selectionListener = FBL.bind(this.$selectionListener, this);
 
-        for each(var i in this.$markers)
-            this.editor.session.removeMarker(i)
+        for (var i in this.$markers)
+            this.editor.session.removeMarker(this.$markers[i])
         this.$markers = [
             editor.session.addMarker(this.$q.filterRange, "ace_bracket k"),
             editor.session.addMarker(this.$q.baseRange, "ace_bracket k")
@@ -320,11 +320,12 @@ Firebug.Ace.BaseAutocompleter = {
                 return 1;
             if (a.isSpecial && !b.isSpecial)
                 return -1;
-            for each(var i in sortVals) {
-              if (a[i] < b[i])
-                  return -1;
-              if (a[i] > b[i])
-                  return 1;
+            for (var i = 0; i < sortVals.length; i++) {
+                var type = sortVals[i]
+                if (a[type] < b[type])
+                    return -1;
+                if (a[type] > b[type])
+                    return 1;
             }
             return 0;
         });
@@ -334,8 +335,8 @@ Firebug.Ace.BaseAutocompleter = {
     finish: function(i) {
         if (this.hidden)
             return;
-        for each(var i in this.$markers)
-            this.editor.session.removeMarker(i)
+        for (var i in this.$markers)
+            this.editor.session.removeMarker(this.$markers[i])
 
         this.hidden = true;
         this.editor.selection.removeEventListener('changeCursor', this.selectionListener);
@@ -658,18 +659,18 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
     propName: function(fragment) {
         if (!gCSSProperties) {
             var table = [];
-            for each(var i in getAllCSSPropertyNames()) {
+            getAllCSSPropertyNames().forEach(function(i) {
                 table.push({name: i, comName: i.toLowerCase()});
-            }
+            })
             gCSSProperties = table;
         }
         return gCSSProperties;
     },
     propValue: function(fragment) {
         var table = [];
-        for each(var i in FBL.getCSSKeywordsByProperty('html', fragment.propName)) {
+        FBL.getCSSKeywordsByProperty('html', fragment.propName).forEach(function(i) {
             table.push({name: i, comName: i.toLowerCase()});
-        }
+        })
 
         return table;
     },
@@ -677,27 +678,27 @@ Firebug.Ace.CSSAutocompleter =  FBL.extend(Firebug.Ace.BaseAutocompleter, {
         var i;
         var table = [];
         if (fragment.termChar[0] == ':') {
-            for each(i in mozPseudoClasses) {
+            mozPseudoClasses.forEach(function(i) {
                 table.push({name: i, comName: i.toLowerCase()});
-            }
-            for each(i in pseudoClasses) {
+            })
+            pseudoClasses.forEach(function(i) {
                 table.push({name: i, comName: i.toLowerCase()});
-            }
-            for each(i in pseudoElements) {
+            })
+            pseudoElements.forEach(function(i) {
                 table.push({name: i, comName: i.toLowerCase()});
-            }
+            })
         } else if (fragment.termChar == '.') {
-            for each(i in getClassesInDoc(Firebug.currentContext.window.document)) {
+            getClassesInDoc(Firebug.currentContext.window.document).forEach(function(i) {
                 table.push({name: i, comName: i.toLowerCase()});
-            }
+            })
         } else if (fragment.termChar == '#') {
-            for each(i in getIDsInDoc(Firebug.currentContext.window.document)) {
+            getIDsInDoc(Firebug.currentContext.window.document).forEach(function(i) {
                 table.push({name: i, comName: i.toLowerCase()});
-            }
+            })
         } else {
-            for each(i in getNodeNamesInDoc(Firebug.currentContext.window.document)) {
+            getNodeNamesInDoc(Firebug.currentContext.window.document).forEach(function(i) {
                 table.push({name: i, comName: i.toLowerCase()});
-            }
+            })
         }
 
         return table;
@@ -1595,4 +1596,4 @@ s.serializeToString(doc)
 
 doc.querySelector('[name="scrollMaxX"]')
 */
-});
+})();
