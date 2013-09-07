@@ -111,10 +111,10 @@ exports.launch = function(env, options) {
 	
 	/**************************** initialize ****************************************************/
 	// global functions
-    toggleGutter = function() {
-        editor.renderer.setShowGutter(!editor.renderer.showGutter);
+    window.toggleGutter = function() {
+        editor.renderer.setShowGutter(!editor.renderer.$showGutter);
     };
-	toggleWrapMode = function(useWrap, session) {
+	window.toggleWrapMode = function(useWrap, session) {
 		session = session || editor.session
 		if (useWrap == null)
 			useWrap = !session.$useWrapMode;
@@ -126,7 +126,9 @@ exports.launch = function(env, options) {
             session.setUseWrapMode(false);		
 		}
     };
-	getExtension = function(name, mime) {
+	
+    ace.config.setDefaultValue("session", "useWorker", false)
+    getExtension = function(name, mime) {
 		if(mime) return (mime.toLowerCase().match(/(xml|html?|css|jsm?|xul|rdf)/i)||[,'js'])[1]
 		return (name.match(/.(xml|html?|css|jsm?|xul|rdf)($|\?|\#)/i)||[,'js'])[1]
 	};
@@ -259,7 +261,7 @@ exports.launch = function(env, options) {
     editor.addCommand = function(cmd) {
         canon.addCommand({
             name: cmd.name,
-            bindKey: {win: cmd.key, mac: cmd.key, sender: "editor"},
+            bindKey: {win: cmd.key, mac: cmd.key},
             exec: function(env, args, request) {
                 cmd.exec(env, args);
             }
@@ -377,6 +379,14 @@ exports.launch = function(env, options) {
 				var session = editor.session
 				var sel = session.selection
 				var range = sel.getRange()
+                
+                if (range.isEmpty() && session.$mode.getCurrentCell) {
+                    var c = session.$mode.getCurrentCell
+                    range.start.row = c.bodyStart
+                    range.start.column = 0
+                    range.end.row = c.bodyEnd
+                    range.end.column = session.getLine(c.bodyEnd).length
+                }
 				
 				var options = {};
 				if (session.getUseSoftTabs()) {
@@ -452,6 +462,134 @@ exports.launch = function(env, options) {
         }
     }]);
 
+    var bindKey = function(w, m) {return {win:w, mac: m}};
+    // ace++ commands
+    canon.addCommands([{
+        name: "centerselection",
+        bindKey: bindKey("Ctrl-L", "Ctrl-L"),
+        exec: function(editor) { editor.centerSelection(); },
+        readOnly: true
+    }, {
+        name: "gotoline",
+        bindKey: bindKey("Ctrl-G", "Command-L"),
+        exec: function(editor) {
+            var line = parseInt(prompt("Enter line number:"), 10);
+            if (!isNaN(line)) {
+                editor.gotoLine(line);
+            }
+        },
+        readOnly: true
+    }, {
+        name: "selectWord",
+        bindKey: bindKey("Ctrl-W", ""),
+        exec: function(editor) { editor.selection.selectWord(); },
+        readOnly: true
+    }, {
+        name: "findnext",
+        bindKey: bindKey("Ctrl-R", "Command-G"),
+        exec: function(editor) { editor.findNext(); },
+        readOnly: true
+    }, {
+        name: "findprevious",
+        bindKey: bindKey("Ctrl-Shift-R", "Command-Shift-G"),
+        exec: function(editor) { editor.findPrevious(); },
+        readOnly: true
+    }, {
+        name: "selectAndFindnext",
+        bindKey: bindKey("Ctrl-K", ""),
+        exec: function(editor) { editor.selection.selectWord(); editor.findNext(); },
+        readOnly: true
+    }, {
+        name: "selectAndFfindprevious",
+        bindKey: bindKey("Ctrl-Shift-K", ""),
+        exec: function(editor) { editor.selection.selectWord(); editor.findPrevious(); },
+        readOnly: true
+    }, {
+        name: "fontsize++",
+        bindKey: bindKey("Ctrl-+", "Command-+"),
+        exec: function(editor) { editor.setFontSize(null, +1) },
+        readOnly: true
+    }, {
+        name: "fontsize--",
+        bindKey: bindKey("Ctrl--", "Command--"),
+        exec: function(editor) { editor.setFontSize(null, -1) },
+        readOnly: true
+    }, {
+        name: "fontsizetodefault",
+        bindKey: bindKey("Ctrl-NUMPAD0|Ctrl-0", "Command-Numpad0|Command-0"),
+        exec: function(editor) { editor.setFontSize(null) },
+        readOnly: true
+    }, {
+        name: "removeline",
+        bindKey: bindKey("Alt-D", "Command-D"),
+        exec: function(editor) { editor.removeLines(); },
+        multiSelectAction: "forEachLine"
+    }, {
+        name: "duplicate",
+        bindKey: bindKey("Ctrl-D", "Command-Option-D"),
+        exec: function(editor) { editor.duplicateSelection(); },
+        multiSelectAction: "forEach"
+    }, {
+        name: "touppercase",
+        bindKey: bindKey("Ctrl-U", "Ctrl-U"),
+        exec: function(editor) { editor.toggleCase("up"); },
+        multiSelectAction: "forEach"
+    }, {
+        name: "tolowercase",
+        bindKey: bindKey("Ctrl-Shift-U", "Ctrl-Shift-U"),
+        exec: function(editor) { editor.toggleCase("low"); },
+        multiSelectAction: "forEach"
+    }])
+    
+    Editor.prototype.setFontSize = function(size, delta) {
+        if (delta && !size)
+            size = (parseInt(this.container.style.fontSize) || 12) + delta;
+        else if (!size)
+            size = 12;
+
+        if (typeof size == "number")
+            size = size + "px";
+    
+        this.setOption("fontSize", size);
+    };
+    
+    Editor.prototype.toggleCase = function(dir, change) {
+        var originalRange = this.getSelectionRange();
+        if (this.selection.isEmpty())
+            this.selection.selectWord();
+
+        var range = this.getSelectionRange();
+        var text = this.session.getTextRange(range);
+		var up = text.toUpperCase();
+		var low = text.toLowerCase();
+
+		var newText = dir == "up" ? up : low;
+		if (change && newText == text)
+			newText = dir == "up" ? low : up;
+
+        this.session.replace(range, newText);
+        this.selection.setSelectionRange(originalRange);
+    };
+    
+    Renderer.prototype.screenToTextCoordinates = function(x, y) {
+        var canvasPos = this.scroller.getBoundingClientRect();
+
+        var col = Math.round(
+            (x + this.scrollLeft - canvasPos.left - this.$padding) / this.characterWidth
+        );
+        var row = Math.floor(
+            (y + this.scrollTop - canvasPos.top) / this.lineHeight
+        );
+        if (row < 0) {
+            row = 0;
+        } else {
+            var maxRow = this.layerConfig.maxHeight / this.layerConfig.lineHeight - 1;
+            if(row > maxRow)
+                row = maxRow;
+        }
+        return this.session.screenToDocumentPosition(row, Math.max(col, 0));
+    };
+    
  	/**************************** misc ***********************************************/
 	canon.addCommand({
         name: "newCell",

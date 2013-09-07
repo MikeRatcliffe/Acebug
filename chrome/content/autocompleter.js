@@ -435,16 +435,17 @@ Firebug.Ace.JSAutocompleter = FBL.extend(Firebug.Ace.BaseAutocompleter, {
             },{
                 name: '\u2555lang=cf',
                 comName: '\u2555lang=cf',
-                description: cell.coffeeText,
+                description: cell.parsedText,
                 isSpecial: true
             },{
                 name:'\u2555lang=ls',
                 comName:'\u2555lang=ls',
+                description: cell.parsedText,
                 isSpecial: true
             },{
                 name: '\u2555this=',
                 comName: '\u2555this=',
-                description: cell.coffeeText,
+                description: cell.parsedText,
                 isSpecial: true
             }]
             this.filter(this.unfilteredArray, this.text);

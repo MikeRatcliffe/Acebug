@@ -589,11 +589,11 @@ Firebug.largeCommandLineEditor = {
         } else {
             //log lines with breakpoints
             var bp = editor.session.$breakpoints;
-            if (cell.coffeeError) {
-                this.logCoffeeError(cell.coffeeError);
+            if (cell.parseError) {
+                this.logCoffeeError(cell.parseError);
                 return;
-            } else if (cell.coffeeText) {
-                text = cell.coffeeText
+            } else if (cell.parsedText) {
+                text = cell.parsedText
             } else {
 				var input = cell.body.join('\n')
 				var cf = this.jsOrCoffee(input)

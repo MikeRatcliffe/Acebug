@@ -1,4 +1,4 @@
-var coffeeScriptCompiler
+var coffeeScriptCompiler, liveScriptCompiler
 
 define("ace/mode/consoleMode", function(require, exports, module) {
 
@@ -81,7 +81,8 @@ modes = {
 		loadScripts(["res/coffee-script"], function(){
             var cf = require("ace/mode/coffee").Mode
             modes.coffee = new cf
-			
+
+            modes.coffee.compiler = 
 			coffeeScriptCompiler = this.CoffeeScript
 			// now that we have real coffee, highlight session
 			// relies on global editor
@@ -90,21 +91,20 @@ modes = {
 		delete this.coffee
 		this.coffee = new TextMode
 		return this.coffee
-	}
+	},
     get ls() {
 		var req  = window.require, def = window.define
-		loadScripts(["res/coffee-script"], function(){
-            var cf = require("ace/mode/coffee").Mode
-            modes.coffee = new cf
+		loadScripts(["res/livescript"], function(){
+            var cf = require("ace/mode/livescript").Mode
+            modes.ls = new cf
 			
-			coffeeScriptCompiler = this.CoffeeScript
-			// now that we have real coffee, highlight session
-			// relies on global editor
+            modes.ls.compiler = 
+			liveScriptCompiler = this.LiveScript
 			editor.session.bgTokenizer.start()
 		})
-		delete this.coffee
-		this.coffee = new TextMode
-		return this.coffee
+		delete this.ls
+		this.ls = new TextMode
+		return this.ls
 	}
 }
 jsMode = modes.js
@@ -249,11 +249,12 @@ oop.inherits(Mode, TextMode);
 		cell.body = session.getLines(cell.bodyStart, cell.bodyEnd)
 		cell.lang = session.getState(cell.headerStart).lang
 		
-		if (cell.lang=='coffee') {
-			this.$compileJSCell(cell);
-			cell.sourceLang = 'coffee '
+        var mode = modes[cell.lang]
+		if (mode && mode.compiler) {
+			this.$compileJSCell(cell, mode.compiler);
+			cell.sourceLang = cell.lang + " ";
 		} else
-			cell.sourceLang = ''
+			cell.sourceLang = "";
 		
 		this.getHeaderText(cell)
 
@@ -277,13 +278,13 @@ oop.inherits(Mode, TextMode);
 		return text
 	}
 	
-	this.$compileJSCell = function(cell) {
+	this.$compileJSCell = function(cell, compiler) {
 		try {			
-			cell.coffeeText = coffeeScriptCompiler.compile(cell.body.join('\n'), {bare: true})
+			cell.parsedText = compiler.compile(cell.body.join('\n'), {bare: true})
 		} catch(e) {
 			var m = e.message.match(/Parse error on line (\d+): (.*)/);
 			if (m) {
-				cell.coffeeError = {
+				cell.parseError = {
 					row: parseInt(m[1]) - 1,
 					column: null,
 					text: m[2],
@@ -293,7 +294,7 @@ oop.inherits(Mode, TextMode);
 			if (e instanceof SyntaxError) {
                 var m = e.message.match(/ on line (\d+)/);
                 if (m) {                    
-                    cell.coffeeError = {
+                    cell.parseError = {
                         row: parseInt(m[1]) - 1,
                         column: null,
                         text: e.message.replace(m[0], ""),

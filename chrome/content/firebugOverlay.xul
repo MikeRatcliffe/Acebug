@@ -48,6 +48,7 @@
 				oncommand="Firebug.largeCommandLineEditor.onSaveCommand(event.target.getAttribute('option'))">
 			<menupopup onpopupshowing="Firebug.Ace.savePopupShowing(this)"/>
         </toolbarbutton>
+        <toolbarbutton id='fbToggleCommandEditor' />
     </hbox>
 
     <deck id="fbSidePanelDeck" persist="width,height">

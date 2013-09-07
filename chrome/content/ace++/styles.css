@@ -125,6 +125,23 @@ separator{
     border-right: 1px solid #A1A1CF;
     border-bottom: 1px solid #A1A1CF;
 }
+
+.ace_editor {
+    font-family: monospace;
+}
+.ace_gutter-cell {
+    padding-left: 10px;
+}
+
+.ace_gutter-cell.ace_error {
+    background-position: 0px center;
+}
+
+.ace_gutter-cell.ace_warning {
+    background-position: 0px center;
+}
+
+
 /********************************* breakpoints ***************************************** /
 .sourceRow-hovered {
     background-color: #EEEEEE;
@@ -261,4 +278,31 @@ separator{
 .buttonify:hover {
     border-color: #666666;
     text-decoration: none !important;
+}
+
+
+
+/****************** fix tm theme ********************/
+
+.ace-tm .ace_gutter {
+  background: #e8e8e8!important;
+}
+
+
+.ace-tm .ace_marker-layer .ace_selection {
+  background: rgb(216, 218, 220)!important;
+}
+.ace-tm.ace_focus .ace_marker-layer .ace_selection {
+  background: rgb(181, 213, 255)!important;
+}
+
+.ace-tm .ace_marker-layer .ace_active-line {
+  background-color: #e8e8e8!important;
+}
+.ace-tm.ace_focus .ace_marker-layer .ace_active_line {
+  background: rgb(232, 242, 254)!important;
+}
+
+.ace-tm .ace_meta.ace_tag {
+  color:rgb(28, 2, 255)!important;
 }

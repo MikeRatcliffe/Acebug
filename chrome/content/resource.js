@@ -41,13 +41,13 @@ function treeView(table) {
     this.isSorted = function() {return false;};
     this.getImageSrc = function(row, col) {return table[row].iconURL}; // return "chrome://global/skin/checkbox/cbox-check.gif"; };
     this.getRowProperties = function(row, props) {
-        //var aserv=Components.classes["@mozilla.org/atom-service;1"].getService(Components.interfaces.nsIAtomService);
-        //props.AppendElement(aserv.getAtom(table[row].depth));
-        //props.AppendElement(aserv.getAtom('a'));
     };
     this.getCellProperties = function(row, col, props) {
-        var aserv=Components.classes["@mozilla.org/atom-service;1"].getService(Components.interfaces.nsIAtomService);
-        props.AppendElement(aserv.getAtom('d'+table[row].depth));
+        if (typeof props == "object") {
+            var aserv=Components.classes["@mozilla.org/atom-service;1"].getService(Components.interfaces.nsIAtomService);
+            props.AppendElement(aserv.getAtom('d'+table[row].depth));
+        } else
+            return 'd'+table[row].depth
     };
     this.getColumnProperties = function(colid, col, props) {};
     this.cycleHeader = function(col, elem) {};

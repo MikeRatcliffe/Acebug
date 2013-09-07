@@ -74,7 +74,7 @@
 */
 
 
-(function() {
+(function() {var define
     function js_beautify(js_source_text, options) {
         "use strict";
         var beautifier = new Beautifier(js_source_text, options);
@@ -1675,7 +1675,7 @@
 // http://www.w3.org/TR/CSS21/syndata.html#tokenization
 // http://www.w3.org/TR/css3-syntax/
 
-(function() {
+(function() {var define
     function css_beautify(source_text, options) {
         options = options || {};
         var indentSize = options.indent_size || 4;
@@ -1952,7 +1952,7 @@
     });
 */
 
-(function() {
+(function() {var define
 
     function trim(s) {
         return s.replace(/^\s+|\s+$/g, '');
