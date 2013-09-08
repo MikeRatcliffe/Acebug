@@ -222,7 +222,7 @@ separator{
 } */
 
 .ace_gutter-cell:hover{
-    background: #BACADF
+    background-color: #BACADF
 }
 .ace_gutter-cell.ace_breakpoint{
     border-radius: 20px 0 0 20px;
@@ -290,17 +290,17 @@ separator{
 
 
 .ace-tm .ace_marker-layer .ace_selection {
-  background: rgb(216, 218, 220)!important;
+  background-color: rgb(216, 218, 220)!important;
 }
 .ace-tm.ace_focus .ace_marker-layer .ace_selection {
-  background: rgb(181, 213, 255)!important;
+  background-color: rgb(181, 213, 255)!important;
 }
 
 .ace-tm .ace_marker-layer .ace_active-line {
   background-color: #e8e8e8!important;
 }
-.ace-tm.ace_focus .ace_marker-layer .ace_active_line {
-  background: rgb(232, 242, 254)!important;
+.ace-tm.ace_focus .ace_marker-layer .ace_active-line {
+  background-color: rgb(232, 242, 254)!important;
 }
 
 .ace-tm .ace_meta.ace_tag {

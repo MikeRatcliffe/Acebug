@@ -322,10 +322,24 @@ oop.inherits(Mode, TextMode);
     };
     
     this.createWorker = function(session) {
-        var cw = require("fbace/worker").ConsoleWorker
-        var worker = new cw(session)
+        var WorkerClient = require("ace/worker/worker_client").WorkerClient;
+        var worker = new WorkerClient(["ace"], "ace/mode/javascript_worker", "JavaScriptWorker");
+        worker.attachToDocument(session.getDocument());
 
-        return worker;
+        worker.on("jslint", function(results) {
+            session.setAnnotations(results.data);
+        });
+
+        worker.on("terminate", function() {
+            session.clearAnnotations();
+        });
+        
+        worker.$worker.postMessage({
+            init: true,
+            tlns: {"ace++": "chrome://acebug/content/ace++"},
+            module: "ace++/worker",
+            classname: "ConsoleWorker"
+        });
     };
 	
 	this.transformAction = function(state, action, editor, session, param) {
