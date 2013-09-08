@@ -73,4 +73,4 @@ oop.inherits(ConsoleWorker, Mirror);
 (function() {
 
 }).call(ConsoleWorker.prototype)
-
+})
